@@ -25,3 +25,5 @@ dependencyResolutionManagement {
 rootProject.name = "Sightline"
 
 include(":app")
+
+include(":core:ar")
