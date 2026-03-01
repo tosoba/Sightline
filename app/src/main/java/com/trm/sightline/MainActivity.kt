@@ -1,24 +1,57 @@
 package com.trm.sightline
 
+import android.content.Context
 import android.os.Bundle
+import android.view.ViewStub
+import android.widget.FrameLayout
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.camera.core.CameraSelector
+import androidx.camera.core.Preview
+import androidx.camera.core.impl.ImageOutputConfig
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.compose.LifecycleStartEffect
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.trm.sightline.core.ar.camera.OpenGLRenderer
+import com.trm.sightline.core.ar.orientation.Orientation
+import com.trm.sightline.core.ar.orientation.OrientationManager
+import com.trm.sightline.core.ar.util.phoneRotation
 import com.trm.sightline.ui.theme.SightlineTheme
+import kotlinx.coroutines.suspendCancellableCoroutine
+import timber.log.Timber
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     enableEdgeToEdge()
+
     setContent {
       SightlineTheme {
         val cameraPermissionState = rememberCameraPermissionState()
@@ -30,16 +63,16 @@ class MainActivity : ComponentActivity() {
 
         Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
           Box(
-            modifier = Modifier
-              .fillMaxSize()
-              .padding(innerPadding),
+            modifier = Modifier.fillMaxSize().padding(innerPadding),
             contentAlignment = Alignment.Center,
           ) {
-            if (cameraPermissionState.isGranted) {
-              Text(text = "Camera permission granted!")
-            } else {
-              Button(onClick = { cameraPermissionState.launchRequest() }) {
-                Text(text = "Grant Camera Permission")
+            AnimatedContent(cameraPermissionState.isGranted) {
+              if (it) {
+                CameraPreview()
+              } else {
+                Button(onClick = cameraPermissionState::launchRequest) {
+                  Text(text = "Grant Camera Permission")
+                }
               }
             }
           }
@@ -49,3 +82,99 @@ class MainActivity : ComponentActivity() {
   }
 }
 
+@Composable
+private fun CameraPreview() {
+  val context = LocalContext.current
+  val lifecycleOwner = LocalLifecycleOwner.current
+
+  val orientationManager = remember {
+    OrientationManager().apply {
+      axisMode = OrientationManager.Mode.AR
+      onOrientationChangedListener =
+        object : OrientationManager.OnOrientationChangedListener {
+          override fun onOrientationChanged(orientation: Orientation) {}
+        }
+    }
+  }
+  var sensorRunning by remember { mutableStateOf(false) }
+  LifecycleStartEffect(Unit) {
+    sensorRunning = orientationManager.startSensor(context)
+    onStopOrDispose {
+      orientationManager.stopSensor()
+      sensorRunning = false
+    }
+  }
+
+  val viewStub = remember { mutableStateOf<ViewStub?>(null) }
+  val preview =
+    produceState<Preview?>(null) {
+      value = context.initCameraPreview(lifecycleOwner, context.phoneRotation)
+    }
+
+  AnimatedVisibility(visible = preview.value != null, enter = fadeIn(), exit = fadeOut()) {
+    AndroidView(
+      modifier = Modifier.fillMaxSize(),
+      factory = { context ->
+        FrameLayout(context).also { container ->
+          container.addView(
+            ViewStub(context).apply {
+              layoutParams =
+                FrameLayout.LayoutParams(
+                  FrameLayout.LayoutParams.MATCH_PARENT,
+                  FrameLayout.LayoutParams.MATCH_PARENT,
+                )
+            }
+          )
+        }
+      },
+      update = { container ->
+        if (viewStub.value == null) {
+          viewStub.value = container.getChildAt(0) as ViewStub
+        }
+      },
+    )
+  }
+
+  val openGLRenderer = rememberOpenGLRenderer(preview.value, viewStub.value)
+}
+
+@Composable
+private fun rememberOpenGLRenderer(preview: Preview?, viewStub: ViewStub?): OpenGLRenderer {
+  val openGLRenderer = remember(::OpenGLRenderer)
+  if (viewStub != null && preview != null) {
+    DisposableEffect(Unit) {
+      try {
+        openGLRenderer.attachInputPreview(preview, viewStub)
+      } catch (ex: Exception) {
+        Timber.e(ex)
+      }
+      onDispose(openGLRenderer::shutdown)
+    }
+  }
+  return openGLRenderer
+}
+
+suspend fun Context.initCameraPreview(
+  lifecycleOwner: LifecycleOwner,
+  @ImageOutputConfig.RotationValue rotation: Int,
+): Preview = suspendCancellableCoroutine { continuation ->
+  val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
+  cameraProviderFuture.addListener(
+    {
+      val preview = Preview.Builder().setTargetRotation(rotation).build()
+      cameraProviderFuture
+        .get()
+        .bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, preview)
+      try {
+        continuation.resume(preview)
+      } catch (ex: Exception) {
+        continuation.resumeWithException(ex)
+      }
+    },
+    ContextCompat.getMainExecutor(this),
+  )
+}
+
+private val Orientation.pitchWithinLimit: Boolean
+  get() = pitch in -PITCH_LIMIT_RADIANS..PITCH_LIMIT_RADIANS
+private const val PITCH_LIMIT_RADIANS = Math.PI / 3
