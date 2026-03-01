@@ -836,7 +836,7 @@ void main() {
 
 extern "C" {
 JNIEXPORT jlong JNICALL
-Java_com_lookaround_core_android_camera_OpenGLRenderer_initContext(
+Java_com_trm_sightline_core_ar_camera_OpenGLRenderer_initContext(
         JNIEnv *env, jobject clazz) {
     EGLDisplay eglDisplay = eglGetDisplay(EGL_DEFAULT_DISPLAY);
     if (eglDisplay == EGL_NO_DISPLAY) {
@@ -1046,7 +1046,7 @@ Java_com_lookaround_core_android_camera_OpenGLRenderer_initContext(
 }
 
 JNIEXPORT jboolean JNICALL
-Java_com_lookaround_core_android_camera_OpenGLRenderer_setWindowSurface(
+Java_com_trm_sightline_core_ar_camera_OpenGLRenderer_setWindowSurface(
         JNIEnv *env, jobject clazz, jlong context, jobject jsurface) {
     auto *nativeContext = reinterpret_cast<NativeContext *>(context);
 
@@ -1116,14 +1116,14 @@ Java_com_lookaround_core_android_camera_OpenGLRenderer_setWindowSurface(
 }
 
 JNIEXPORT jint JNICALL
-Java_com_lookaround_core_android_camera_OpenGLRenderer_getTexName(
+Java_com_trm_sightline_core_ar_camera_OpenGLRenderer_getTexName(
         JNIEnv *env, jobject clazz, jlong context) {
     auto *nativeContext = reinterpret_cast<NativeContext *>(context);
     return nativeContext->inputTextureId;
 }
 
 JNIEXPORT jboolean JNICALL
-Java_com_lookaround_core_android_camera_OpenGLRenderer_renderTexture(
+Java_com_trm_sightline_core_ar_camera_OpenGLRenderer_renderTexture(
         JNIEnv *env, jobject clazz, jlong context, jlong timestampNs,
         jfloatArray jvertTransformArray, jfloatArray jtexTransformArray,
         jfloatArray jrectsCoordinates, jint jallRectsCount, jint jotherRectsCount) {
@@ -1201,7 +1201,7 @@ Java_com_lookaround_core_android_camera_OpenGLRenderer_renderTexture(
 }
 
 JNIEXPORT void JNICALL
-Java_com_lookaround_core_android_camera_OpenGLRenderer_setBlurEnabled(
+Java_com_trm_sightline_core_ar_camera_OpenGLRenderer_setBlurEnabled(
         JNIEnv *env, jobject clazz, jlong context, jboolean enabled, jboolean animated) {
     auto *nativeContext = reinterpret_cast<NativeContext *>(context);
     if (nativeContext->blurEnabled == enabled) return;
@@ -1228,7 +1228,7 @@ Java_com_lookaround_core_android_camera_OpenGLRenderer_setBlurEnabled(
 }
 
 JNIEXPORT void JNICALL
-Java_com_lookaround_core_android_camera_OpenGLRenderer_setContrastingColor(
+Java_com_trm_sightline_core_ar_camera_OpenGLRenderer_setContrastingColor(
         JNIEnv *env, jobject clazz, jlong context,
         jfloat red, jfloat green, jfloat blue) {
     auto *nativeContext = reinterpret_cast<NativeContext *>(context);
@@ -1247,7 +1247,7 @@ Java_com_lookaround_core_android_camera_OpenGLRenderer_setContrastingColor(
 }
 
 JNIEXPORT void JNICALL
-Java_com_lookaround_core_android_camera_OpenGLRenderer_closeContext(
+Java_com_trm_sightline_core_ar_camera_OpenGLRenderer_closeContext(
         JNIEnv *env, jobject clazz, jlong context) {
     auto *nativeContext = reinterpret_cast<NativeContext *>(context);
 
