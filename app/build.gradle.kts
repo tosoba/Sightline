@@ -49,5 +49,7 @@ dependencies {
   implementation(libs.androidx.camera.lifecycle)
   implementation(libs.androidx.camera.view)
 
+  implementation(libs.androidx.concurrent.futures.ktx)
+
   implementation(libs.timber)
 }

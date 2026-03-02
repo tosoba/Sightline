@@ -33,7 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.content.ContextCompat
+import androidx.concurrent.futures.await
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -42,10 +42,7 @@ import com.trm.sightline.core.ar.orientation.Orientation
 import com.trm.sightline.core.ar.orientation.OrientationManager
 import com.trm.sightline.core.ar.util.phoneRotation
 import com.trm.sightline.ui.theme.SightlineTheme
-import kotlinx.coroutines.suspendCancellableCoroutine
 import timber.log.Timber
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -157,22 +154,11 @@ private fun rememberOpenGLRenderer(preview: Preview?, viewStub: ViewStub?): Open
 suspend fun Context.initCameraPreview(
   lifecycleOwner: LifecycleOwner,
   @ImageOutputConfig.RotationValue rotation: Int,
-): Preview = suspendCancellableCoroutine { continuation ->
-  val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
-  cameraProviderFuture.addListener(
-    {
-      val preview = Preview.Builder().setTargetRotation(rotation).build()
-      cameraProviderFuture
-        .get()
-        .bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, preview)
-      try {
-        continuation.resume(preview)
-      } catch (ex: Exception) {
-        continuation.resumeWithException(ex)
-      }
-    },
-    ContextCompat.getMainExecutor(this),
-  )
+): Preview {
+  val cameraProviderFuture = ProcessCameraProvider.getInstance(this).await()
+  val preview = Preview.Builder().setTargetRotation(rotation).build()
+  cameraProviderFuture.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, preview)
+  return preview
 }
 
 private val Orientation.pitchWithinLimit: Boolean
