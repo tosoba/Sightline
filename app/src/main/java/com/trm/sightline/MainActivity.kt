@@ -155,9 +155,10 @@ suspend fun Context.initCameraPreview(
   lifecycleOwner: LifecycleOwner,
   @ImageOutputConfig.RotationValue rotation: Int,
 ): Preview {
-  val cameraProviderFuture = ProcessCameraProvider.getInstance(this).await()
   val preview = Preview.Builder().setTargetRotation(rotation).build()
-  cameraProviderFuture.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, preview)
+  ProcessCameraProvider.getInstance(this)
+    .await()
+    .bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, preview)
   return preview
 }
 
