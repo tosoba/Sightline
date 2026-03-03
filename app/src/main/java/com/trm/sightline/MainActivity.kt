@@ -44,7 +44,6 @@ import com.trm.sightline.core.ar.model.SimpleARMarker
 import com.trm.sightline.core.ar.orientation.Orientation
 import com.trm.sightline.core.ar.orientation.OrientationManager
 import com.trm.sightline.core.ar.util.phoneRotation
-import com.trm.sightline.core.ar.view.ARMarkerRenderer
 import com.trm.sightline.core.ar.view.ARView
 import com.trm.sightline.ui.theme.SightlineTheme
 import timber.log.Timber
@@ -109,8 +108,6 @@ private fun CameraPreview() {
     }
   }
 
-  val arMarkerRenderer = remember { ARMarkerRenderer(context).apply { setMarkers(markers) } }
-
   AnimatedVisibility(visible = preview.value != null, enter = fadeIn(), exit = fadeOut()) {
     AndroidView(
       modifier = Modifier.fillMaxSize(),
@@ -142,7 +139,6 @@ private fun CameraPreview() {
             longitude = 21.017532
           }
         this.markers = markers
-        markerRenderer = arMarkerRenderer
       }
     }
     AndroidView(modifier = Modifier.fillMaxSize(), factory = { arView })
@@ -164,13 +160,12 @@ private fun CameraPreview() {
       orientationManager.startSensor(context)
       onStopOrDispose { orientationManager.stopSensor() }
     }
-  }
 
-  val openGLRenderer = rememberOpenGLRenderer(preview.value, viewStub.value)
-
-  LaunchedEffect(lifecycleOwner) {
-    lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-      arMarkerRenderer.drawnRectsFlow.collect(openGLRenderer::setMarkerRects)
+    val openGLRenderer = rememberOpenGLRenderer(preview.value, viewStub.value)
+    LaunchedEffect(lifecycleOwner) {
+      lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+        arView.markerRenderer.drawnRectsFlow.collect(openGLRenderer::setMarkerRects)
+      }
     }
   }
 }

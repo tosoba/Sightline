@@ -32,7 +32,7 @@ class ARView : View {
       maxRange =
         (markers.lastOrNull()?.distance?.toDouble() ?: DEFAULT_MAX_RANGE_METERS) *
           RANGE_MARGIN_MULTIPLIER
-      markerRenderer?.povLocation = value
+      markerRenderer.povLocation = value
     }
 
   private var maxRange: Double = DEFAULT_MAX_RANGE_METERS
@@ -50,10 +50,10 @@ class ARView : View {
       maxRange =
         (value.lastOrNull()?.distance?.toDouble() ?: DEFAULT_MAX_RANGE_METERS) *
           RANGE_MARGIN_MULTIPLIER
+      markerRenderer.setMarkers(value)
     }
 
-  var markerRenderer: ARMarkerRenderer? = null
-    @MainThread set
+  val markerRenderer: ARMarkerRenderer = ARMarkerRenderer(context)
 
   var orientation: Orientation = Orientation()
     @MainThread
@@ -79,10 +79,10 @@ class ARView : View {
   private val screenRotTrig = Trig1()
 
   private val markerWidth: Float
-    get() = markerRenderer?.markerWidthPx ?: DEFAULT_MARKER_DIMENSION_PX
+    get() = markerRenderer.markerWidthPx
 
   private val markerHeight: Float
-    get() = markerRenderer?.markerHeightPx ?: DEFAULT_MARKER_DIMENSION_PX
+    get() = markerRenderer.markerHeightPx
 
   private val ARMarker.shouldBeDrawn: Boolean
     get() = distance < maxRange && isDrawn
@@ -105,7 +105,6 @@ class ARView : View {
     super.onDraw(canvas)
     val povLocation = this.povLocation ?: return
     preDraw(povLocation)
-    val markerRenderer = this.markerRenderer ?: return
     markers.forEach { marker -> calculateMarkerScreenPosition(marker) }
     markerRenderer.draw(markers.filter { it.shouldBeDrawn }, canvas)
   }
@@ -170,7 +169,7 @@ class ARView : View {
 
   private fun findNearestMarker(x: Float, y: Float): ARMarker? =
     markers
-      .filter { marker -> marker.isDrawn && markerRenderer?.isOnCurrentPage(marker) ?: true }
+      .filter { marker -> marker.isDrawn && markerRenderer.isOnCurrentPage(marker) }
       .minByOrNull { marker ->
         sqrt((marker.x - x).toDouble().pow(2.0) + (marker.y - y).toDouble().pow(2.0))
       }
@@ -180,12 +179,12 @@ class ARView : View {
   }
 
   override fun onSaveInstanceState(): Parcelable =
-    SavedState(super.onSaveInstanceState(), markerRenderer?.onSaveInstanceState())
+    SavedState(super.onSaveInstanceState(), markerRenderer.onSaveInstanceState())
 
   override fun onRestoreInstanceState(state: Parcelable?) {
     val savedState = state as? SavedState
     super.onRestoreInstanceState(savedState?.superSavedState ?: state)
-    markerRenderer?.onRestoreInstanceState(savedState?.rendererBundle)
+    markerRenderer.onRestoreInstanceState(savedState?.rendererBundle)
   }
 
   @Parcelize
@@ -196,6 +195,5 @@ class ARView : View {
     private const val SCREEN_DEPTH = 1
     private const val DEFAULT_MAX_RANGE_METERS = 1_000.0
     private const val RANGE_MARGIN_MULTIPLIER = 1.1
-    private const val DEFAULT_MARKER_DIMENSION_PX = 50f
   }
 }
