@@ -5,7 +5,7 @@ import android.view.ViewStub
 import com.google.common.util.concurrent.ListenableFuture
 import com.trm.sightline.core.ar.camera.OpenGLRenderer
 
-internal interface IRenderSurface {
+internal interface RenderSurface {
   fun waitForNextFrame(): ListenableFuture<Unit>
 
   fun inflateWith(viewStub: ViewStub, renderer: OpenGLRenderer): View

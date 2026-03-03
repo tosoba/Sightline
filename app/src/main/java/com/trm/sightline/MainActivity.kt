@@ -39,13 +39,13 @@ import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import com.trm.sightline.core.ar.camera.OpenGLRenderer
-import com.trm.sightline.core.ar.marker.SimpleARMarker
 import com.trm.sightline.core.ar.model.Marker
+import com.trm.sightline.core.ar.model.SimpleARMarker
 import com.trm.sightline.core.ar.orientation.Orientation
 import com.trm.sightline.core.ar.orientation.OrientationManager
-import com.trm.sightline.core.ar.renderer.impl.CameraMarkerRenderer
 import com.trm.sightline.core.ar.util.phoneRotation
-import com.trm.sightline.core.ar.view.ARCameraView
+import com.trm.sightline.core.ar.view.ARMarkerRenderer
+import com.trm.sightline.core.ar.view.ARView
 import com.trm.sightline.ui.theme.SightlineTheme
 import timber.log.Timber
 
@@ -109,9 +109,7 @@ private fun CameraPreview() {
     }
   }
 
-  val cameraMarkerRenderer = remember {
-    CameraMarkerRenderer(context).apply { setMarkers(markers) }
-  }
+  val arMarkerRenderer = remember { ARMarkerRenderer(context).apply { setMarkers(markers) } }
 
   AnimatedVisibility(visible = preview.value != null, enter = fadeIn(), exit = fadeOut()) {
     AndroidView(
@@ -136,18 +134,18 @@ private fun CameraPreview() {
       },
     )
 
-    val arCameraView = remember {
-      ARCameraView(context).apply {
+    val arView = remember {
+      ARView(context).apply {
         povLocation =
           Location(null).apply {
             latitude = 52.237049
             longitude = 21.017532
           }
         this.markers = markers
-        markerRenderer = cameraMarkerRenderer
+        markerRenderer = arMarkerRenderer
       }
     }
-    AndroidView(modifier = Modifier.fillMaxSize(), factory = { arCameraView })
+    AndroidView(modifier = Modifier.fillMaxSize(), factory = { arView })
 
     val orientationManager = remember {
       OrientationManager().apply {
@@ -156,8 +154,8 @@ private fun CameraPreview() {
           object : OrientationManager.OnOrientationChangedListener {
             override fun onOrientationChanged(orientation: Orientation) {
               if (!orientation.pitchWithinLimit) return
-              arCameraView.orientation = orientation
-              arCameraView.phoneRotation = context.phoneRotation
+              arView.orientation = orientation
+              arView.phoneRotation = context.phoneRotation
             }
           }
       }
@@ -172,7 +170,7 @@ private fun CameraPreview() {
 
   LaunchedEffect(lifecycleOwner) {
     lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-      cameraMarkerRenderer.drawnRectsFlow.collect(openGLRenderer::setMarkerRects)
+      arMarkerRenderer.drawnRectsFlow.collect(openGLRenderer::setMarkerRects)
     }
   }
 }

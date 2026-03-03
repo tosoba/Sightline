@@ -1,4 +1,4 @@
-package com.trm.sightline.core.ar.camera.surface.impl
+package com.trm.sightline.core.ar.camera.surface
 
 import android.annotation.SuppressLint
 import android.util.Size
@@ -9,13 +9,11 @@ import androidx.camera.core.impl.utils.futures.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import com.trm.sightline.core.ar.R
 import com.trm.sightline.core.ar.camera.OpenGLRenderer
-import com.trm.sightline.core.ar.camera.surface.IRenderSurface
-import com.trm.sightline.core.ar.camera.surface.Surfaces
 
-internal class SurfaceViewRenderSurface : IRenderSurface {
+internal class SurfaceViewRenderSurface : RenderSurface {
   /**
-   * Inflates a [SurfaceView] into the provided [ViewStub] and attaches it to the provided
-   * [OpenGLRenderer].
+   * Inflates a [android.view.SurfaceView] into the provided [android.view.ViewStub] and attaches it
+   * to the provided [com.trm.sightline.core.ar.camera.OpenGLRenderer].
    *
    * @param viewStub Stub which will be replaced by SurfaceView.
    * @param renderer Renderer which will be used to update the SurfaceView.

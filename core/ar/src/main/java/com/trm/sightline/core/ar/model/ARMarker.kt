@@ -1,6 +1,4 @@
-package com.trm.sightline.core.ar.marker
-
-import com.trm.sightline.core.ar.model.Marker
+package com.trm.sightline.core.ar.model
 
 interface ARMarker {
   val wrapped: Marker

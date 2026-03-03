@@ -1,28 +1,25 @@
-package com.trm.sightline.core.ar.camera.surface.impl
+package com.trm.sightline.core.ar.camera.surface
 
 import android.graphics.SurfaceTexture
 import android.util.Size
 import android.view.Surface
 import android.view.TextureView
-import android.view.TextureView.SurfaceTextureListener
 import android.view.ViewStub
 import androidx.concurrent.futures.CallbackToFutureAdapter
 import androidx.core.content.ContextCompat
 import com.google.common.util.concurrent.ListenableFuture
 import com.trm.sightline.core.ar.R
 import com.trm.sightline.core.ar.camera.OpenGLRenderer
-import com.trm.sightline.core.ar.camera.surface.IRenderSurface
-import com.trm.sightline.core.ar.camera.surface.Surfaces
 import java.util.concurrent.atomic.AtomicReference
 
-internal class TextureViewRenderSurface : IRenderSurface {
+internal class TextureViewRenderSurface : RenderSurface {
   private val nextFrameCompleter = AtomicReference<CallbackToFutureAdapter.Completer<Unit>?>()
 
   override fun inflateWith(viewStub: ViewStub, renderer: OpenGLRenderer): TextureView {
     viewStub.layoutResource = R.layout.texture_view_render_surface
     val textureView = viewStub.inflate() as TextureView
     textureView.surfaceTextureListener =
-      object : SurfaceTextureListener {
+      object : TextureView.SurfaceTextureListener {
         private lateinit var surface: Surface
 
         override fun onSurfaceTextureAvailable(st: SurfaceTexture, width: Int, height: Int) {

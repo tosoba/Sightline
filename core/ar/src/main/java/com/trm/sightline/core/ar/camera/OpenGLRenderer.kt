@@ -16,8 +16,8 @@ import androidx.camera.view.PreviewView.StreamState
 import androidx.concurrent.futures.CallbackToFutureAdapter
 import androidx.core.content.ContextCompat
 import com.google.common.util.concurrent.ListenableFuture
-import com.trm.sightline.core.ar.camera.surface.impl.SurfaceViewRenderSurface
-import com.trm.sightline.core.ar.camera.surface.impl.TextureViewRenderSurface
+import com.trm.sightline.core.ar.camera.surface.SurfaceViewRenderSurface
+import com.trm.sightline.core.ar.camera.surface.TextureViewRenderSurface
 import com.trm.sightline.core.ar.model.RoundedRectF
 import com.trm.sightline.core.ar.util.shouldUseTextureView
 import kotlinx.coroutines.channels.BufferOverflow

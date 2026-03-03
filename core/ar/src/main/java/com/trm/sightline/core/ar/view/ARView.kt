@@ -1,20 +1,30 @@
 package com.trm.sightline.core.ar.view
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
 import android.location.Location
 import android.os.Bundle
 import android.os.Parcelable
 import android.util.AttributeSet
+import android.view.MotionEvent
 import android.view.View
 import androidx.annotation.MainThread
-import com.trm.sightline.core.ar.marker.ARMarker
+import com.trm.sightline.core.ar.math.Math3D
+import com.trm.sightline.core.ar.math.Trig1
+import com.trm.sightline.core.ar.math.Trig3
+import com.trm.sightline.core.ar.math.Vector1
+import com.trm.sightline.core.ar.math.Vector2
+import com.trm.sightline.core.ar.math.Vector3
+import com.trm.sightline.core.ar.model.ARMarker
 import com.trm.sightline.core.ar.orientation.Orientation
-import com.trm.sightline.core.ar.renderer.MarkerRenderer
 import kotlinx.parcelize.Parcelize
+import kotlin.math.abs
+import kotlin.math.pow
+import kotlin.math.sqrt
 
-abstract class ARView<R : MarkerRenderer> : View {
-  open var povLocation: Location? = null
+class ARView : View {
+  var povLocation: Location? = null
     @MainThread
     set(value) {
       field = value
@@ -22,9 +32,10 @@ abstract class ARView<R : MarkerRenderer> : View {
       maxRange =
         (markers.lastOrNull()?.distance?.toDouble() ?: DEFAULT_MAX_RANGE_METERS) *
           RANGE_MARGIN_MULTIPLIER
+      markerRenderer?.povLocation = value
     }
 
-  protected var maxRange: Double = DEFAULT_MAX_RANGE_METERS
+  private var maxRange: Double = DEFAULT_MAX_RANGE_METERS
     @MainThread
     set(value) {
       field = value
@@ -41,7 +52,7 @@ abstract class ARView<R : MarkerRenderer> : View {
           RANGE_MARGIN_MULTIPLIER
     }
 
-  var markerRenderer: R? = null
+  var markerRenderer: ARMarkerRenderer? = null
     @MainThread set
 
   var orientation: Orientation = Orientation()
@@ -54,13 +65,27 @@ abstract class ARView<R : MarkerRenderer> : View {
   var phoneRotation: Int = 0
     @MainThread set
 
-  protected val markerWidth: Float
-    get() = markerRenderer?.markerWidthPx ?: MarkerRenderer.DEFAULT_MARKER_DIMENSION_PX
+  var onMarkerPressed: ((ARMarker) -> Unit)? = null
+    @MainThread set
 
-  protected val markerHeight: Float
-    get() = markerRenderer?.markerHeightPx ?: MarkerRenderer.DEFAULT_MARKER_DIMENSION_PX
+  var onTouch: (() -> Unit)? = null
+    @MainThread set
 
-  protected abstract val ARMarker.shouldBeDrawn: Boolean
+  private val camTrig = Trig3()
+  private val camPos = Vector3()
+  private val screenRatio = Vector3()
+  private val screenSize = Vector2()
+  private val screenRot = Vector1()
+  private val screenRotTrig = Trig1()
+
+  private val markerWidth: Float
+    get() = markerRenderer?.markerWidthPx ?: DEFAULT_MARKER_DIMENSION_PX
+
+  private val markerHeight: Float
+    get() = markerRenderer?.markerHeightPx ?: DEFAULT_MARKER_DIMENSION_PX
+
+  private val ARMarker.shouldBeDrawn: Boolean
+    get() = distance < maxRange && isDrawn
 
   constructor(context: Context) : super(context)
 
@@ -72,27 +97,89 @@ abstract class ARView<R : MarkerRenderer> : View {
     defStyle: Int,
   ) : super(context, attrs, defStyle)
 
+  init {
+    screenRatio.z = SCREEN_DEPTH.toDouble()
+  }
+
   override fun onDraw(canvas: Canvas) {
     super.onDraw(canvas)
     val povLocation = this.povLocation ?: return
-    preDraw(canvas, povLocation)
+    preDraw(povLocation)
     val markerRenderer = this.markerRenderer ?: return
-    markers.forEach { marker -> calculateMarkerScreenPosition(marker, povLocation) }
-    markerRenderer.draw(markers.filter { it.shouldBeDrawn }, canvas, orientation)
-    postDraw(canvas, povLocation)
+    markers.forEach { marker -> calculateMarkerScreenPosition(marker) }
+    markerRenderer.draw(markers.filter { it.shouldBeDrawn }, canvas)
   }
 
-  protected abstract fun preDraw(canvas: Canvas, location: Location)
+  private fun preDraw(location: Location) {
+    // For the moment we set a square as ratio. Size is arithmetic mean of width and height
+    screenRatio.y = ((width + height).toFloat() / 2).toDouble()
+    screenRatio.x = ((width + height).toFloat() / 2).toDouble()
+    // Get the current size of the window
+    screenSize.y = height.toDouble()
+    screenSize.x = width.toDouble()
+    // Obtain the current camera rotation and related calculations based on phone orientation
+    // and rotation
+    val camRot = Vector3()
+    Math3D.getCamRotation(orientation, phoneRotation, camRot, camTrig, screenRot, screenRotTrig)
+    // Transform current camera location into a position object;
+    Math3D.convertLocationToPosition(location, camPos)
+  }
 
-  protected abstract fun calculateMarkerScreenPosition(marker: ARMarker, location: Location)
+  private fun calculateMarkerScreenPosition(marker: ARMarker) {
+    val markerPos = Vector3()
+    // Transform marker Location into a Position object
+    Math3D.convertLocationToPosition(marker.wrapped.location, markerPos)
+    // Calculate relative position to the camera. Transforms angles of latitude and longitude
+    // into meters of distance.
+    val relativePos = Vector3()
+    Math3D.getRelativeTranslationInMeters(markerPos, camPos, relativePos)
+    // Rotates the marker around the camera in order to set the camera rotation to <0,0,0>
+    val relativeRotPos = Vector3()
+    Math3D.getRelativeRotation(relativePos, camTrig, relativeRotPos)
+    // Converts a 3d position into a 2d position on screen
+    val screenPos = Vector2()
+    val drawn =
+      Math3D.convert3dTo2d(relativeRotPos, screenSize, screenRatio, screenRotTrig, screenPos)
+    // If drawn is false, the marker is behind us, so no need to paint
+    if (drawn) {
+      marker.x = screenPos.x.toFloat()
+      marker.y = screenPos.y.toFloat()
+    }
+    marker.isDrawn = drawn
+  }
 
-  protected abstract fun postDraw(canvas: Canvas, location: Location)
+  @SuppressLint("ClickableViewAccessibility")
+  override fun onTouchEvent(event: MotionEvent): Boolean {
+    val markerPressed =
+      onMarkerPressed?.let { listener ->
+        if (event.action != MotionEvent.ACTION_DOWN) return@let false
+        val pressedMarker =
+          findNearestMarker(event.x, event.y)?.takeIf { marker ->
+            abs(marker.x - event.x) < markerWidth / 2 && abs(marker.y - event.y) < markerHeight / 2
+          }
+        if (pressedMarker != null) {
+          listener(pressedMarker)
+          true
+        } else {
+          false
+        }
+      } ?: false
+    if (!markerPressed) onTouch?.invoke()
+    return super.onTouchEvent(event)
+  }
+
+  private fun findNearestMarker(x: Float, y: Float): ARMarker? =
+    markers
+      .filter { marker -> marker.isDrawn && markerRenderer?.isOnCurrentPage(marker) ?: true }
+      .minByOrNull { marker ->
+        sqrt((marker.x - x).toDouble().pow(2.0) + (marker.y - y).toDouble().pow(2.0))
+      }
 
   private fun calculateDistancesBetween(location: Location, markers: List<ARMarker>) {
     markers.forEach { marker -> marker.distance = marker.wrapped.location.distanceTo(location) }
   }
 
-  override fun onSaveInstanceState(): Parcelable? =
+  override fun onSaveInstanceState(): Parcelable =
     SavedState(super.onSaveInstanceState(), markerRenderer?.onSaveInstanceState())
 
   override fun onRestoreInstanceState(state: Parcelable?) {
@@ -106,7 +193,9 @@ abstract class ARView<R : MarkerRenderer> : View {
     BaseSavedState(superSavedState), Parcelable
 
   companion object {
-    const val DEFAULT_MAX_RANGE_METERS = 1_000.0
-    const val RANGE_MARGIN_MULTIPLIER = 1.1
+    private const val SCREEN_DEPTH = 1
+    private const val DEFAULT_MAX_RANGE_METERS = 1_000.0
+    private const val RANGE_MARGIN_MULTIPLIER = 1.1
+    private const val DEFAULT_MARKER_DIMENSION_PX = 50f
   }
 }

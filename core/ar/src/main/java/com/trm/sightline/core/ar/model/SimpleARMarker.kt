@@ -1,6 +1,5 @@
-package com.trm.sightline.core.ar.marker
+package com.trm.sightline.core.ar.model
 
-import com.trm.sightline.core.ar.model.Marker
 import java.util.Objects
 
 class SimpleARMarker(override val wrapped: Marker) : ARMarker {

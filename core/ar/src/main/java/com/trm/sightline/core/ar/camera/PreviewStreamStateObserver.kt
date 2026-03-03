@@ -15,14 +15,14 @@ import androidx.camera.core.impl.utils.futures.Futures
 import androidx.camera.view.PreviewView.StreamState
 import androidx.concurrent.futures.CallbackToFutureAdapter
 import com.google.common.util.concurrent.ListenableFuture
-import com.trm.sightline.core.ar.camera.surface.IRenderSurface
+import com.trm.sightline.core.ar.camera.surface.RenderSurface
 import kotlinx.coroutines.flow.MutableStateFlow
 
 @SuppressLint("RestrictedApi")
 internal class PreviewStreamStateObserver(
   private val cameraInfo: CameraInfo,
   private val previewStreamStateFlow: MutableStateFlow<StreamState>,
-  private val renderSurface: IRenderSurface,
+  private val renderSurface: RenderSurface,
 ) : Observable.Observer<CameraInternal.State?> {
   private var flowFuture: ListenableFuture<Unit>? = null
   private var hasStartedPreviewStreamFlow = false

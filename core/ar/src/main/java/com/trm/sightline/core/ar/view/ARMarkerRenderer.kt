@@ -1,4 +1,4 @@
-package com.trm.sightline.core.ar.renderer.impl
+package com.trm.sightline.core.ar.view
 
 import android.content.Context
 import android.content.res.Configuration
@@ -13,9 +13,7 @@ import android.text.TextPaint
 import android.text.TextUtils
 import androidx.annotation.MainThread
 import androidx.core.os.bundleOf
-import com.trm.sightline.core.ar.marker.ARMarker
-import com.trm.sightline.core.ar.orientation.Orientation
-import com.trm.sightline.core.ar.renderer.MarkerRenderer
+import com.trm.sightline.core.ar.model.ARMarker
 import com.trm.sightline.core.ar.util.actionBarHeightPx
 import com.trm.sightline.core.ar.util.bottomNavigationViewHeightPx
 import com.trm.sightline.core.ar.util.dpToPx
@@ -29,15 +27,15 @@ import java.util.Objects
 import java.util.TreeMap
 import java.util.UUID
 
-class CameraMarkerRenderer(context: Context) : MarkerRenderer {
+class ARMarkerRenderer(context: Context) {
   private val screenOrientation: Int = context.resources.configuration.orientation
 
   private val markerPaddingPx: Float = context.dpToPx(MARKER_PADDING_DP)
   private val markerTitleTextSizePx: Float = context.spToPx(MARKER_TITLE_TEXT_SIZE_SP)
   private val markerDistanceTextSizePx: Float = context.spToPx(MARKER_DISTANCE_TEXT_SIZE_SP)
 
-  override val markerHeightPx: Float
-  override val markerWidthPx: Float
+  val markerHeightPx: Float
+  val markerWidthPx: Float
 
   private val statusBarHeightPx: Float = context.statusBarHeightPx.toFloat()
   private val actionBarHeightPx: Float = context.actionBarHeightPx
@@ -133,7 +131,7 @@ class CameraMarkerRenderer(context: Context) : MarkerRenderer {
         y + markerHeightPx / 2,
       )
 
-  override fun draw(markers: List<ARMarker>, canvas: Canvas, orientation: Orientation) {
+  fun draw(markers: List<ARMarker>, canvas: Canvas) {
     if (disabled) return
 
     pagedMarkerPositions.clear()
@@ -192,10 +190,10 @@ class CameraMarkerRenderer(context: Context) : MarkerRenderer {
     firstFrame = false
   }
 
-  override fun onSaveInstanceState(): Bundle =
+  fun onSaveInstanceState(): Bundle =
     bundleOf(SavedStateKeys.LAST_DRAWN_MARKER_IDS.name to lastDrawnMarkerIds)
 
-  override fun onRestoreInstanceState(bundle: Bundle?) {
+  fun onRestoreInstanceState(bundle: Bundle?) {
     @Suppress("UNCHECKED_CAST")
     lastDrawnMarkerIds =
       bundle?.getSerializable(SavedStateKeys.LAST_DRAWN_MARKER_IDS.name) as? HashSet<UUID> ?: return
