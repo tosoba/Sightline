@@ -170,6 +170,7 @@ class OpenGLRenderer {
       val inputSurface = Surface(surfaceTexture)
       numOutstandingSurfaces++
       surfaceRequest.provideSurface(inputSurface, executor) {
+        surfaceTexture.setOnFrameAvailableListener(null)
         inputSurface.release()
         surfaceTexture.release()
         if (surfaceTexture === previewTexture) previewTexture = null

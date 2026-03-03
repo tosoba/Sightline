@@ -1132,9 +1132,19 @@ Java_com_trm_sightline_core_ar_camera_OpenGLRenderer_renderTexture(
 
     GLfloat *vertTransformArray = env->GetFloatArrayElements(jvertTransformArray, nullptr);
     GLfloat *texTransformArray = env->GetFloatArrayElements(jtexTransformArray, nullptr);
+    if (nativeWindow == nullptr) {
+        env->ReleaseFloatArrayElements(jvertTransformArray, vertTransformArray, JNI_ABORT);
+        env->ReleaseFloatArrayElements(jtexTransformArray, texTransformArray, JNI_ABORT);
+        return JNI_FALSE;
+    }
 
     auto width = ANativeWindow_getWidth(nativeWindow);
     auto height = ANativeWindow_getHeight(nativeWindow);
+    if (width <= 0 || height <= 0) {
+        env->ReleaseFloatArrayElements(jvertTransformArray, vertTransformArray, JNI_ABORT);
+        env->ReleaseFloatArrayElements(jtexTransformArray, texTransformArray, JNI_ABORT);
+        return JNI_FALSE;
+    }
     CHECK_GL(glScissor(0, 0, width, height));
 
     CHECK_GL(glEnable(GL_STENCIL_TEST));
