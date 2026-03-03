@@ -1,6 +1,7 @@
 package com.trm.sightline
 
 import android.content.Context
+import android.location.Location
 import android.os.Bundle
 import android.view.ViewStub
 import android.widget.FrameLayout
@@ -24,23 +25,27 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.concurrent.futures.await
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import com.trm.sightline.core.ar.camera.OpenGLRenderer
+import com.trm.sightline.core.ar.marker.SimpleARMarker
+import com.trm.sightline.core.ar.model.Marker
 import com.trm.sightline.core.ar.orientation.Orientation
 import com.trm.sightline.core.ar.orientation.OrientationManager
+import com.trm.sightline.core.ar.renderer.impl.CameraMarkerRenderer
 import com.trm.sightline.core.ar.util.phoneRotation
+import com.trm.sightline.core.ar.view.ARCameraView
 import com.trm.sightline.ui.theme.SightlineTheme
 import timber.log.Timber
 
@@ -84,29 +89,29 @@ private fun CameraPreview() {
   val context = LocalContext.current
   val lifecycleOwner = LocalLifecycleOwner.current
 
-  val orientationManager = remember {
-    OrientationManager().apply {
-      axisMode = OrientationManager.Mode.AR
-      onOrientationChangedListener =
-        object : OrientationManager.OnOrientationChangedListener {
-          override fun onOrientationChanged(orientation: Orientation) {}
-        }
-    }
-  }
-  var sensorRunning by remember { mutableStateOf(false) }
-  LifecycleStartEffect(Unit) {
-    sensorRunning = orientationManager.startSensor(context)
-    onStopOrDispose {
-      orientationManager.stopSensor()
-      sensorRunning = false
-    }
-  }
-
   val viewStub = remember { mutableStateOf<ViewStub?>(null) }
   val preview =
     produceState<Preview?>(null) {
       value = context.initCameraPreview(lifecycleOwner, context.phoneRotation)
     }
+
+  val markers = remember {
+    List(5) { index ->
+      SimpleARMarker(
+        Marker(
+          "Marker ${index + 1}",
+          Location(null).apply {
+            latitude = 52.237049 + (index * 0.001)
+            longitude = 21.017532 + (index * 0.001)
+          },
+        )
+      )
+    }
+  }
+
+  val cameraMarkerRenderer = remember {
+    CameraMarkerRenderer(context).apply { setMarkers(markers) }
+  }
 
   AnimatedVisibility(visible = preview.value != null, enter = fadeIn(), exit = fadeOut()) {
     AndroidView(
@@ -130,9 +135,46 @@ private fun CameraPreview() {
         }
       },
     )
+
+    val arCameraView = remember {
+      ARCameraView(context).apply {
+        povLocation =
+          Location(null).apply {
+            latitude = 52.237049
+            longitude = 21.017532
+          }
+        this.markers = markers
+        markerRenderer = cameraMarkerRenderer
+      }
+    }
+    AndroidView(modifier = Modifier.fillMaxSize(), factory = { arCameraView })
+
+    val orientationManager = remember {
+      OrientationManager().apply {
+        axisMode = OrientationManager.Mode.AR
+        onOrientationChangedListener =
+          object : OrientationManager.OnOrientationChangedListener {
+            override fun onOrientationChanged(orientation: Orientation) {
+              if (!orientation.pitchWithinLimit) return
+              arCameraView.orientation = orientation
+              arCameraView.phoneRotation = context.phoneRotation
+            }
+          }
+      }
+    }
+    LifecycleStartEffect(Unit) {
+      orientationManager.startSensor(context)
+      onStopOrDispose { orientationManager.stopSensor() }
+    }
   }
 
   val openGLRenderer = rememberOpenGLRenderer(preview.value, viewStub.value)
+
+  LaunchedEffect(lifecycleOwner) {
+    lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+      cameraMarkerRenderer.drawnRectsFlow.collect(openGLRenderer::setMarkerRects)
+    }
+  }
 }
 
 @Composable
@@ -164,4 +206,5 @@ suspend fun Context.initCameraPreview(
 
 private val Orientation.pitchWithinLimit: Boolean
   get() = pitch in -PITCH_LIMIT_RADIANS..PITCH_LIMIT_RADIANS
+
 private const val PITCH_LIMIT_RADIANS = Math.PI / 3
