@@ -8,10 +8,6 @@ import android.hardware.SensorManager
 import androidx.annotation.MainThread
 import kotlin.math.abs
 
-/**
- * This class is responsible for providing the measure of the compass (in the 3 axis) everytime it
- * changes and dealing with the service
- */
 class OrientationManager : SensorEventListener {
   private val gravs = FloatArray(3)
   private val geoMags = FloatArray(3)
@@ -42,26 +38,6 @@ class OrientationManager : SensorEventListener {
   private var secondAxis: Int = SensorManager.AXIS_MINUS_X
   private var failed: Boolean = false
 
-  /**
-   * * This constructor will generate and start a Compass Manager
-   *
-   * @param context The context where the service will work
-   */
-  constructor(context: Context) {
-    startSensor(context)
-  }
-
-  /**
-   * * This constructor will generate a Compass Manager, but it will need to be started manually
-   *   using [.startSensor]
-   */
-  constructor()
-
-  /**
-   * * This method registers this class as a listener of the Sensor service
-   *
-   * @param context The context over this will work
-   */
   @MainThread
   fun startSensor(context: Context): Boolean {
     if (sensorRunning) return true
@@ -85,7 +61,6 @@ class OrientationManager : SensorEventListener {
     return true
   }
 
-  /** * Detects a change in a sensor and warns the appropiate listener. */
   override fun onSensorChanged(event: SensorEvent) {
     when (event.sensor.type) {
       Sensor.TYPE_ACCELEROMETER -> System.arraycopy(event.values, 0, gravs, 0, 3)
@@ -126,13 +101,6 @@ class OrientationManager : SensorEventListener {
     onOrientationChangedListener?.onOrientationChanged(orientation)
   }
 
-  /**
-   * Applies a low pass filter to the change in the lecture of the sensor
-   *
-   * @param newValue the new sensor value
-   * @param oldValue the old sensor value
-   * @return and intermediate value
-   */
   private fun lowPass(newValue: Float, oldValue: Float): Float =
     if (abs(newValue - oldValue) < CIRCLE / 2) {
       if (abs(newValue - oldValue) > SMOOTH_THRESHOLD) {
@@ -155,7 +123,6 @@ class OrientationManager : SensorEventListener {
 
   override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) = Unit
 
-  /** * We stop "hearing" the sensors */
   @MainThread
   fun stopSensor() {
     if (sensorRunning) {
@@ -170,17 +137,12 @@ class OrientationManager : SensorEventListener {
   }
 
   interface OnOrientationChangedListener {
-    /**
-     * * This method will be invoked when the magnetic orientation of the phone changed
-     *
-     * @param orientation Orientation on degrees. 360-0 is north.
-     */
     fun onOrientationChanged(orientation: Orientation)
   }
 
   companion object {
     private const val CIRCLE: Float = (Math.PI * 2).toFloat()
-    private const val SMOOTH_THRESHOLD: Float = CIRCLE / 3f // originally: CIRCLE / 6
-    private const val SMOOTH_FACTOR: Float = .005f // originally: SMOOTH_THRESHOLD / 5
+    private const val SMOOTH_THRESHOLD: Float = CIRCLE / 6f // originally: CIRCLE / 6
+    private const val SMOOTH_FACTOR: Float = .05f // originally: SMOOTH_THRESHOLD / 5
   }
 }
