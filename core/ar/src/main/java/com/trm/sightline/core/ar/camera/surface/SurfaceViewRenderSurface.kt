@@ -11,14 +11,6 @@ import com.trm.sightline.core.ar.R
 import com.trm.sightline.core.ar.camera.OpenGLRenderer
 
 internal class SurfaceViewRenderSurface : RenderSurface {
-  /**
-   * Inflates a [android.view.SurfaceView] into the provided [android.view.ViewStub] and attaches it
-   * to the provided [com.trm.sightline.core.ar.camera.OpenGLRenderer].
-   *
-   * @param viewStub Stub which will be replaced by SurfaceView.
-   * @param renderer Renderer which will be used to update the SurfaceView.
-   * @return The inflated SurfaceView.
-   */
   override fun inflateWith(viewStub: ViewStub, renderer: OpenGLRenderer): SurfaceView {
     viewStub.layoutResource = R.layout.surface_view_render_surface
     val surfaceView = viewStub.inflate() as SurfaceView
@@ -27,9 +19,7 @@ internal class SurfaceViewRenderSurface : RenderSurface {
         override fun surfaceRedrawNeeded(holder: SurfaceHolder) {
           val surfaceViewDisplay = surfaceView.display
           if (surfaceViewDisplay != null) {
-            renderer.invalidateSurface(
-              Surfaces.toSurfaceRotationDegrees(surfaceViewDisplay.rotation)
-            )
+            renderer.invalidateSurface(SurfaceRotations.toDegrees(surfaceViewDisplay.rotation))
           }
         }
 
@@ -37,9 +27,9 @@ internal class SurfaceViewRenderSurface : RenderSurface {
 
         override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
           renderer.attachOutputSurface(
-            holder.surface,
-            Size(width, height),
-            Surfaces.toSurfaceRotationDegrees(surfaceView.display.rotation),
+            surface = holder.surface,
+            surfaceSize = Size(width, height),
+            surfaceRotationDegrees = SurfaceRotations.toDegrees(surfaceView.display.rotation),
           )
         }
 

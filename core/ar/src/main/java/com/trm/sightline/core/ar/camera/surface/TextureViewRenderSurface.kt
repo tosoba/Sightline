@@ -25,17 +25,17 @@ internal class TextureViewRenderSurface : RenderSurface {
         override fun onSurfaceTextureAvailable(st: SurfaceTexture, width: Int, height: Int) {
           surface = Surface(st)
           renderer.attachOutputSurface(
-            surface,
-            Size(width, height),
-            Surfaces.toSurfaceRotationDegrees(textureView.display.rotation),
+            surface = surface,
+            surfaceSize = Size(width, height),
+            surfaceRotationDegrees = SurfaceRotations.toDegrees(textureView.display.rotation),
           )
         }
 
         override fun onSurfaceTextureSizeChanged(st: SurfaceTexture, width: Int, height: Int) {
           renderer.attachOutputSurface(
-            surface,
-            Size(width, height),
-            Surfaces.toSurfaceRotationDegrees(textureView.display.rotation),
+            surface = surface,
+            surfaceSize = Size(width, height),
+            surfaceRotationDegrees = SurfaceRotations.toDegrees(textureView.display.rotation),
           )
         }
 

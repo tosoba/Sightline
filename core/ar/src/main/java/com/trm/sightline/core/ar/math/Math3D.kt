@@ -5,7 +5,7 @@ import android.view.Surface
 import com.trm.sightline.core.ar.orientation.Orientation
 import kotlin.math.cos
 
-object Math3D {
+internal object Math3D {
   // http://gis.stackexchange.com/questions/2951/algorithm-for-offsetting-a-latitude-longitude-by-some-amount-of-meters
   private const val METERS_IN_A_DEGREE = 111111.0
   private const val QUADRANT = Math.PI / 2

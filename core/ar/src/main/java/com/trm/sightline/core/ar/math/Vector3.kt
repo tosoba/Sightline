@@ -1,6 +1,6 @@
 package com.trm.sightline.core.ar.math
 
-class Vector3 {
+internal class Vector3 {
   var x = 0.0
   var y = 0.0
   var z = 0.0

@@ -3,14 +3,14 @@ package com.trm.sightline.core.ar.camera.surface
 import android.view.Surface
 import androidx.annotation.IntDef
 
-internal object Surfaces {
+internal object SurfaceRotations {
   const val ROTATION_0_DEG = 0
   const val ROTATION_90_DEG = 90
   const val ROTATION_180_DEG = 180
   const val ROTATION_270_DEG = 270
 
   @RotationDegrees
-  fun toSurfaceRotationDegrees(@RotationEnum rotationEnum: Int): Int =
+  fun toDegrees(@RotationEnum rotationEnum: Int): Int =
     when (rotationEnum) {
       Surface.ROTATION_0 -> ROTATION_0_DEG
       Surface.ROTATION_90 -> ROTATION_90_DEG

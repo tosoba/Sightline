@@ -3,8 +3,7 @@ package com.trm.sightline.core.ar.math
 import kotlin.math.cos
 import kotlin.math.sin
 
-/** The list of trigonometric values (sin and cos) of a Vector3 */
-class Trig3 {
+internal class Trig3 {
   var xSin = 0.0
     private set
 
@@ -23,11 +22,6 @@ class Trig3 {
   var zCos = 0.0
     private set
 
-  /**
-   * Stores the trigonometric values of a 3d vector
-   *
-   * @param vector The set of angles used to calculate trigonometric values
-   */
   fun setVector3(vector: Vector3) {
     xSin = sin(vector.x)
     ySin = sin(vector.y)
