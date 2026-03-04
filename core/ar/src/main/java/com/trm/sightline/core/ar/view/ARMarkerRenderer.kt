@@ -21,11 +21,11 @@ import com.trm.sightline.core.ar.util.drawMultilineText
 import com.trm.sightline.core.ar.util.preciseFormattedDistance
 import com.trm.sightline.core.ar.util.spToPx
 import com.trm.sightline.core.ar.util.statusBarHeightPx
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 import java.util.Objects
 import java.util.TreeMap
 import java.util.UUID
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 
 class ARMarkerRenderer(context: Context) {
   private val screenOrientation: Int = context.resources.configuration.orientation
@@ -190,13 +190,23 @@ class ARMarkerRenderer(context: Context) {
     firstFrame = false
   }
 
-  fun onSaveInstanceState(): Bundle =
-    bundleOf(SavedStateKeys.LAST_DRAWN_MARKER_IDS.name to lastDrawnMarkerIds)
+  fun onSaveInstanceState(): Bundle {
+    val bits = LongArray(lastDrawnMarkerIds.size * 2)
+    var i = 0
+    for (uuid in lastDrawnMarkerIds) {
+      bits[i++] = uuid.mostSignificantBits
+      bits[i++] = uuid.leastSignificantBits
+    }
+    return bundleOf(SavedStateKeys.LAST_DRAWN_MARKER_IDS_BITS.name to bits)
+  }
 
   fun onRestoreInstanceState(bundle: Bundle?) {
-    @Suppress("UNCHECKED_CAST")
-    lastDrawnMarkerIds =
-      bundle?.getSerializable(SavedStateKeys.LAST_DRAWN_MARKER_IDS.name) as? HashSet<UUID> ?: return
+    val bits = bundle?.getLongArray(SavedStateKeys.LAST_DRAWN_MARKER_IDS_BITS.name) ?: return
+    val ids = HashSet<UUID>(bits.size / 2)
+    for (i in 0 until bits.size step 2) {
+      ids.add(UUID(bits[i], bits[i + 1]))
+    }
+    lastDrawnMarkerIds = ids
   }
 
   @MainThread
@@ -302,7 +312,7 @@ class ARMarkerRenderer(context: Context) {
   data class MarkersDrawn(val currentPage: Int, val maxPage: Int)
 
   private enum class SavedStateKeys {
-    LAST_DRAWN_MARKER_IDS
+    LAST_DRAWN_MARKER_IDS_BITS
   }
 
   companion object {
