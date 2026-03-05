@@ -21,11 +21,11 @@ import com.trm.sightline.core.ar.util.drawMultilineText
 import com.trm.sightline.core.ar.util.preciseFormattedDistance
 import com.trm.sightline.core.ar.util.spToPx
 import com.trm.sightline.core.ar.util.statusBarHeightPx
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import java.util.Objects
 import java.util.TreeMap
 import java.util.UUID
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 
 class ARMarkerRenderer(context: Context) {
   private val screenOrientation: Int = context.resources.configuration.orientation
@@ -34,8 +34,8 @@ class ARMarkerRenderer(context: Context) {
   private val markerTitleTextSizePx: Float = context.spToPx(MARKER_TITLE_TEXT_SIZE_SP)
   private val markerDistanceTextSizePx: Float = context.spToPx(MARKER_DISTANCE_TEXT_SIZE_SP)
 
-  val markerHeightPx: Float
-  val markerWidthPx: Float
+  internal val markerHeightPx: Float
+  internal val markerWidthPx: Float
 
   private val statusBarHeightPx: Float = context.statusBarHeightPx.toFloat()
   private val actionBarHeightPx: Float = context.actionBarHeightPx
@@ -131,7 +131,7 @@ class ARMarkerRenderer(context: Context) {
         y + markerHeightPx / 2,
       )
 
-  fun draw(markers: List<ARMarker>, canvas: Canvas) {
+  internal fun draw(markers: List<ARMarker>, canvas: Canvas) {
     if (disabled) return
 
     pagedMarkerPositions.clear()
@@ -190,7 +190,7 @@ class ARMarkerRenderer(context: Context) {
     firstFrame = false
   }
 
-  fun onSaveInstanceState(): Bundle {
+  internal fun onSaveInstanceState(): Bundle {
     val bits = LongArray(lastDrawnMarkerIds.size * 2)
     var i = 0
     for (uuid in lastDrawnMarkerIds) {
@@ -200,7 +200,7 @@ class ARMarkerRenderer(context: Context) {
     return bundleOf(SavedStateKeys.LAST_DRAWN_MARKER_IDS_BITS.name to bits)
   }
 
-  fun onRestoreInstanceState(bundle: Bundle?) {
+  internal fun onRestoreInstanceState(bundle: Bundle?) {
     val bits = bundle?.getLongArray(SavedStateKeys.LAST_DRAWN_MARKER_IDS_BITS.name) ?: return
     val ids = HashSet<UUID>(bits.size / 2)
     for (i in 0 until bits.size step 2) {
@@ -210,7 +210,7 @@ class ARMarkerRenderer(context: Context) {
   }
 
   @MainThread
-  fun setMarkers(markers: Collection<ARMarker>) {
+  internal fun setMarkers(markers: Collection<ARMarker>) {
     if (
       pagedMarkers.keys.containsAll(markers.map { it.wrapped.id }) &&
         pagedMarkers.size == markers.size

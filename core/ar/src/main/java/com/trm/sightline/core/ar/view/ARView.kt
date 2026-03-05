@@ -78,12 +78,6 @@ class ARView : View {
   private val screenRot = Vector1()
   private val screenRotTrig = Trig1()
 
-  private val markerWidth: Float
-    get() = markerRenderer.markerWidthPx
-
-  private val markerHeight: Float
-    get() = markerRenderer.markerHeightPx
-
   private val ARMarker.shouldBeDrawn: Boolean
     get() = distance < maxRange && isDrawn
 
@@ -152,6 +146,8 @@ class ARView : View {
     val markerPressed =
       onMarkerPressed?.let { listener ->
         if (event.action != MotionEvent.ACTION_DOWN) return@let false
+        val markerWidth = markerRenderer.markerWidthPx
+        val markerHeight = markerRenderer.markerHeightPx
         val pressedMarker =
           findNearestMarker(event.x, event.y)?.takeIf { marker ->
             abs(marker.x - event.x) < markerWidth / 2 && abs(marker.y - event.y) < markerHeight / 2
