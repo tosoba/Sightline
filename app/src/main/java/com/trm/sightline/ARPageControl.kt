@@ -17,9 +17,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -28,15 +26,14 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun ARPageControl(totalPages: Int = 10, onPageSelected: (Int) -> Unit) {
-  var currentPageIndex by remember { mutableIntStateOf(0) }
+fun ARPageControl(currentPage: Int = 0, totalPages: Int = 10, onPageSelected: (Int) -> Unit) {
   val visibleIndices =
-    remember(currentPageIndex, totalPages) {
+    remember(currentPage, totalPages) {
       when {
         totalPages <= 3 -> (0 until totalPages).toList()
-        currentPageIndex == 0 -> listOf(0, 1, 2)
-        currentPageIndex >= totalPages - 1 -> listOf(totalPages - 3, totalPages - 2, totalPages - 1)
-        else -> listOf(currentPageIndex - 1, currentPageIndex, currentPageIndex + 1)
+        currentPage == 0 -> listOf(0, 1, 2)
+        currentPage >= totalPages - 1 -> listOf(totalPages - 3, totalPages - 2, totalPages - 1)
+        else -> listOf(currentPage - 1, currentPage, currentPage + 1)
       }
     }
 
@@ -46,7 +43,7 @@ fun ARPageControl(totalPages: Int = 10, onPageSelected: (Int) -> Unit) {
     modifier = Modifier.padding(16.dp),
   ) {
     Box(contentAlignment = Alignment.CenterStart) {
-      val selectedPosition = visibleIndices.indexOf(currentPageIndex)
+      val selectedPosition = visibleIndices.indexOf(currentPage)
       val thumbOffset by
         animateFloatAsState(
           targetValue = selectedPosition * 48f,
@@ -67,17 +64,16 @@ fun ARPageControl(totalPages: Int = 10, onPageSelected: (Int) -> Unit) {
           Box(
             modifier =
               Modifier.size(48.dp).clickable(
-                interactionSource = remember { MutableInteractionSource() },
+                interactionSource = remember(::MutableInteractionSource),
                 indication = null,
               ) {
-                currentPageIndex = index
                 onPageSelected(index)
               },
             contentAlignment = Alignment.Center,
           ) {
             Text(
               text = (index + 1).toString(),
-              color = if (currentPageIndex == index) Color.Black else Color.White,
+              color = if (currentPage == index) Color.Black else Color.White,
               style = MaterialTheme.typography.labelLarge,
               fontWeight = FontWeight.Bold,
             )

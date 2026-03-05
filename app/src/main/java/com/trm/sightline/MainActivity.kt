@@ -25,18 +25,21 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.concurrent.futures.await
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.trm.sightline.core.ar.camera.OpenGLRenderer
 import com.trm.sightline.core.ar.model.Marker
@@ -95,13 +98,13 @@ private fun CameraPreview() {
     }
 
   val markers = remember {
-    List(5) { index ->
+    List(10) { index ->
       SimpleARMarker(
         Marker(
           "Marker ${index + 1}",
           Location(null).apply {
-            latitude = 52.237049 + (index * 0.001)
-            longitude = 21.017532 + (index * 0.001)
+            latitude = 52.237049 + ((index + 1) * 0.001)
+            longitude = 21.017532 + ((index + 1) * 0.001)
           },
         )
       )
@@ -109,62 +112,77 @@ private fun CameraPreview() {
   }
 
   AnimatedVisibility(visible = preview.value != null, enter = fadeIn(), exit = fadeOut()) {
-    AndroidView(
-      modifier = Modifier.fillMaxSize(),
-      factory = { context ->
-        FrameLayout(context).also { container ->
-          container.addView(
-            ViewStub(context).apply {
-              layoutParams =
-                FrameLayout.LayoutParams(
-                  FrameLayout.LayoutParams.MATCH_PARENT,
-                  FrameLayout.LayoutParams.MATCH_PARENT,
-                )
-            }
-          )
-        }
-      },
-      update = { container ->
-        if (viewStub.value == null) {
-          viewStub.value = container.getChildAt(0) as ViewStub
-        }
-      },
-    )
-
-    val arView = remember {
-      ARView(context).apply {
-        povLocation =
-          Location(null).apply {
-            latitude = 52.237049
-            longitude = 21.017532
+    Box(modifier = Modifier.fillMaxSize()) {
+      AndroidView(
+        modifier = Modifier.fillMaxSize(),
+        factory = { context ->
+          FrameLayout(context).also { container ->
+            container.addView(
+              ViewStub(context).apply {
+                layoutParams =
+                  FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                  )
+              }
+            )
           }
-        this.markers = markers
-      }
-    }
-    AndroidView(modifier = Modifier.fillMaxSize(), factory = { arView })
-
-    val orientationManager = remember {
-      OrientationManager().apply {
-        axisMode = OrientationManager.Mode.AR
-        onOrientationChangedListener =
-          object : OrientationManager.OnOrientationChangedListener {
-            override fun onOrientationChanged(orientation: Orientation) {
-              if (!orientation.pitchWithinLimit) return
-              arView.orientation = orientation
-              arView.phoneRotation = context.phoneRotation
-            }
+        },
+        update = { container ->
+          if (viewStub.value == null) {
+            viewStub.value = container.getChildAt(0) as ViewStub
           }
-      }
-    }
-    LifecycleStartEffect(Unit) {
-      orientationManager.startSensor(context)
-      onStopOrDispose { orientationManager.stopSensor() }
-    }
+        },
+      )
 
-    val openGLRenderer = rememberOpenGLRenderer(preview.value, viewStub.value)
-    LaunchedEffect(lifecycleOwner) {
-      lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-        arView.markerRenderer.drawnRectsFlow.collect(openGLRenderer::setMarkerRects)
+      val arView = remember {
+        ARView(context).apply {
+          povLocation =
+            Location(null).apply {
+              latitude = 52.237049
+              longitude = 21.017532
+            }
+          this.markers = markers
+        }
+      }
+      AndroidView(modifier = Modifier.fillMaxSize(), factory = { arView })
+
+      val orientationManager = remember {
+        OrientationManager().apply {
+          axisMode = OrientationManager.Mode.AR
+          onOrientationChangedListener =
+            object : OrientationManager.OnOrientationChangedListener {
+              override fun onOrientationChanged(orientation: Orientation) {
+                if (!orientation.pitchWithinLimit) return
+                arView.orientation = orientation
+                arView.phoneRotation = context.phoneRotation
+              }
+            }
+        }
+      }
+      LifecycleStartEffect(Unit) {
+        orientationManager.startSensor(context)
+        onStopOrDispose { orientationManager.stopSensor() }
+      }
+
+      val openGLRenderer = rememberOpenGLRenderer(preview.value, viewStub.value)
+      LaunchedEffect(lifecycleOwner) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+          arView.markerRenderer.drawnMarkerRectFs.collect(openGLRenderer::setMarkerRects)
+        }
+      }
+
+      val markersPagingState by
+        arView.markerRenderer.markersPagingState.collectAsStateWithLifecycle()
+      AnimatedVisibility(
+        visible = markersPagingState.maxPage > 0,
+        modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp),
+      ) {
+        ARPageControl(
+          currentPage = markersPagingState.currentPage,
+          totalPages = markersPagingState.maxPage + 1,
+          onPageSelected = { arView.markerRenderer.currentPage = it },
+        )
       }
     }
   }

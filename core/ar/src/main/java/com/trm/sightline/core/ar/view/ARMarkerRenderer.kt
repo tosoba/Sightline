@@ -14,6 +14,7 @@ import android.text.TextUtils
 import androidx.annotation.MainThread
 import androidx.core.os.bundleOf
 import com.trm.sightline.core.ar.model.ARMarker
+import com.trm.sightline.core.ar.model.MarkersPagingState
 import com.trm.sightline.core.ar.util.actionBarHeightPx
 import com.trm.sightline.core.ar.util.bottomNavigationViewHeightPx
 import com.trm.sightline.core.ar.util.dpToPx
@@ -21,8 +22,9 @@ import com.trm.sightline.core.ar.util.drawMultilineText
 import com.trm.sightline.core.ar.util.preciseFormattedDistance
 import com.trm.sightline.core.ar.util.spToPx
 import com.trm.sightline.core.ar.util.statusBarHeightPx
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import java.util.Objects
 import java.util.TreeMap
 import java.util.UUID
@@ -67,22 +69,16 @@ class ARMarkerRenderer(context: Context) {
       field = value
     }
 
-  var maxPage: Int = 0
-    private set(value) {
-      assert(value >= 0)
-      field = value
-    }
+  private var maxPage: Int = 0
 
   private var firstFrame: Boolean = true
   private var lastDrawnMarkerIds = HashSet<UUID>()
 
-  private val markersDrawnStateFlow = MutableStateFlow(MarkersDrawn(currentPage, maxPage))
-  val markersDrawnFlow: Flow<MarkersDrawn>
-    get() = markersDrawnStateFlow
+  private val _markersPagingState = MutableStateFlow(MarkersPagingState(currentPage, maxPage))
+  val markersPagingState: StateFlow<MarkersPagingState> = _markersPagingState.asStateFlow()
 
-  private val drawnRectsStateFlow = MutableStateFlow<List<RectF>>(emptyList())
-  val drawnRectsFlow: Flow<List<RectF>>
-    get() = drawnRectsStateFlow
+  private val _drawnMarkerRectFs = MutableStateFlow<List<RectF>>(emptyList())
+  val drawnMarkerRectFs: StateFlow<List<RectF>> = _drawnMarkerRectFs.asStateFlow()
 
   var disabled: Boolean = false
     @MainThread set
@@ -185,8 +181,8 @@ class ARMarkerRenderer(context: Context) {
     if (currentPage > maxPage) currentPage = maxPage
 
     lastDrawnMarkerIds = drawnMarkerIds
-    markersDrawnStateFlow.value = MarkersDrawn(currentPage, maxPage)
-    drawnRectsStateFlow.value = drawnRects
+    _markersPagingState.value = MarkersPagingState(currentPage, maxPage)
+    _drawnMarkerRectFs.value = drawnRects
     firstFrame = false
   }
 
@@ -308,8 +304,6 @@ class ARMarkerRenderer(context: Context) {
   }
 
   private data class PagedPosition(var y: Float, var page: Int)
-
-  data class MarkersDrawn(val currentPage: Int, val maxPage: Int)
 
   private enum class SavedStateKeys {
     LAST_DRAWN_MARKER_IDS_BITS
