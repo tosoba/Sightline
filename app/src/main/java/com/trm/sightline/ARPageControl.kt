@@ -23,6 +23,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewParameter
+import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -86,6 +88,24 @@ fun ARPageControl(currentPage: Int = 0, totalPages: Int = 10, onPageSelected: (I
 
 @Preview
 @Composable
-private fun ARPageControlPreview() {
-  ARPageControl(onPageSelected = {})
+private fun ARPageControlPreview(
+  @PreviewParameter(ARPageControlProvider::class) params: ARPageControlParams
+) {
+  ARPageControl(
+    currentPage = params.currentPage,
+    totalPages = params.totalPages,
+    onPageSelected = {},
+  )
+}
+
+private data class ARPageControlParams(val currentPage: Int, val totalPages: Int)
+
+private class ARPageControlProvider : PreviewParameterProvider<ARPageControlParams> {
+  override val values =
+    sequenceOf(
+      ARPageControlParams(currentPage = 0, totalPages = 2),
+      ARPageControlParams(currentPage = 0, totalPages = 10),
+      ARPageControlParams(currentPage = 9, totalPages = 10),
+      ARPageControlParams(currentPage = 5, totalPages = 10),
+    )
 }
