@@ -23,14 +23,17 @@ android {
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
     }
   }
+
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_11
     targetCompatibility = JavaVersion.VERSION_11
   }
+
   buildFeatures { compose = true }
 }
 
 dependencies {
+  implementation(project(":api:overpass"))
   implementation(project(":core:ar"))
 
   implementation(libs.androidx.appcompat)
