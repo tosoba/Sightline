@@ -1,20 +1,17 @@
 plugins {
-  alias(libs.plugins.android.application)
+  alias(libs.plugins.android.library)
   alias(libs.plugins.kotlin.compose)
 }
 
 android {
-  namespace = "com.trm.sightline"
+  namespace = "com.trm.sightline.feature.camera"
   compileSdk { version = release(36) { minorApiLevel = 1 } }
 
   defaultConfig {
-    applicationId = "com.trm.sightline"
     minSdk = 24
-    targetSdk = 36
-    versionCode = 1
-    versionName = "1.0"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    consumerProguardFiles("consumer-rules.pro")
   }
 
   buildTypes {
@@ -33,13 +30,10 @@ android {
 }
 
 dependencies {
-  implementation(project(":api:overpass"))
   implementation(project(":core:ar"))
-  implementation(project(":feature:camera"))
 
-  implementation(libs.androidx.appcompat)
   implementation(libs.androidx.core.ktx)
-  implementation(libs.androidx.lifecycle.runtime.ktx)
+  implementation(libs.androidx.appcompat)
   implementation(libs.material)
 
   implementation(libs.androidx.activity.compose)
@@ -49,8 +43,11 @@ dependencies {
   implementation(libs.androidx.compose.ui.tooling.preview)
   implementation(libs.androidx.compose.material3)
 
-  debugImplementation(libs.androidx.compose.ui.test.manifest)
-  debugImplementation(libs.androidx.compose.ui.tooling)
+  implementation(libs.androidx.camera.camera2)
+  implementation(libs.androidx.camera.lifecycle)
+  implementation(libs.androidx.camera.view)
+
+  implementation(libs.androidx.concurrent.futures.ktx)
 
   implementation(libs.timber)
 }

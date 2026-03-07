@@ -1,4 +1,4 @@
-package com.trm.sightline
+package com.trm.sightline.feature.camera
 
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -28,7 +28,11 @@ import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun ARPageControl(currentPage: Int = 0, totalPages: Int = 10, onPageSelected: (Int) -> Unit) {
+fun CameraPreviewPagePicker(
+  currentPage: Int = 0,
+  totalPages: Int = 10,
+  onPageSelected: (Int) -> Unit,
+) {
   val visibleIndices =
     remember(currentPage, totalPages) {
       when {
@@ -88,24 +92,24 @@ fun ARPageControl(currentPage: Int = 0, totalPages: Int = 10, onPageSelected: (I
 
 @Preview
 @Composable
-private fun ARPageControlPreview(
-  @PreviewParameter(ARPageControlProvider::class) params: ARPageControlParams
+private fun CameraPreviewPagePickerPreview(
+  @PreviewParameter(ARPageControlProvider::class) params: CameraPreviewPagePickerParams
 ) {
-  ARPageControl(
+  CameraPreviewPagePicker(
     currentPage = params.currentPage,
     totalPages = params.totalPages,
     onPageSelected = {},
   )
 }
 
-private data class ARPageControlParams(val currentPage: Int, val totalPages: Int)
+private data class CameraPreviewPagePickerParams(val currentPage: Int, val totalPages: Int)
 
-private class ARPageControlProvider : PreviewParameterProvider<ARPageControlParams> {
+private class ARPageControlProvider : PreviewParameterProvider<CameraPreviewPagePickerParams> {
   override val values =
     sequenceOf(
-      ARPageControlParams(currentPage = 0, totalPages = 2),
-      ARPageControlParams(currentPage = 0, totalPages = 10),
-      ARPageControlParams(currentPage = 9, totalPages = 10),
-      ARPageControlParams(currentPage = 5, totalPages = 10),
+      CameraPreviewPagePickerParams(currentPage = 0, totalPages = 2),
+      CameraPreviewPagePickerParams(currentPage = 0, totalPages = 10),
+      CameraPreviewPagePickerParams(currentPage = 9, totalPages = 10),
+      CameraPreviewPagePickerParams(currentPage = 5, totalPages = 10),
     )
 }

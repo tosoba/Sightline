@@ -1,4 +1,4 @@
-package com.trm.sightline
+package com.trm.sightline.feature.camera
 
 import android.Manifest
 import android.content.pm.PackageManager

@@ -29,3 +29,5 @@ include(":app")
 include(":api:overpass")
 
 include(":core:ar")
+
+include(":feature:camera")
