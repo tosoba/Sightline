@@ -35,6 +35,7 @@ android {
 dependencies {
   implementation(project(":api:overpass"))
   implementation(project(":core:ar"))
+  implementation(project(":core:model"))
   implementation(project(":feature:camera"))
 
   implementation(libs.androidx.appcompat)

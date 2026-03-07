@@ -30,4 +30,6 @@ include(":api:overpass")
 
 include(":core:ar")
 
+include(":core:model")
+
 include(":feature:camera")
