@@ -126,7 +126,7 @@ fun CameraPreview(
         visible = markersPagingState.maxPage > 0,
         enter = fadeIn(),
         exit = fadeOut(),
-        modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp),
+        modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
       ) {
         CameraPreviewPagePicker(
           currentPage = markersPagingState.currentPage,
