@@ -124,6 +124,8 @@ fun CameraPreview(
         arView.markerRenderer.markersPagingState.collectAsStateWithLifecycle()
       AnimatedVisibility(
         visible = markersPagingState.maxPage > 0,
+        enter = fadeIn(),
+        exit = fadeOut(),
         modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp),
       ) {
         CameraPreviewPagePicker(
