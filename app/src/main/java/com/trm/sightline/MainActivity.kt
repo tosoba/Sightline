@@ -26,12 +26,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Hotel
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Storefront
@@ -39,6 +43,7 @@ import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.MaterialTheme
@@ -60,12 +65,14 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
@@ -75,8 +82,13 @@ import com.trm.sightline.feature.camera.CameraPermissionState
 import com.trm.sightline.feature.camera.CameraPreview
 import com.trm.sightline.feature.camera.rememberCameraPermissionState
 import com.trm.sightline.ui.theme.SightlineTheme
+import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class)
+@OptIn(
+  ExperimentalMaterial3Api::class,
+  ExperimentalMaterial3WindowSizeClassApi::class,
+  ExperimentalMaterial3ExpressiveApi::class,
+)
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -84,6 +96,10 @@ class MainActivity : ComponentActivity() {
     setContent {
       SightlineTheme {
         val cameraPermissionState = rememberCameraPermissionState()
+        val pagerState = rememberPagerState { MainPage.entries.size }
+        val scope = rememberCoroutineScope()
+        val selectedPage = MainPage.entries[pagerState.currentPage]
+
         LaunchedEffect(Unit) {
           if (!cameraPermissionState.isGranted) {
             cameraPermissionState.launchRequest()
@@ -135,7 +151,43 @@ class MainActivity : ComponentActivity() {
             modifier = Modifier.fillMaxSize().padding(innerPadding),
             contentAlignment = Alignment.Center,
           ) {
-            CameraContent(cameraPermissionState)
+            HorizontalPager(
+              state = pagerState,
+              modifier = Modifier.fillMaxSize(),
+              beyondViewportPageCount = 1,
+              userScrollEnabled = false,
+            ) { page ->
+              when (MainPage.entries[page]) {
+                MainPage.Camera -> {
+                  CameraContent(cameraPermissionState)
+                }
+                MainPage.Map -> {
+                  Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(text = "Map view content goes here")
+                  }
+                }
+              }
+            }
+
+            HorizontalFloatingToolbar(
+              expanded = true,
+              modifier = Modifier.align(Alignment.BottomStart).padding(16.dp),
+            ) {
+              MainPagerToolbarItem(
+                isSelected = selectedPage == MainPage.Camera,
+                onClick = {
+                  scope.launch { pagerState.animateScrollToPage(MainPage.Camera.ordinal) }
+                },
+                icon = Icons.Default.PhotoCamera,
+                label = "Camera",
+              )
+              MainPagerToolbarItem(
+                isSelected = selectedPage == MainPage.Map,
+                onClick = { scope.launch { pagerState.animateScrollToPage(MainPage.Map.ordinal) } },
+                icon = Icons.Default.Map,
+                label = "Map",
+              )
+            }
 
             if (isCompactHeight) {
               Surface(
@@ -148,6 +200,36 @@ class MainActivity : ComponentActivity() {
             }
           }
         }
+      }
+    }
+  }
+}
+
+enum class MainPage {
+  Camera,
+  Map,
+}
+
+@Composable
+fun MainPagerToolbarItem(label: String, icon: ImageVector, isSelected: Boolean, onClick: () -> Unit) {
+  Surface(
+    selected = isSelected,
+    onClick = onClick,
+    shape = CircleShape,
+    color = if (isSelected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent,
+    contentColor =
+      if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer
+      else MaterialTheme.colorScheme.onSurfaceVariant,
+  ) {
+    Row(
+      modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+      verticalAlignment = Alignment.CenterVertically,
+      horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+      Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
+
+      if (isSelected) {
+        Text(text = label, style = MaterialTheme.typography.labelLarge)
       }
     }
   }
