@@ -52,7 +52,6 @@ fun CameraPreviewPagePicker(
         animateFloatAsState(
           targetValue = selectedPosition * 48f,
           animationSpec = spring(stiffness = Spring.StiffnessLow),
-          label = "ThumbScroll",
         )
 
       Box(
