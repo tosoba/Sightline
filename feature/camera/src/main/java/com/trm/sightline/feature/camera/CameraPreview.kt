@@ -45,6 +45,7 @@ import timber.log.Timber
 fun CameraPreview(
   location: Location,
   markers: List<SimpleARMarker>,
+  enabled: Boolean,
   modifier: Modifier = Modifier,
 ) {
   val context = LocalContext.current
@@ -92,6 +93,7 @@ fun CameraPreview(
         update = { view ->
           view.povLocation = location
           view.markers = markers
+          view.markerRenderer.disabled = !enabled
         },
       )
 

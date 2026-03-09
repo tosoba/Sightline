@@ -159,7 +159,10 @@ class MainActivity : ComponentActivity() {
             ) { page ->
               when (MainPage.entries[page]) {
                 MainPage.Camera -> {
-                  CameraContent(cameraPermissionState)
+                  CameraContent(
+                    cameraPermissionState = cameraPermissionState,
+                    previewEnabled = pagerState.currentPage == MainPage.Camera.ordinal,
+                  )
                 }
                 MainPage.Map -> {
                   Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -211,7 +214,12 @@ enum class MainPage {
 }
 
 @Composable
-fun MainPagerToolbarItem(label: String, icon: ImageVector, isSelected: Boolean, onClick: () -> Unit) {
+fun MainPagerToolbarItem(
+  label: String,
+  icon: ImageVector,
+  isSelected: Boolean,
+  onClick: () -> Unit,
+) {
   Surface(
     selected = isSelected,
     onClick = onClick,
@@ -226,7 +234,7 @@ fun MainPagerToolbarItem(label: String, icon: ImageVector, isSelected: Boolean, 
       verticalAlignment = Alignment.CenterVertically,
       horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-      Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
+      Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(20.dp))
 
       if (isSelected) {
         Text(text = label, style = MaterialTheme.typography.labelLarge)
@@ -236,7 +244,7 @@ fun MainPagerToolbarItem(label: String, icon: ImageVector, isSelected: Boolean, 
 }
 
 @Composable
-fun CameraContent(cameraPermissionState: CameraPermissionState) {
+fun CameraContent(cameraPermissionState: CameraPermissionState, previewEnabled: Boolean) {
   AnimatedContent(cameraPermissionState.isGranted) {
     if (it) {
       CameraPreview(
@@ -261,6 +269,7 @@ fun CameraContent(cameraPermissionState: CameraPermissionState) {
               )
             }
           },
+        enabled = previewEnabled,
       )
     } else {
       Button(onClick = cameraPermissionState::launchRequest) {
@@ -282,7 +291,7 @@ fun PlacesSheetContent(state: PlacesState, modifier: Modifier = Modifier) {
         onValueChange = { state.location = it },
         modifier = Modifier.weight(1f),
         placeholder = { Text("Current location") },
-        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+        leadingIcon = { Icon(imageVector = Icons.Default.Search, contentDescription = null) },
         shape = CircleShape,
       )
 
@@ -367,6 +376,7 @@ class PlacesState(
 fun rememberPlacesState(): PlacesState =
   rememberSaveable(saver = PlacesState.Saver, init = ::PlacesState)
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun RowScope.PlaceCategoryToggleButton(
   label: String,
@@ -374,7 +384,6 @@ fun RowScope.PlaceCategoryToggleButton(
   isSelected: Boolean,
   onClick: () -> Unit,
 ) {
-  @OptIn(ExperimentalMaterial3ExpressiveApi::class)
   ToggleButton(
     checked = isSelected,
     onCheckedChange = { onClick() },
