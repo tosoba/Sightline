@@ -25,12 +25,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 
 @Composable
 fun CameraPreviewPagePicker(
-  currentPage: Int = 0,
-  totalPages: Int = 10,
+  currentPage: Int,
+  totalPages: Int,
+  modifier: Modifier = Modifier,
   onPageSelected: (Int) -> Unit,
 ) {
   val visibleIndices =
@@ -43,11 +45,7 @@ fun CameraPreviewPagePicker(
       }
     }
 
-  Surface(
-    shape = CircleShape,
-    color = Color.Black.copy(alpha = 0.5f),
-    modifier = Modifier.padding(16.dp),
-  ) {
+  Surface(shape = CircleShape, color = Color.Black.copy(alpha = 0.5f), modifier = modifier) {
     Box(contentAlignment = Alignment.CenterStart) {
       val selectedPosition = visibleIndices.indexOf(currentPage)
       val thumbOffset by
@@ -59,7 +57,7 @@ fun CameraPreviewPagePicker(
 
       Box(
         modifier =
-          Modifier.offset(x = thumbOffset.dp)
+          Modifier.offset { IntOffset(x = thumbOffset.dp.roundToPx(), y = 0) }
             .size(48.dp)
             .padding(4.dp)
             .background(Color.White, CircleShape)
