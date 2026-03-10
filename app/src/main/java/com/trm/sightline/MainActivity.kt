@@ -7,6 +7,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -83,6 +84,10 @@ import com.trm.sightline.feature.camera.CameraPreview
 import com.trm.sightline.feature.camera.rememberCameraPermissionState
 import com.trm.sightline.ui.theme.SightlineTheme
 import kotlinx.coroutines.launch
+import org.maplibre.compose.map.MapOptions
+import org.maplibre.compose.map.MaplibreMap
+import org.maplibre.compose.map.OrnamentOptions
+import org.maplibre.compose.style.BaseStyle
 
 @OptIn(
   ExperimentalMaterial3Api::class,
@@ -165,9 +170,13 @@ class MainActivity : ComponentActivity() {
                   )
                 }
                 MainPage.Map -> {
-                  Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(text = "Map view content goes here")
-                  }
+                  MaplibreMap(
+                    baseStyle =
+                      BaseStyle.Uri(
+                        "https://tiles.openfreemap.org/styles/${if (isSystemInDarkTheme()) OpenFreeMapStyle.Dark.name.lowercase() else OpenFreeMapStyle.Liberty.name.lowercase()}"
+                      ),
+                    options = MapOptions(ornamentOptions = OrnamentOptions.AllDisabled),
+                  ) {}
                 }
               }
             }
@@ -200,6 +209,14 @@ class MainActivity : ComponentActivity() {
       }
     }
   }
+}
+
+enum class OpenFreeMapStyle {
+  Bright,
+  Liberty,
+  Positron,
+  Dark,
+  Fiord,
 }
 
 enum class MainPage(val icon: ImageVector, val label: String) {
