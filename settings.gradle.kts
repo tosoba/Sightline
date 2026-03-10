@@ -33,3 +33,5 @@ include(":core:ar")
 include(":core:model")
 
 include(":feature:camera")
+
+include(":feature:map")
