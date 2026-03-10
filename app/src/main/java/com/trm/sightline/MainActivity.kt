@@ -76,6 +76,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.ui.NavDisplay
 import com.trm.sightline.core.ar.model.Marker
 import com.trm.sightline.core.ar.model.SimpleARMarker
 import com.trm.sightline.feature.camera.CameraPermissionState
@@ -84,6 +88,7 @@ import com.trm.sightline.feature.camera.rememberCameraPermissionState
 import com.trm.sightline.feature.map.MapPreview
 import com.trm.sightline.ui.theme.SightlineTheme
 import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
 
 @OptIn(
   ExperimentalMaterial3Api::class,
@@ -138,70 +143,82 @@ class MainActivity : ComponentActivity() {
             )
           }
 
-        BottomSheetScaffold(
-          scaffoldState = scaffoldState,
-          sheetPeekHeight =
-            if (isCompactHeight) {
-              0.dp
-            } else {
-              160.dp + 26.dp + WindowInsets.navigationBars.getBottom(LocalDensity.current).dp
+        val backStack = rememberNavBackStack(MainRoute)
+        NavDisplay(
+          backStack = backStack,
+          entryProvider =
+            entryProvider {
+              entry<MainRoute> {
+                BottomSheetScaffold(
+                  scaffoldState = scaffoldState,
+                  sheetPeekHeight =
+                    if (isCompactHeight) {
+                      0.dp
+                    } else {
+                      160.dp + 26.dp + WindowInsets.navigationBars.getBottom(LocalDensity.current).dp
+                    },
+                  sheetContent = { sheetContent() },
+                ) { innerPadding ->
+                  Box(
+                    modifier = Modifier.fillMaxSize().padding(innerPadding),
+                    contentAlignment = Alignment.Center,
+                  ) {
+                    HorizontalPager(
+                      state = pagerState,
+                      modifier = Modifier.fillMaxSize(),
+                      beyondViewportPageCount = 1,
+                      userScrollEnabled = false,
+                    ) { page ->
+                      when (MainPage.entries[page]) {
+                        MainPage.Camera -> {
+                          CameraContent(
+                            cameraPermissionState = cameraPermissionState,
+                            previewEnabled = pagerState.currentPage == MainPage.Camera.ordinal,
+                          )
+                        }
+
+                        MainPage.Map -> {
+                          MapPreview(modifier = Modifier.fillMaxSize())
+                        }
+                      }
+                    }
+
+                    HorizontalFloatingToolbar(
+                      expanded = true,
+                      modifier = Modifier.align(Alignment.BottomStart).padding(16.dp),
+                    ) {
+                      MainPage.entries.forEach { page ->
+                        MainPagerToolbarItem(
+                          isSelected = selectedPage == page,
+                          onClick = {
+                            scope.launch { pagerState.animateScrollToPage(page.ordinal) }
+                          },
+                          icon = page.icon,
+                          label = page.label,
+                        )
+                      }
+                    }
+
+                    if (isCompactHeight) {
+                      Surface(
+                        modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
+                        color = MaterialTheme.colorScheme.surfaceContainerLow,
+                        tonalElevation = 1.dp,
+                      ) {
+                        sheetContent()
+                      }
+                    }
+                  }
+                }
+              }
             },
-          sheetContent = { sheetContent() },
-        ) { innerPadding ->
-          Box(
-            modifier = Modifier.fillMaxSize().padding(innerPadding),
-            contentAlignment = Alignment.Center,
-          ) {
-            HorizontalPager(
-              state = pagerState,
-              modifier = Modifier.fillMaxSize(),
-              beyondViewportPageCount = 1,
-              userScrollEnabled = false,
-            ) { page ->
-              when (MainPage.entries[page]) {
-                MainPage.Camera -> {
-                  CameraContent(
-                    cameraPermissionState = cameraPermissionState,
-                    previewEnabled = pagerState.currentPage == MainPage.Camera.ordinal,
-                  )
-                }
-                MainPage.Map -> {
-                  MapPreview(modifier = Modifier.fillMaxSize())
-                }
-              }
-            }
-
-            HorizontalFloatingToolbar(
-              expanded = true,
-              modifier = Modifier.align(Alignment.BottomStart).padding(16.dp),
-            ) {
-              MainPage.entries.forEach { page ->
-                MainPagerToolbarItem(
-                  isSelected = selectedPage == page,
-                  onClick = { scope.launch { pagerState.animateScrollToPage(page.ordinal) } },
-                  icon = page.icon,
-                  label = page.label,
-                )
-              }
-            }
-
-            if (isCompactHeight) {
-              Surface(
-                modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
-                color = MaterialTheme.colorScheme.surfaceContainerLow,
-                tonalElevation = 1.dp,
-              ) {
-                sheetContent()
-              }
-            }
-          }
-        }
+        )
       }
     }
   }
 }
 
-
+@Serializable private data object MainRoute : NavKey
 
 enum class MainPage(val icon: ImageVector, val label: String) {
   Camera(Icons.Default.PhotoCamera, "Camera"),
