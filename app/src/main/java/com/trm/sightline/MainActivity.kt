@@ -176,20 +176,14 @@ class MainActivity : ComponentActivity() {
               expanded = true,
               modifier = Modifier.align(Alignment.BottomStart).padding(16.dp),
             ) {
-              MainPagerToolbarItem(
-                isSelected = selectedPage == MainPage.Camera,
-                onClick = {
-                  scope.launch { pagerState.animateScrollToPage(MainPage.Camera.ordinal) }
-                },
-                icon = Icons.Default.PhotoCamera,
-                label = "Camera",
-              )
-              MainPagerToolbarItem(
-                isSelected = selectedPage == MainPage.Map,
-                onClick = { scope.launch { pagerState.animateScrollToPage(MainPage.Map.ordinal) } },
-                icon = Icons.Default.Map,
-                label = "Map",
-              )
+              MainPage.entries.forEach { page ->
+                MainPagerToolbarItem(
+                  isSelected = selectedPage == page,
+                  onClick = { scope.launch { pagerState.animateScrollToPage(page.ordinal) } },
+                  icon = page.icon,
+                  label = page.label,
+                )
+              }
             }
 
             if (isCompactHeight) {
@@ -208,9 +202,9 @@ class MainActivity : ComponentActivity() {
   }
 }
 
-enum class MainPage {
-  Camera,
-  Map,
+enum class MainPage(val icon: ImageVector, val label: String) {
+  Camera(Icons.Default.PhotoCamera, "Camera"),
+  Map(Icons.Default.Map, "Map"),
 }
 
 @Composable
