@@ -8,14 +8,6 @@ import org.maplibre.compose.map.MaplibreMap
 import org.maplibre.compose.map.OrnamentOptions
 import org.maplibre.compose.style.BaseStyle
 
-enum class OpenFreeMapStyle {
-  Bright,
-  Liberty,
-  Positron,
-  Dark,
-  Fiord,
-}
-
 @Composable
 fun MapPreview(modifier: Modifier = Modifier) {
   MaplibreMap(
@@ -26,4 +18,12 @@ fun MapPreview(modifier: Modifier = Modifier) {
       ),
     options = MapOptions(ornamentOptions = OrnamentOptions.AllDisabled),
   ) {}
+}
+
+private enum class OpenFreeMapStyle {
+  Bright,
+  Liberty,
+  Positron,
+  Dark,
+  Fiord,
 }

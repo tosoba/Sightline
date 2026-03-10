@@ -92,8 +92,8 @@ import kotlinx.serialization.Serializable
 
 @OptIn(
   ExperimentalMaterial3Api::class,
-  ExperimentalMaterial3WindowSizeClassApi::class,
   ExperimentalMaterial3ExpressiveApi::class,
+  ExperimentalMaterial3WindowSizeClassApi::class,
 )
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -155,7 +155,9 @@ class MainActivity : ComponentActivity() {
                     if (isCompactHeight) {
                       0.dp
                     } else {
-                      160.dp + 26.dp + WindowInsets.navigationBars.getBottom(LocalDensity.current).dp
+                      160.dp +
+                        26.dp +
+                        WindowInsets.navigationBars.getBottom(LocalDensity.current).dp
                     },
                   sheetContent = { sheetContent() },
                 ) { innerPadding ->
@@ -176,7 +178,6 @@ class MainActivity : ComponentActivity() {
                             previewEnabled = pagerState.currentPage == MainPage.Camera.ordinal,
                           )
                         }
-
                         MainPage.Map -> {
                           MapPreview(modifier = Modifier.fillMaxSize())
                         }
@@ -201,7 +202,7 @@ class MainActivity : ComponentActivity() {
 
                     if (isCompactHeight) {
                       Surface(
-                        modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
+                        modifier = Modifier.fillMaxHeight().align(Alignment.CenterEnd),
                         color = MaterialTheme.colorScheme.surfaceContainerLow,
                         tonalElevation = 1.dp,
                       ) {
