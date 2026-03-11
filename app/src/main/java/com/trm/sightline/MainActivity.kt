@@ -5,7 +5,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -40,7 +39,6 @@ import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material3.BottomSheetScaffold
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.HorizontalFloatingToolbar
@@ -81,9 +79,7 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import com.trm.sightline.core.ar.model.Marker
-import com.trm.sightline.feature.camera.CameraPermissionState
-import com.trm.sightline.feature.camera.CameraPreview
-import com.trm.sightline.feature.camera.rememberCameraPermissionState
+import com.trm.sightline.feature.camera.CameraContent
 import com.trm.sightline.feature.map.MapPreview
 import com.trm.sightline.ui.theme.SightlineTheme
 import kotlinx.coroutines.launch
@@ -100,16 +96,9 @@ class MainActivity : ComponentActivity() {
     enableEdgeToEdge()
     setContent {
       SightlineTheme {
-        val cameraPermissionState = rememberCameraPermissionState()
         val pagerState = rememberPagerState { MainPage.entries.size }
         val scope = rememberCoroutineScope()
         val selectedPage = MainPage.entries[pagerState.currentPage]
-
-        LaunchedEffect(Unit) {
-          if (!cameraPermissionState.isGranted) {
-            cameraPermissionState.launchRequest()
-          }
-        }
 
         val isCompactHeight =
           calculateWindowSizeClass(this).heightSizeClass == WindowHeightSizeClass.Compact
@@ -191,7 +180,6 @@ class MainActivity : ComponentActivity() {
                       when (MainPage.entries[page]) {
                         MainPage.Camera -> {
                           CameraContent(
-                            cameraPermissionState = cameraPermissionState,
                             previewEnabled = pagerState.currentPage == MainPage.Camera.ordinal,
                             location = location,
                             markers = markers,
@@ -270,24 +258,6 @@ fun MainPagerToolbarItem(
 
       if (isSelected) {
         Text(text = label, style = MaterialTheme.typography.labelLarge)
-      }
-    }
-  }
-}
-
-@Composable
-fun CameraContent(
-  cameraPermissionState: CameraPermissionState,
-  previewEnabled: Boolean,
-  location: Location,
-  markers: List<Marker>,
-) {
-  AnimatedContent(cameraPermissionState.isGranted) {
-    if (it) {
-      CameraPreview(location = location, markers = markers, enabled = previewEnabled)
-    } else {
-      Button(onClick = cameraPermissionState::launchRequest) {
-        Text(text = "Grant camera permission")
       }
     }
   }

@@ -43,12 +43,7 @@ import com.trm.sightline.core.ar.view.ARView
 import timber.log.Timber
 
 @Composable
-fun CameraPreview(
-  location: Location,
-  markers: List<Marker>,
-  enabled: Boolean,
-  modifier: Modifier = Modifier,
-) {
+fun CameraPreview(location: Location, markers: List<Marker>, enabled: Boolean) {
   val context = LocalContext.current
   val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -58,13 +53,8 @@ fun CameraPreview(
       value = context.initCameraPreview(lifecycleOwner, context.phoneRotation)
     }
 
-  AnimatedVisibility(
-    visible = preview.value != null,
-    enter = fadeIn(),
-    exit = fadeOut(),
-    modifier = modifier,
-  ) {
-    Box(modifier = Modifier.fillMaxSize()) {
+  AnimatedVisibility(visible = preview.value != null, enter = fadeIn(), exit = fadeOut()) {
+    Box {
       AndroidView(
         modifier = Modifier.fillMaxSize(),
         factory = { context ->
