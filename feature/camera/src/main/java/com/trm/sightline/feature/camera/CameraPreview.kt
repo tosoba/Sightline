@@ -35,6 +35,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.trm.sightline.core.ar.camera.OpenGLRenderer
 import com.trm.sightline.core.ar.model.ARMarker
+import com.trm.sightline.core.ar.model.Marker
 import com.trm.sightline.core.ar.orientation.Orientation
 import com.trm.sightline.core.ar.orientation.OrientationManager
 import com.trm.sightline.core.ar.util.phoneRotation
@@ -44,7 +45,7 @@ import timber.log.Timber
 @Composable
 fun CameraPreview(
   location: Location,
-  markers: List<ARMarker>,
+  markers: List<Marker>,
   enabled: Boolean,
   modifier: Modifier = Modifier,
 ) {
@@ -92,7 +93,7 @@ fun CameraPreview(
         factory = { arView },
         update = { view ->
           view.povLocation = location
-          view.markers = markers
+          view.markers = markers.map(::ARMarker)
           view.markerRenderer.disabled = !enabled
         },
       )

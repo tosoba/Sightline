@@ -80,7 +80,6 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
-import com.trm.sightline.core.ar.model.ARMarker
 import com.trm.sightline.core.ar.model.Marker
 import com.trm.sightline.feature.camera.CameraPermissionState
 import com.trm.sightline.feature.camera.CameraPreview
@@ -124,6 +123,24 @@ class MainActivity : ComponentActivity() {
           }
         val scaffoldState = rememberBottomSheetScaffoldState(sheetState)
         LaunchedEffect(isCompactHeight) { if (isCompactHeight) sheetState.hide() }
+
+        val location = remember {
+          Location(null).apply {
+            latitude = 52.237049
+            longitude = 21.017532
+          }
+        }
+        val markers = remember {
+          List(10) { index ->
+            Marker(
+              "Marker ${index + 1}",
+              Location(null).apply {
+                latitude = 52.237049 + ((index + 1) * 0.001)
+                longitude = 21.017532 + ((index + 1) * 0.001)
+              },
+            )
+          }
+        }
 
         val placesSheetState = rememberPlacesState()
         val sheetContent =
@@ -176,6 +193,8 @@ class MainActivity : ComponentActivity() {
                           CameraContent(
                             cameraPermissionState = cameraPermissionState,
                             previewEnabled = pagerState.currentPage == MainPage.Camera.ordinal,
+                            location = location,
+                            markers = markers,
                           )
                         }
                         MainPage.Map -> {
@@ -257,33 +276,15 @@ fun MainPagerToolbarItem(
 }
 
 @Composable
-fun CameraContent(cameraPermissionState: CameraPermissionState, previewEnabled: Boolean) {
+fun CameraContent(
+  cameraPermissionState: CameraPermissionState,
+  previewEnabled: Boolean,
+  location: Location,
+  markers: List<Marker>,
+) {
   AnimatedContent(cameraPermissionState.isGranted) {
     if (it) {
-      CameraPreview(
-        location =
-          remember {
-            Location(null).apply {
-              latitude = 52.237049
-              longitude = 21.017532
-            }
-          },
-        markers =
-          remember {
-            List(10) { index ->
-              ARMarker(
-                Marker(
-                  "Marker ${index + 1}",
-                  Location(null).apply {
-                    latitude = 52.237049 + ((index + 1) * 0.001)
-                    longitude = 21.017532 + ((index + 1) * 0.001)
-                  },
-                )
-              )
-            }
-          },
-        enabled = previewEnabled,
-      )
+      CameraPreview(location = location, markers = markers, enabled = previewEnabled)
     } else {
       Button(onClick = cameraPermissionState::launchRequest) {
         Text(text = "Grant camera permission")
