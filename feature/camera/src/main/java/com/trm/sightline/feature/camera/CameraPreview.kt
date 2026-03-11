@@ -34,7 +34,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.trm.sightline.core.ar.camera.OpenGLRenderer
-import com.trm.sightline.core.ar.model.SimpleARMarker
+import com.trm.sightline.core.ar.model.ARMarker
 import com.trm.sightline.core.ar.orientation.Orientation
 import com.trm.sightline.core.ar.orientation.OrientationManager
 import com.trm.sightline.core.ar.util.phoneRotation
@@ -44,7 +44,7 @@ import timber.log.Timber
 @Composable
 fun CameraPreview(
   location: Location,
-  markers: List<SimpleARMarker>,
+  markers: List<ARMarker>,
   enabled: Boolean,
   modifier: Modifier = Modifier,
 ) {

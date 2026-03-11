@@ -13,8 +13,8 @@ import android.text.TextPaint
 import android.text.TextUtils
 import androidx.annotation.MainThread
 import androidx.core.os.bundleOf
-import com.trm.sightline.core.ar.model.ARMarker
 import com.trm.sightline.core.ar.model.MarkersPagingState
+import com.trm.sightline.core.ar.model.ARMarker
 import com.trm.sightline.core.ar.util.actionBarHeightPx
 import com.trm.sightline.core.ar.util.bottomNavigationViewHeightPx
 import com.trm.sightline.core.ar.util.dpToPx

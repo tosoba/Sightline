@@ -80,8 +80,8 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
+import com.trm.sightline.core.ar.model.ARMarker
 import com.trm.sightline.core.ar.model.Marker
-import com.trm.sightline.core.ar.model.SimpleARMarker
 import com.trm.sightline.feature.camera.CameraPermissionState
 import com.trm.sightline.feature.camera.CameraPreview
 import com.trm.sightline.feature.camera.rememberCameraPermissionState
@@ -271,7 +271,7 @@ fun CameraContent(cameraPermissionState: CameraPermissionState, previewEnabled: 
         markers =
           remember {
             List(10) { index ->
-              SimpleARMarker(
+              ARMarker(
                 Marker(
                   "Marker ${index + 1}",
                   Location(null).apply {
