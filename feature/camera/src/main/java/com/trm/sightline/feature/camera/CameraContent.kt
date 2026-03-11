@@ -9,7 +9,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
-import com.trm.sightline.core.ar.model.Marker
+import com.trm.sightline.core.model.Marker
 
 @Composable
 fun CameraContent(previewEnabled: Boolean, location: Location, markers: List<Marker>) {

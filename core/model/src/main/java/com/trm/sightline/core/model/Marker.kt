@@ -1,12 +1,12 @@
-package com.trm.sightline.core.ar.model
+package com.trm.sightline.core.model
 
-import android.location.Location
 import java.util.Objects
 import java.util.UUID
 
 data class Marker(
   val name: String,
-  val location: Location,
+  val latitude: Double,
+  val longitude: Double,
   val tags: Map<String, String> = emptyMap(),
   val id: UUID = UUID.randomUUID(),
 ) {

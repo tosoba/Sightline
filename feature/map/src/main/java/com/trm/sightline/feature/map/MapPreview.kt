@@ -3,13 +3,14 @@ package com.trm.sightline.feature.map
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import com.trm.sightline.core.model.Marker
 import org.maplibre.compose.map.MapOptions
 import org.maplibre.compose.map.MaplibreMap
 import org.maplibre.compose.map.OrnamentOptions
 import org.maplibre.compose.style.BaseStyle
 
 @Composable
-fun MapPreview(modifier: Modifier = Modifier) {
+fun MapPreview(markers: List<Marker>, modifier: Modifier = Modifier) {
   MaplibreMap(
     modifier = modifier,
     baseStyle =

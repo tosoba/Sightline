@@ -121,7 +121,7 @@ class ARView : View {
   private fun calculateMarkerScreenPosition(marker: ARMarker) {
     val markerPos = Vector3()
     // Transform marker Location into a Position object
-    Math3D.convertLocationToPosition(marker.wrapped.location, markerPos)
+    Math3D.convertLocationToPosition(marker.location, markerPos)
     // Calculate relative position to the camera. Transforms angles of latitude and longitude
     // into meters of distance.
     val relativePos = Vector3()
@@ -171,7 +171,7 @@ class ARView : View {
       }
 
   private fun calculateDistancesBetween(location: Location, markers: List<ARMarker>) {
-    markers.forEach { marker -> marker.distance = marker.wrapped.location.distanceTo(location) }
+    markers.forEach { marker -> marker.distance = marker.location.distanceTo(location) }
   }
 
   override fun onSaveInstanceState(): Parcelable =

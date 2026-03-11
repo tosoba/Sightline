@@ -78,7 +78,7 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
-import com.trm.sightline.core.ar.model.Marker
+import com.trm.sightline.core.model.Marker
 import com.trm.sightline.feature.camera.CameraContent
 import com.trm.sightline.feature.map.MapPreview
 import com.trm.sightline.ui.theme.SightlineTheme
@@ -122,11 +122,9 @@ class MainActivity : ComponentActivity() {
         val markers = remember {
           List(10) { index ->
             Marker(
-              "Marker ${index + 1}",
-              Location(null).apply {
-                latitude = 52.237049 + ((index + 1) * 0.001)
-                longitude = 21.017532 + ((index + 1) * 0.001)
-              },
+              name = "Marker ${index + 1}",
+              latitude = 52.237049 + ((index + 1) * 0.001),
+              longitude = 21.017532 + ((index + 1) * 0.001),
             )
           }
         }
@@ -186,7 +184,7 @@ class MainActivity : ComponentActivity() {
                           )
                         }
                         MainPage.Map -> {
-                          MapPreview(modifier = Modifier.fillMaxSize())
+                          MapPreview(markers = markers, modifier = Modifier.fillMaxSize())
                         }
                       }
                     }

@@ -35,11 +35,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.trm.sightline.core.ar.camera.OpenGLRenderer
 import com.trm.sightline.core.ar.model.ARMarker
-import com.trm.sightline.core.ar.model.Marker
 import com.trm.sightline.core.ar.orientation.Orientation
 import com.trm.sightline.core.ar.orientation.OrientationManager
 import com.trm.sightline.core.ar.util.phoneRotation
 import com.trm.sightline.core.ar.view.ARView
+import com.trm.sightline.core.model.Marker
 import timber.log.Timber
 
 @Composable
