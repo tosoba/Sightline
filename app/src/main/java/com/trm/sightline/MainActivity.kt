@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -22,11 +23,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -53,6 +56,7 @@ import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.ToggleButton
+import androidx.compose.material3.VerticalFloatingToolbar
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
@@ -233,20 +237,44 @@ class MainActivity : ComponentActivity() {
                       }
                     }
 
-                    HorizontalFloatingToolbar(
-                      expanded = true,
-                      modifier = Modifier.align(Alignment.BottomStart).padding(16.dp),
-                    ) {
-                      MainPage.entries.forEach { page ->
-                        MainPagerToolbarItem(
-                          isSelected = selectedPage == page,
-                          onClick = {
-                            scope.launch { pagerState.animateScrollToPage(page.ordinal) }
-                          },
-                          icon = page.icon,
-                          label = page.label,
-                        )
+                    val toolbarContent =
+                      @Composable { showLabel: Boolean ->
+                        MainPage.entries.forEach { page ->
+                          MainPagerToolbarItem(
+                            isSelected = selectedPage == page,
+                            onClick = {
+                              scope.launch { pagerState.animateScrollToPage(page.ordinal) }
+                            },
+                            icon = page.icon,
+                            label = page.label,
+                            showLabel = showLabel,
+                          )
+                        }
                       }
+                    if (isCompactHeight) {
+                      VerticalFloatingToolbar(
+                        expanded = true,
+                        modifier =
+                          Modifier.align(Alignment.BottomStart)
+                            .windowInsetsPadding(
+                              WindowInsets.safeDrawing.only(
+                                WindowInsetsSides.Start + WindowInsetsSides.Bottom
+                              )
+                            )
+                            .padding(16.dp),
+                        content = { toolbarContent(false) },
+                      )
+                    } else {
+                      HorizontalFloatingToolbar(
+                        expanded = true,
+                        modifier =
+                          Modifier.align(Alignment.BottomStart)
+                            .windowInsetsPadding(
+                              WindowInsets.safeDrawing.only(WindowInsetsSides.Start)
+                            )
+                            .padding(16.dp),
+                        content = { toolbarContent(true) },
+                      )
                     }
 
                     if (isCompactHeight) {
@@ -281,6 +309,7 @@ fun MainPagerToolbarItem(
   icon: ImageVector,
   isSelected: Boolean,
   onClick: () -> Unit,
+  showLabel: Boolean = true,
 ) {
   Surface(
     selected = isSelected,
@@ -298,7 +327,7 @@ fun MainPagerToolbarItem(
     ) {
       Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(20.dp))
 
-      if (isSelected) {
+      if (isSelected && showLabel) {
         Text(text = label, style = MaterialTheme.typography.labelLarge)
       }
     }
