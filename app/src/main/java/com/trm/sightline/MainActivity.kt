@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -23,13 +22,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -37,9 +34,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Hotel
-import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.MyLocation
-import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Storefront
@@ -47,7 +42,6 @@ import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.MaterialTheme
@@ -56,7 +50,6 @@ import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.ToggleButton
-import androidx.compose.material3.VerticalFloatingToolbar
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
@@ -78,7 +71,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
@@ -139,7 +131,6 @@ class MainActivity : ComponentActivity() {
         }
 
         val density = LocalDensity.current
-        val safeDrawingPaddingValues = WindowInsets.safeDrawing.asPaddingValues()
         val sheetOffset = runCatching { sheetState.requireOffset() }.getOrDefault(0f)
         val sheetPeekHeight =
           if (isCompactHeight) {
@@ -204,7 +195,8 @@ class MainActivity : ComponentActivity() {
                       Spacer(
                         modifier =
                           Modifier.height(
-                            safeDrawingPaddingValues.calculateTopPadding() * expandedProgress
+                            WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding() *
+                              expandedProgress
                           )
                       )
                       BottomSheetDefaults.DragHandle()
@@ -237,45 +229,14 @@ class MainActivity : ComponentActivity() {
                       }
                     }
 
-                    val toolbarContent =
-                      @Composable { showLabel: Boolean ->
-                        MainPage.entries.forEach { page ->
-                          MainPagerToolbarItem(
-                            isSelected = selectedPage == page,
-                            onClick = {
-                              scope.launch { pagerState.animateScrollToPage(page.ordinal) }
-                            },
-                            icon = page.icon,
-                            label = page.label,
-                            showLabel = showLabel,
-                          )
-                        }
-                      }
-                    if (isCompactHeight) {
-                      VerticalFloatingToolbar(
-                        expanded = true,
-                        modifier =
-                          Modifier.align(Alignment.BottomStart)
-                            .windowInsetsPadding(
-                              WindowInsets.safeDrawing.only(
-                                WindowInsetsSides.Start + WindowInsetsSides.Bottom
-                              )
-                            )
-                            .padding(16.dp),
-                        content = { toolbarContent(false) },
-                      )
-                    } else {
-                      HorizontalFloatingToolbar(
-                        expanded = true,
-                        modifier =
-                          Modifier.align(Alignment.BottomStart)
-                            .windowInsetsPadding(
-                              WindowInsets.safeDrawing.only(WindowInsetsSides.Start)
-                            )
-                            .padding(16.dp),
-                        content = { toolbarContent(true) },
-                      )
-                    }
+                    MainPagerToolbar(
+                      isCompactHeight = isCompactHeight,
+                      selectedPage = selectedPage,
+                      onPageSelected = { page ->
+                        scope.launch { pagerState.animateScrollToPage(page.ordinal) }
+                      },
+                      modifier = Modifier.align(Alignment.BottomStart),
+                    )
 
                     if (isCompactHeight) {
                       Surface(
@@ -297,42 +258,6 @@ class MainActivity : ComponentActivity() {
 }
 
 @Serializable private data object MainRoute : NavKey
-
-enum class MainPage(val icon: ImageVector, val label: String) {
-  Camera(Icons.Default.PhotoCamera, "Camera"),
-  Map(Icons.Default.Map, "Map"),
-}
-
-@Composable
-fun MainPagerToolbarItem(
-  label: String,
-  icon: ImageVector,
-  isSelected: Boolean,
-  onClick: () -> Unit,
-  showLabel: Boolean = true,
-) {
-  Surface(
-    selected = isSelected,
-    onClick = onClick,
-    shape = CircleShape,
-    color = if (isSelected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent,
-    contentColor =
-      if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer
-      else MaterialTheme.colorScheme.onSurfaceVariant,
-  ) {
-    Row(
-      modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-      verticalAlignment = Alignment.CenterVertically,
-      horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-      Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(20.dp))
-
-      if (isSelected && showLabel) {
-        Text(text = label, style = MaterialTheme.typography.labelLarge)
-      }
-    }
-  }
-}
 
 @Composable
 fun PlacesSheetContent(state: PlacesState, modifier: Modifier = Modifier) {
