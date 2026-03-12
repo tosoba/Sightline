@@ -15,10 +15,11 @@ import androidx.annotation.MainThread
 import androidx.core.os.bundleOf
 import com.trm.sightline.core.ar.model.ARMarker
 import com.trm.sightline.core.ar.model.MarkersPagingState
-import com.trm.sightline.core.ar.util.actionBarHeightPx
 import com.trm.sightline.core.ar.util.bottomSheetHeightPx
 import com.trm.sightline.core.ar.util.dpToPx
 import com.trm.sightline.core.ar.util.drawMultilineText
+import com.trm.sightline.core.ar.util.isCompactHeight
+import com.trm.sightline.core.ar.util.navigationBarHeightPx
 import com.trm.sightline.core.ar.util.preciseFormattedDistance
 import com.trm.sightline.core.ar.util.spToPx
 import com.trm.sightline.core.ar.util.statusBarHeightPx
@@ -29,7 +30,7 @@ import java.util.Objects
 import java.util.TreeMap
 import java.util.UUID
 
-class ARMarkerRenderer(context: Context) {
+class ARMarkerRenderer(private val context: Context) {
   private val screenOrientation: Int = context.resources.configuration.orientation
 
   private val markerPaddingPx: Float = context.dpToPx(MARKER_PADDING_DP)
@@ -39,16 +40,12 @@ class ARMarkerRenderer(context: Context) {
   internal val markerHeightPx: Float
   internal val markerWidthPx: Float
 
-  private val statusBarHeightPx: Float = context.statusBarHeightPx
-  private val actionBarHeightPx: Float = context.actionBarHeightPx
-
   init {
     val displayMetrics = context.resources.displayMetrics
     val cameraViewHeight =
       displayMetrics.heightPixels -
-        statusBarHeightPx -
-        actionBarHeightPx -
-        context.bottomSheetHeightPx
+        context.statusBarHeightPx -
+        if (context.isCompactHeight) context.navigationBarHeightPx else context.bottomSheetHeightPx
     markerHeightPx = cameraViewHeight / numberOfRows - MARKER_VERTICAL_SPACING_PX
     val markerWidthDivisor =
       if (screenOrientation == Configuration.ORIENTATION_PORTRAIT) {
@@ -242,7 +239,7 @@ class ARMarkerRenderer(context: Context) {
         .toSet()
     pagedMarker.pagedPosition?.let { if (!takenPositions.contains(it)) return it }
 
-    val baseY = statusBarHeightPx + actionBarHeightPx
+    val baseY = context.statusBarHeightPx + markerHeightPx / 2f
     val position = PagedPosition(baseY, 0)
     var row = 0
     while (takenPositions.contains(position)) {

@@ -21,28 +21,13 @@ val Context.phoneRotation: Int
       (getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay?.rotation
     } ?: Surface.ROTATION_0
 
-val Context.statusBarHeightPx: Float
+val Context.bottomSheetHeightPx: Float
   get() {
-    val heightDp = 24
+    val heightDp = 186 + navigationBarHeightPx
     return ceil(heightDp * resources.displayMetrics.density)
   }
 
-val Context.actionBarHeightPx: Float
-  get() {
-    val actionBarStyledAttributes =
-      theme.obtainStyledAttributes(intArrayOf(android.R.attr.actionBarSize))
-    val actionBarHeight = actionBarStyledAttributes.getDimension(0, 0f)
-    actionBarStyledAttributes.recycle()
-    return actionBarHeight
-  }
-
-val Context.bottomSheetHeightPx: Int
-  get() {
-    val heightDp = 186 + navigationBarHeightPx
-    return ceil(heightDp * resources.displayMetrics.density).toInt()
-  }
-
-private val Context.navigationBarHeightPx: Float
+val Context.navigationBarHeightPx: Float
   get() {
     val insets =
       WindowInsetsCompat.toWindowInsetsCompat(
@@ -50,6 +35,18 @@ private val Context.navigationBarHeightPx: Float
       )
     return insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom.toFloat()
   }
+
+val Context.statusBarHeightPx: Float
+  get() {
+    val insets =
+      WindowInsetsCompat.toWindowInsetsCompat(
+        (this as? android.app.Activity)?.window?.decorView?.rootWindowInsets ?: return 0f
+      )
+    return insets.getInsets(WindowInsetsCompat.Type.statusBars()).top.toFloat()
+  }
+
+val Context.isCompactHeight: Boolean
+  get() = resources.displayMetrics.run { heightPixels / density < 480f }
 
 fun Context.dpToPx(value: Float): Float =
   TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, value, resources.displayMetrics)
