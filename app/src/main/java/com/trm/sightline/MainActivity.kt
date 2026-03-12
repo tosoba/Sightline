@@ -79,6 +79,9 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
+import com.trm.sightline.core.ar.model.RoundedRectF
+import com.trm.sightline.core.ar.util.bottomSheetRectF
+import com.trm.sightline.core.ar.util.sideSheetRectF
 import com.trm.sightline.core.model.Marker
 import com.trm.sightline.feature.camera.CameraContent
 import com.trm.sightline.feature.map.MapPreview
@@ -222,6 +225,13 @@ class MainActivity : ComponentActivity() {
                             previewEnabled = pagerState.currentPage == MainPage.Camera.ordinal,
                             location = location,
                             markers = markers,
+                            blurredRectFs =
+                              listOf(
+                                RoundedRectF(
+                                  rectF = if (isCompactHeight) sideSheetRectF else bottomSheetRectF,
+                                  cornerRadius = 0f,
+                                )
+                              ),
                           )
                         }
                         MainPage.Map -> {

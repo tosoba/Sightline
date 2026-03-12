@@ -35,6 +35,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.trm.sightline.core.ar.camera.OpenGLRenderer
 import com.trm.sightline.core.ar.model.ARMarker
+import com.trm.sightline.core.ar.model.RoundedRectF
 import com.trm.sightline.core.ar.orientation.Orientation
 import com.trm.sightline.core.ar.orientation.OrientationManager
 import com.trm.sightline.core.ar.util.phoneRotation
@@ -43,7 +44,12 @@ import com.trm.sightline.core.model.Marker
 import timber.log.Timber
 
 @Composable
-fun CameraPreview(location: Location, markers: List<Marker>, enabled: Boolean) {
+fun CameraPreview(
+  location: Location,
+  markers: List<Marker>,
+  enabled: Boolean,
+  blurredRectFs: List<RoundedRectF>,
+) {
   val context = LocalContext.current
   val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -112,6 +118,7 @@ fun CameraPreview(location: Location, markers: List<Marker>, enabled: Boolean) {
           arView.markerRenderer.drawnMarkerRectFs.collect(openGLRenderer::setMarkerRectFs)
         }
       }
+      LaunchedEffect(blurredRectFs) { openGLRenderer.otherRectFs = blurredRectFs }
 
       val markersPagingState by
         arView.markerRenderer.markersPagingState.collectAsStateWithLifecycle()

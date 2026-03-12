@@ -68,13 +68,23 @@ fun Context.getOrCreateCacheFile(name: String): File? {
   return tileCacheDir
 }
 
-val Context.bottomNavigationViewRectF: RectF
+val Context.bottomSheetRectF: RectF
   get() {
     val screenSize = getScreenSize(includeTopInset = true)
-    val bottomNavigationViewHeight = dpToPx(56f)
     return RectF(
       0f,
-      screenSize.height - bottomNavigationViewHeight,
+      screenSize.height - bottomSheetHeightPx,
+      screenSize.width.toFloat(),
+      screenSize.height.toFloat(),
+    )
+  }
+
+val Context.sideSheetRectF: RectF
+  get() {
+    val screenSize = getScreenSize(includeTopInset = true)
+    return RectF(
+      screenSize.width - dpToPx(320f),
+      0f,
       screenSize.width.toFloat(),
       screenSize.height.toFloat(),
     )
@@ -90,7 +100,7 @@ fun Context.getScreenSize(
     val metrics = (getSystemService(Context.WINDOW_SERVICE) as WindowManager).currentWindowMetrics
     val insets =
       metrics.windowInsets.getInsetsIgnoringVisibility(
-        WindowInsets.Type.navigationBars() or WindowInsets.Type.displayCutout()
+        WindowInsets.Type.navigationBars() or WindowInsets.Type.statusBars()
       )
     val bounds = metrics.bounds
     var width = bounds.width()
