@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,6 +23,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
@@ -38,6 +40,7 @@ import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Storefront
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -60,6 +63,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.runtime.remember
@@ -72,6 +76,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavKey
@@ -129,8 +134,33 @@ class MainActivity : ComponentActivity() {
           }
         }
 
+        val density = LocalDensity.current
+        val safeDrawingPaddingValues = WindowInsets.safeDrawing.asPaddingValues()
+        val sheetOffset = runCatching { sheetState.requireOffset() }.getOrDefault(0f)
+        val sheetPeekHeight =
+          if (isCompactHeight) {
+            0.dp
+          } else {
+            160.dp + 26.dp + WindowInsets.navigationBars.getBottom(LocalDensity.current).dp
+          }
+        var sheetHeightPx by remember { mutableFloatStateOf(0f) }
+        val transitionProgress =
+          remember(sheetOffset, sheetHeightPx) {
+            if (sheetHeightPx > 0f) (sheetOffset / sheetHeightPx).coerceIn(0f, 1f) else 0f
+          }
+        val transitionThreshold = .5f
+        val thresholdProgress =
+          remember(transitionProgress) {
+            ((transitionProgress - transitionThreshold) / (1f - transitionThreshold)).coerceIn(
+              0f,
+              1f,
+            )
+          }
+        val expandedProgress =
+          remember(thresholdProgress) { 1f - thresholdProgress }.coerceIn(0f, 1f)
+
         val placesSheetState = rememberPlacesState()
-        val sheetContent =
+        val placesSheetContent =
           @Composable {
             PlacesSheetContent(
               state = placesSheetState,
@@ -142,7 +172,14 @@ class MainActivity : ComponentActivity() {
                     .navigationBarsPadding()
                     .padding(horizontal = 16.dp)
                 } else {
-                  Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp)
+                  Modifier.fillMaxSize()
+                    .navigationBarsPadding()
+                    .padding(horizontal = 16.dp)
+                    .onGloballyPositioned { layoutCoordinates ->
+                      sheetHeightPx =
+                        layoutCoordinates.size.height.toFloat() -
+                          with(density) { sheetPeekHeight.toPx() }
+                    }
                 },
             )
           }
@@ -155,15 +192,22 @@ class MainActivity : ComponentActivity() {
               entry<MainRoute> {
                 BottomSheetScaffold(
                   scaffoldState = scaffoldState,
-                  sheetPeekHeight =
-                    if (isCompactHeight) {
-                      0.dp
-                    } else {
-                      160.dp +
-                        26.dp +
-                        WindowInsets.navigationBars.getBottom(LocalDensity.current).dp
-                    },
-                  sheetContent = { sheetContent() },
+                  sheetDragHandle = {
+                    Column(
+                      modifier = Modifier.fillMaxWidth(),
+                      horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                      Spacer(
+                        modifier =
+                          Modifier.height(
+                            safeDrawingPaddingValues.calculateTopPadding() * expandedProgress
+                          )
+                      )
+                      BottomSheetDefaults.DragHandle()
+                    }
+                  },
+                  sheetPeekHeight = sheetPeekHeight,
+                  sheetContent = { placesSheetContent() },
                 ) { innerPadding ->
                   Box(
                     modifier = Modifier.fillMaxSize().padding(innerPadding),
@@ -211,7 +255,7 @@ class MainActivity : ComponentActivity() {
                         color = MaterialTheme.colorScheme.surfaceContainerLow,
                         tonalElevation = 1.dp,
                       ) {
-                        sheetContent()
+                        placesSheetContent()
                       }
                     }
                   }
