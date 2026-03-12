@@ -42,9 +42,8 @@ class OpenGLRenderer {
 
     private val RENDERER_COUNT = AtomicInteger(0)
 
-    const val MARKER_RECT_CORNER_RADIUS = 100f
-    private const val MARKER_RECTS_MAX_SIZE = 24
-    private const val COORDINATES_PER_RECT = 5
+    private const val MARKER_RECTF_CORNER_RADIUS = 100f
+    private const val COORDINATES_PER_RECTF = 5
   }
 
   private val executor =
@@ -79,21 +78,16 @@ class OpenGLRenderer {
   val oglFatalErrorsFlow: Flow<Unit>
     get() = oglFatalErrorsSharedFlow
 
-  private var markerRects: List<RoundedRectF> = emptyList()
-    set(value) {
-      field = value.take(MARKER_RECTS_MAX_SIZE)
-    }
+  private var markerRectFs: List<RoundedRectF> = emptyList()
+  var otherRectFs: List<RoundedRectF> = emptyList()
 
-  var otherRects: List<RoundedRectF> = emptyList()
-  var markerRectsDisabled: Boolean = false
-
-  private val rectsCoordinates: FloatArray
+  private val rectFsCoordinates: FloatArray
     get() {
-      val coordinates = FloatArray((MARKER_RECTS_MAX_SIZE + otherRects.size) * COORDINATES_PER_RECT)
+      val coordinates = FloatArray((markerRectFs.size + otherRectFs.size) * COORDINATES_PER_RECTF)
       var index = 0
 
-      fun fillCoordinatesOf(rects: Collection<RoundedRectF>) {
-        for (roundedRect in rects) {
+      fun fillCoordinatesOf(rectFs: Collection<RoundedRectF>) {
+        for (roundedRect in rectFs) {
           val (rect, cornerRadius) = roundedRect
           coordinates[index++] = rect.left
           coordinates[index++] = rect.bottom
@@ -103,14 +97,13 @@ class OpenGLRenderer {
         }
       }
 
-      fillCoordinatesOf(otherRects)
-      if (!markerRectsDisabled) fillCoordinatesOf(markerRects)
+      fillCoordinatesOf(otherRectFs)
+      fillCoordinatesOf(markerRectFs)
       return coordinates
     }
 
-  fun setMarkerRects(rects: Iterable<RectF>) {
-    if (markerRectsDisabled) return
-    markerRects = rects.map { RoundedRectF(it, MARKER_RECT_CORNER_RADIUS) }
+  fun setMarkerRectFs(rectFs: Iterable<RectF>) {
+    markerRectFs = rectFs.map { RoundedRectF(it, MARKER_RECTF_CORNER_RADIUS) }
   }
 
   @MainThread
@@ -118,8 +111,8 @@ class OpenGLRenderer {
     if (isShutdown || nativeContext == 0L) return
     try {
       executor.execute { setBlurEnabled(nativeContext, enabled = enabled, animated = animated) }
-    } catch (e: RejectedExecutionException) {
-      Timber.tag(TAG).i("Renderer already shutting down. Ignore.")
+    } catch (ex: RejectedExecutionException) {
+      Timber.tag(TAG).e(ex, "Renderer already shutting down. Ignoring the exception.")
     }
   }
 
@@ -135,8 +128,8 @@ class OpenGLRenderer {
           blue = blue.toFloat() / 256f,
         )
       }
-    } catch (e: RejectedExecutionException) {
-      Timber.tag(TAG).i("Renderer already shutting down. Ignore.")
+    } catch (ex: RejectedExecutionException) {
+      Timber.tag(TAG).e(ex, "Renderer already shutting down. Ignoring the exception.")
     }
   }
 
@@ -200,8 +193,8 @@ class OpenGLRenderer {
           this.surfaceSize = null
         }
       }
-    } catch (e: RejectedExecutionException) {
-      Timber.tag(TAG).i("Renderer already shutting down. Ignore.")
+    } catch (ex: RejectedExecutionException) {
+      Timber.tag(TAG).e(ex, "Renderer already shutting down. Ignoring the exception.")
     }
   }
 
@@ -216,8 +209,8 @@ class OpenGLRenderer {
   fun setFrameUpdateListener(executor: Executor, listener: (Long) -> Unit) {
     try {
       this.executor.execute { frameUpdateListener = Pair(executor, listener) }
-    } catch (e: RejectedExecutionException) {
-      Timber.tag(TAG).i("Renderer already shutting down. Ignore.")
+    } catch (ex: RejectedExecutionException) {
+      Timber.tag(TAG).e(ex, "Renderer already shutting down. Ignoring the exception.")
     }
   }
 
@@ -227,8 +220,8 @@ class OpenGLRenderer {
         this.surfaceRotationDegrees = surfaceRotationDegrees
         if (previewTexture != null && nativeContext != 0L) renderLatest()
       }
-    } catch (e: RejectedExecutionException) {
-      Timber.tag(TAG).i("Renderer already shutting down. Ignore.")
+    } catch (ex: RejectedExecutionException) {
+      Timber.tag(TAG).e(ex, "Renderer already shutting down. Ignoring the exception.")
     }
   }
 
@@ -250,8 +243,9 @@ class OpenGLRenderer {
           }
           completer.set(Unit)
         }
-      } catch (e: RejectedExecutionException) {
+      } catch (ex: RejectedExecutionException) {
         // Renderer is shutting down. Can notify that the surface is detached.
+        Timber.tag(TAG).e(ex, "Renderer already shutting down. Ignoring the exception.")
         completer.set(Unit)
       }
       "detachOutputSurface [$this]"
@@ -267,8 +261,8 @@ class OpenGLRenderer {
         }
         doShutdownIfNeeded()
       }
-    } catch (e: RejectedExecutionException) {
-      Timber.tag(TAG).i("Renderer already shutting down. Ignore.")
+    } catch (ex: RejectedExecutionException) {
+      Timber.tag(TAG).e(ex, "Renderer already shutting down. Ignoring the exception.")
     }
   }
 
@@ -317,17 +311,17 @@ class OpenGLRenderer {
         timestampNs = timestampNs,
         vertexTransform = surfaceTransform,
         textureTransform = previewTransform,
-        rectsCoordinates = rectsCoordinates,
-        allRectsCount = markerRects.size + otherRects.size,
-        otherRectsCount = otherRects.size,
+        rectFsCoordinates = rectFsCoordinates,
+        allRectFsCount = markerRectFs.size + otherRectFs.size,
+        otherRectFsCount = otherRectFs.size,
       )
     if (!success) return
 
     frameUpdateListener?.let { (executor, listener) ->
       try {
         executor.execute { listener(timestampNs) }
-      } catch (e: RejectedExecutionException) {
-        Timber.tag(TAG).i("Unable to send frame update. Ignore.")
+      } catch (ex: RejectedExecutionException) {
+        Timber.tag(TAG).e(ex, "Unable to send frame update. Ignoring the exception.")
       }
     }
   }
@@ -531,9 +525,9 @@ class OpenGLRenderer {
     timestampNs: Long,
     vertexTransform: FloatArray,
     textureTransform: FloatArray,
-    rectsCoordinates: FloatArray,
-    allRectsCount: Int,
-    otherRectsCount: Int,
+    rectFsCoordinates: FloatArray,
+    allRectFsCount: Int,
+    otherRectFsCount: Int,
   ): Boolean
 
   @WorkerThread private external fun closeContext(nativeContext: Long)

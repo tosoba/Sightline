@@ -13,8 +13,8 @@ import android.text.TextPaint
 import android.text.TextUtils
 import androidx.annotation.MainThread
 import androidx.core.os.bundleOf
-import com.trm.sightline.core.ar.model.MarkersPagingState
 import com.trm.sightline.core.ar.model.ARMarker
+import com.trm.sightline.core.ar.model.MarkersPagingState
 import com.trm.sightline.core.ar.util.actionBarHeightPx
 import com.trm.sightline.core.ar.util.bottomNavigationViewHeightPx
 import com.trm.sightline.core.ar.util.dpToPx
@@ -266,11 +266,11 @@ class ARMarkerRenderer(context: Context) {
       ?: run { pagedMarkerPositions[marker.wrapped.x] = mutableSetOf(pagedPosition) }
   }
 
-  private fun Canvas.drawTitleText(marker: ARMarker, rect: RectF) {
+  private fun Canvas.drawTitleText(marker: ARMarker, rectF: RectF) {
     drawMultilineText(
       text = marker.wrapped.name,
       textPaint = titleTextPaint,
-      width = (rect.width() - MARKER_PADDING_DP * 2 - ELLIPSIS_WIDTH_PX).toInt(),
+      width = (rectF.width() - MARKER_PADDING_DP * 2 - ELLIPSIS_WIDTH_PX).toInt(),
       x = marker.x - markerWidthPx / 2 + markerPaddingPx,
       y = marker.y - markerHeightPx / 2 + markerPaddingPx,
       ellipsize = TextUtils.TruncateAt.END,
@@ -278,12 +278,12 @@ class ARMarkerRenderer(context: Context) {
     )
   }
 
-  private fun Canvas.drawDistanceText(marker: ARMarker, rect: RectF) {
+  private fun Canvas.drawDistanceText(marker: ARMarker, rectF: RectF) {
     val distance =
       TextUtils.ellipsize(
         marker.distance.preciseFormattedDistance,
         distanceTextPaint,
-        rect.width() - MARKER_PADDING_DP * 2 - ELLIPSIS_WIDTH_PX,
+        rectF.width() - MARKER_PADDING_DP * 2 - ELLIPSIS_WIDTH_PX,
         TextUtils.TruncateAt.END,
       )
     drawText(

@@ -593,12 +593,12 @@ void main() {
 
         void DrawScissoredRectsInStencil(const GLfloat *vertTransformArray,
                                          const GLfloat *texTransformArray,
-                                         GLfloat *rectsCoordinates,
-                                         GLuint rectsCount,
+                                         GLfloat *rectFsCoordinates,
+                                         GLuint rectFsCount,
                                          GLfloat width,
                                          GLfloat height) const {
-            GLfloat *rectCoordinate = rectsCoordinates;
-            for (GLuint i = 0; i < rectsCount; ++i) {
+            GLfloat *rectCoordinate = rectFsCoordinates;
+            for (GLuint i = 0; i < rectFsCount; ++i) {
                 auto rectLeftX = *rectCoordinate;
                 ++rectCoordinate;
                 auto rectBottomY = height - *rectCoordinate;
@@ -713,13 +713,13 @@ void main() {
 
         void DrawBlurredRects(const GLfloat *vertTransformArray,
                               const GLfloat *texTransformArray,
-                              GLfloat *rectsCoordinates,
-                              GLuint rectsCount,
+                              GLfloat *rectFsCoordinates,
+                              GLuint rectFsCount,
                               GLfloat width,
                               GLfloat height) {
             PrepareStencilForDrawingRects();
             DrawScissoredRectsInStencil(vertTransformArray, texTransformArray,
-                                        rectsCoordinates, rectsCount,
+                                        rectFsCoordinates, rectFsCount,
                                         width, height);
             DrawBlurredRects(vertTransformArray, texTransformArray, width, height);
         }
@@ -1126,7 +1126,7 @@ JNIEXPORT jboolean JNICALL
 Java_com_trm_sightline_core_ar_camera_OpenGLRenderer_renderTexture(
         JNIEnv *env, jobject clazz, jlong context, jlong timestampNs,
         jfloatArray jvertTransformArray, jfloatArray jtexTransformArray,
-        jfloatArray jrectsCoordinates, jint jallRectsCount, jint jotherRectsCount) {
+        jfloatArray jrectFsCoordinates, jint jallRectFsCount, jint jotherRectFsCount) {
     auto *nativeContext = reinterpret_cast<NativeContext *>(context);
     auto nativeWindow = nativeContext->windowSurface.first;
 
@@ -1160,22 +1160,22 @@ Java_com_trm_sightline_core_ar_camera_OpenGLRenderer_renderTexture(
                                   (GLfloat) height, 0, 0, .0f);
     }
 
-    GLfloat *rectsCoordinates =
-            jallRectsCount == 0
+    GLfloat *rectFsCoordinates =
+            jallRectFsCount == 0
             ? nullptr
-            : env->GetFloatArrayElements(jrectsCoordinates, nullptr);
-    if (rectsCoordinates != nullptr) {
+            : env->GetFloatArrayElements(jrectFsCoordinates, nullptr);
+    if (rectFsCoordinates != nullptr) {
         if (nativeContext->IsAnimatingContrastingColor()) {
             nativeContext->AnimateContrastingColor();
         }
 
-        const GLuint rectsCount = !nativeContext->blurEnabled ||
+        const GLuint rectFsCount = !nativeContext->blurEnabled ||
                                   nativeContext->IsAnimatingLod()
-                                  ? jallRectsCount : jotherRectsCount;
+                                  ? jallRectFsCount : jotherRectFsCount;
         nativeContext->DrawBlurredRects(vertTransformArray, texTransformArray,
-                                        rectsCoordinates, rectsCount,
+                                        rectFsCoordinates, rectFsCount,
                                         (GLfloat) width, (GLfloat) height);
-        env->ReleaseFloatArrayElements(jrectsCoordinates, rectsCoordinates,
+        env->ReleaseFloatArrayElements(jrectFsCoordinates, rectFsCoordinates,
                                        JNI_ABORT);
     }
 

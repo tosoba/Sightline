@@ -109,7 +109,7 @@ fun CameraPreview(location: Location, markers: List<Marker>, enabled: Boolean) {
       val openGLRenderer = rememberOpenGLRenderer(preview.value, viewStub.value)
       LaunchedEffect(lifecycleOwner) {
         lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-          arView.markerRenderer.drawnMarkerRectFs.collect(openGLRenderer::setMarkerRects)
+          arView.markerRenderer.drawnMarkerRectFs.collect(openGLRenderer::setMarkerRectFs)
         }
       }
 
