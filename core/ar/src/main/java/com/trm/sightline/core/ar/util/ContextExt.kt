@@ -1,5 +1,6 @@
 package com.trm.sightline.core.ar.util
 
+import android.app.Activity
 import android.content.Context
 import android.graphics.RectF
 import android.os.Build
@@ -9,7 +10,6 @@ import android.view.Surface
 import android.view.WindowInsets
 import android.view.WindowManager
 import androidx.core.view.WindowInsetsCompat
-import java.io.File
 import kotlin.math.ceil
 
 val Context.phoneRotation: Int
@@ -23,27 +23,19 @@ val Context.phoneRotation: Int
 
 val Context.bottomSheetHeightPx: Float
   get() {
-    val heightDp = 186 + navigationBarHeightPx
+    val heightDp = 186 + navigationBarsBottomInsetPx
     return ceil(heightDp * resources.displayMetrics.density)
   }
 
-val Context.navigationBarHeightPx: Float
-  get() {
-    val insets =
-      WindowInsetsCompat.toWindowInsetsCompat(
-        (this as? android.app.Activity)?.window?.decorView?.rootWindowInsets ?: return 0f
-      )
-    return insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom.toFloat()
-  }
+val Context.navigationBarsBottomInsetPx: Float
+  get() = rootWindowInsets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom.toFloat()
 
-val Context.statusBarHeightPx: Float
-  get() {
-    val insets =
-      WindowInsetsCompat.toWindowInsetsCompat(
-        (this as? android.app.Activity)?.window?.decorView?.rootWindowInsets ?: return 0f
-      )
-    return insets.getInsets(WindowInsetsCompat.Type.statusBars()).top.toFloat()
-  }
+val Context.statusBarTopInsetPx: Float
+  get() = rootWindowInsets.getInsets(WindowInsetsCompat.Type.statusBars()).top.toFloat()
+
+val Context.rootWindowInsets: WindowInsetsCompat
+  get() =
+    WindowInsetsCompat.toWindowInsetsCompat((this as Activity).window.decorView.rootWindowInsets)
 
 val Context.isCompactHeight: Boolean
   get() = resources.displayMetrics.run { heightPixels / density < 480f }
@@ -51,22 +43,8 @@ val Context.isCompactHeight: Boolean
 fun Context.dpToPx(value: Float): Float =
   TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, value, resources.displayMetrics)
 
-fun Context.pxToDp(value: Float): Float = value / resources.displayMetrics.density
-
 fun Context.spToPx(value: Float): Float =
   TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, value, resources.displayMetrics)
-
-fun Context.getOrCreateCacheFile(name: String): File? {
-  val cacheDir = externalCacheDir
-  val tileCacheDir: File?
-  if (cacheDir != null) {
-    tileCacheDir = File(cacheDir, name)
-    if (!tileCacheDir.exists()) tileCacheDir.mkdir()
-  } else {
-    tileCacheDir = null
-  }
-  return tileCacheDir
-}
 
 val Context.bottomSheetRectF: RectF
   get() {

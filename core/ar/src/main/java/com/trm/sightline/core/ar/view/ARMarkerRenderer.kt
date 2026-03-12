@@ -19,10 +19,10 @@ import com.trm.sightline.core.ar.util.bottomSheetHeightPx
 import com.trm.sightline.core.ar.util.dpToPx
 import com.trm.sightline.core.ar.util.drawMultilineText
 import com.trm.sightline.core.ar.util.isCompactHeight
-import com.trm.sightline.core.ar.util.navigationBarHeightPx
+import com.trm.sightline.core.ar.util.navigationBarsBottomInsetPx
 import com.trm.sightline.core.ar.util.preciseFormattedDistance
 import com.trm.sightline.core.ar.util.spToPx
-import com.trm.sightline.core.ar.util.statusBarHeightPx
+import com.trm.sightline.core.ar.util.statusBarTopInsetPx
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -44,8 +44,8 @@ class ARMarkerRenderer(private val context: Context) {
     val displayMetrics = context.resources.displayMetrics
     val cameraViewHeight =
       displayMetrics.heightPixels -
-        context.statusBarHeightPx -
-        if (context.isCompactHeight) context.navigationBarHeightPx else context.bottomSheetHeightPx
+        context.statusBarTopInsetPx -
+        if (context.isCompactHeight) context.navigationBarsBottomInsetPx else context.bottomSheetHeightPx
     markerHeightPx = cameraViewHeight / numberOfRows - MARKER_VERTICAL_SPACING_PX
     val markerWidthDivisor =
       if (screenOrientation == Configuration.ORIENTATION_PORTRAIT) {
@@ -239,7 +239,7 @@ class ARMarkerRenderer(private val context: Context) {
         .toSet()
     pagedMarker.pagedPosition?.let { if (!takenPositions.contains(it)) return it }
 
-    val baseY = context.statusBarHeightPx + markerHeightPx / 2f
+    val baseY = context.statusBarTopInsetPx + markerHeightPx / 2f
     val position = PagedPosition(baseY, 0)
     var row = 0
     while (takenPositions.contains(position)) {
