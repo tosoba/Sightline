@@ -8,6 +8,7 @@ import android.util.TypedValue
 import android.view.Surface
 import android.view.WindowInsets
 import android.view.WindowManager
+import androidx.core.view.WindowInsetsCompat
 import java.io.File
 import kotlin.math.ceil
 
@@ -20,10 +21,10 @@ val Context.phoneRotation: Int
       (getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay?.rotation
     } ?: Surface.ROTATION_0
 
-val Context.statusBarHeightPx: Int
+val Context.statusBarHeightPx: Float
   get() {
     val heightDp = 24
-    return ceil(heightDp * resources.displayMetrics.density).toInt()
+    return ceil(heightDp * resources.displayMetrics.density)
   }
 
 val Context.actionBarHeightPx: Float
@@ -35,10 +36,19 @@ val Context.actionBarHeightPx: Float
     return actionBarHeight
   }
 
-val Context.bottomNavigationViewHeightPx: Int
+val Context.bottomSheetHeightPx: Int
   get() {
-    val heightDp = 56
+    val heightDp = 186 + navigationBarHeightPx
     return ceil(heightDp * resources.displayMetrics.density).toInt()
+  }
+
+private val Context.navigationBarHeightPx: Float
+  get() {
+    val insets =
+      WindowInsetsCompat.toWindowInsetsCompat(
+        (this as? android.app.Activity)?.window?.decorView?.rootWindowInsets ?: return 0f
+      )
+    return insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom.toFloat()
   }
 
 fun Context.dpToPx(value: Float): Float =

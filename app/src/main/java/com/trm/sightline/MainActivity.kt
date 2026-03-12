@@ -97,8 +97,9 @@ class MainActivity : ComponentActivity() {
     enableEdgeToEdge()
     setContent {
       SightlineTheme {
-        val pagerState = rememberPagerState { MainPage.entries.size }
         val scope = rememberCoroutineScope()
+
+        val pagerState = rememberPagerState(pageCount = MainPage.entries::size)
         val selectedPage = MainPage.entries[pagerState.currentPage]
 
         val isCompactHeight =
@@ -136,7 +137,7 @@ class MainActivity : ComponentActivity() {
           if (isCompactHeight) {
             0.dp
           } else {
-            160.dp + 26.dp + WindowInsets.navigationBars.getBottom(LocalDensity.current).dp
+            186.dp + WindowInsets.navigationBars.getBottom(LocalDensity.current).dp
           }
         var sheetHeightPx by remember { mutableFloatStateOf(0f) }
         val transitionProgress =

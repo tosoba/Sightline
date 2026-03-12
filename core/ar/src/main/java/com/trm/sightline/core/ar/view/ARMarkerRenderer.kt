@@ -16,7 +16,7 @@ import androidx.core.os.bundleOf
 import com.trm.sightline.core.ar.model.ARMarker
 import com.trm.sightline.core.ar.model.MarkersPagingState
 import com.trm.sightline.core.ar.util.actionBarHeightPx
-import com.trm.sightline.core.ar.util.bottomNavigationViewHeightPx
+import com.trm.sightline.core.ar.util.bottomSheetHeightPx
 import com.trm.sightline.core.ar.util.dpToPx
 import com.trm.sightline.core.ar.util.drawMultilineText
 import com.trm.sightline.core.ar.util.preciseFormattedDistance
@@ -39,7 +39,7 @@ class ARMarkerRenderer(context: Context) {
   internal val markerHeightPx: Float
   internal val markerWidthPx: Float
 
-  private val statusBarHeightPx: Float = context.statusBarHeightPx.toFloat()
+  private val statusBarHeightPx: Float = context.statusBarHeightPx
   private val actionBarHeightPx: Float = context.actionBarHeightPx
 
   init {
@@ -48,7 +48,7 @@ class ARMarkerRenderer(context: Context) {
       displayMetrics.heightPixels -
         statusBarHeightPx -
         actionBarHeightPx -
-        context.bottomNavigationViewHeightPx
+        context.bottomSheetHeightPx
     markerHeightPx = cameraViewHeight / numberOfRows - MARKER_VERTICAL_SPACING_PX
     val markerWidthDivisor =
       if (screenOrientation == Configuration.ORIENTATION_PORTRAIT) {
