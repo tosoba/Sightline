@@ -12,26 +12,22 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.concurrent.futures.await
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.trm.sightline.core.ar.camera.OpenGLRenderer
 import com.trm.sightline.core.ar.model.ARMarker
@@ -39,6 +35,7 @@ import com.trm.sightline.core.ar.model.RoundedRectF
 import com.trm.sightline.core.ar.orientation.Orientation
 import com.trm.sightline.core.ar.orientation.OrientationManager
 import com.trm.sightline.core.ar.util.phoneRotation
+import com.trm.sightline.core.ar.view.ARMarkerRenderer
 import com.trm.sightline.core.ar.view.ARView
 import com.trm.sightline.core.model.Marker
 import timber.log.Timber
@@ -49,6 +46,7 @@ fun CameraPreview(
   markers: List<Marker>,
   enabled: Boolean,
   blurredRectFs: List<RoundedRectF>,
+  overlayContent: @Composable BoxScope.(ARMarkerRenderer) -> Unit = {},
 ) {
   val context = LocalContext.current
   val lifecycleOwner = LocalLifecycleOwner.current
@@ -120,20 +118,7 @@ fun CameraPreview(
       }
       LaunchedEffect(blurredRectFs) { openGLRenderer.otherRectFs = blurredRectFs }
 
-      val markersPagingState by
-        arView.markerRenderer.markersPagingState.collectAsStateWithLifecycle()
-      AnimatedVisibility(
-        visible = markersPagingState.maxPage > 0,
-        enter = fadeIn(),
-        exit = fadeOut(),
-        modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
-      ) {
-        CameraPreviewPagePicker(
-          currentPage = markersPagingState.currentPage,
-          totalPages = markersPagingState.maxPage + 1,
-          onPageSelected = { arView.markerRenderer.currentPage = it },
-        )
-      }
+      overlayContent(arView.markerRenderer)
     }
   }
 }
