@@ -1,7 +1,6 @@
 package com.trm.sightline.core.ar.view
 
 import android.content.Context
-import android.content.res.Configuration
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
@@ -16,6 +15,7 @@ import androidx.core.os.bundleOf
 import com.trm.sightline.core.ar.model.ARMarker
 import com.trm.sightline.core.ar.model.MarkersPagingState
 import com.trm.sightline.core.ar.util.bottomSheetHeightPx
+import com.trm.sightline.core.ar.util.cameraPreviewVerticalPaddingPx
 import com.trm.sightline.core.ar.util.dpToPx
 import com.trm.sightline.core.ar.util.drawMultilineText
 import com.trm.sightline.core.ar.util.isCompactHeight
@@ -31,8 +31,6 @@ import java.util.TreeMap
 import java.util.UUID
 
 class ARMarkerRenderer(private val context: Context) {
-  private val screenOrientation: Int = context.resources.configuration.orientation
-
   private val markerPaddingPx: Float = context.dpToPx(MARKER_PADDING_DP)
   private val markerTitleTextSizePx: Float = context.spToPx(MARKER_TITLE_TEXT_SIZE_SP)
   private val markerDistanceTextSizePx: Float = context.spToPx(MARKER_DISTANCE_TEXT_SIZE_SP)
@@ -45,14 +43,13 @@ class ARMarkerRenderer(private val context: Context) {
     val cameraViewHeight =
       displayMetrics.heightPixels -
         context.statusBarTopInsetPx -
-        if (context.isCompactHeight) context.navigationBarsBottomInsetPx else context.bottomSheetHeightPx
+        context.cameraPreviewVerticalPaddingPx -
+        if (context.isCompactHeight) context.navigationBarsBottomInsetPx
+        else context.bottomSheetHeightPx
     markerHeightPx = cameraViewHeight / numberOfRows - MARKER_VERTICAL_SPACING_PX
     val markerWidthDivisor =
-      if (screenOrientation == Configuration.ORIENTATION_PORTRAIT) {
-        MARKER_WIDTH_DIVISOR_PORTRAIT
-      } else {
-        MARKER_WIDTH_DIVISOR_LANDSCAPE
-      }
+      if (context.isCompactHeight) MARKER_WIDTH_DIVISOR_COMPACT_HEIGHT
+      else MARKER_WIDTH_DIVISOR_NON_COMPACT_HEIGHT
     markerWidthPx = (displayMetrics.widthPixels / markerWidthDivisor).toFloat()
   }
 
@@ -85,8 +82,8 @@ class ARMarkerRenderer(private val context: Context) {
 
   private val numberOfRows: Int
     get() =
-      if (screenOrientation == Configuration.ORIENTATION_PORTRAIT) NUMBER_OF_ROWS_PORTRAIT
-      else NUMBER_OF_ROWS_LANDSCAPE
+      if (context.isCompactHeight) NUMBER_OF_ROWS_COMPACT_HEIGHT
+      else NUMBER_OF_ROWS_NON_COMPACT_HEIGHT
 
   private val titleTextPaint: TextPaint by
     lazy(LazyThreadSafetyMode.NONE) {
@@ -309,11 +306,11 @@ class ARMarkerRenderer(private val context: Context) {
   companion object {
     private const val MARKER_WIDTH_TAKEN_X_MULTIPLIER = 2.75f
     private const val MARKER_VERTICAL_SPACING_PX = 50f
-    private const val NUMBER_OF_ROWS_PORTRAIT = 5
-    private const val NUMBER_OF_ROWS_LANDSCAPE = 2
-    private const val MARKER_WIDTH_DIVISOR_PORTRAIT = 2
-    private const val MARKER_WIDTH_DIVISOR_LANDSCAPE = 4
-    private const val MARKER_PADDING_DP = 10f
+    private const val NUMBER_OF_ROWS_NON_COMPACT_HEIGHT = 5
+    private const val NUMBER_OF_ROWS_COMPACT_HEIGHT = 2
+    private const val MARKER_WIDTH_DIVISOR_NON_COMPACT_HEIGHT = 2
+    private const val MARKER_WIDTH_DIVISOR_COMPACT_HEIGHT = 4
+    private const val MARKER_PADDING_DP = 16f
     private const val ELLIPSIS_WIDTH_PX = 10f
     private const val MARKER_TITLE_TEXT_SIZE_SP = 16f
     private const val MARKER_DISTANCE_TEXT_SIZE_SP = 14f

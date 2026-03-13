@@ -14,20 +14,25 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -74,17 +79,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
-import com.trm.sightline.core.ar.model.RoundedRectF
-import com.trm.sightline.core.ar.util.bottomSheetRectF
-import com.trm.sightline.core.ar.util.sideSheetRectF
+import com.trm.sightline.core.ar.util.collapsedBottomSheetContentHeightDp
+import com.trm.sightline.core.ar.util.sideSheetWidthDp
 import com.trm.sightline.core.model.Marker
-import com.trm.sightline.feature.camera.CameraContent
-import com.trm.sightline.feature.map.MapPreview
 import com.trm.sightline.ui.theme.SightlineTheme
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
@@ -140,7 +143,8 @@ class MainActivity : ComponentActivity() {
           if (isCompactHeight) {
             0.dp
           } else {
-            186.dp + WindowInsets.navigationBars.getBottom(LocalDensity.current).dp
+            collapsedBottomSheetContentHeightDp.dp +
+              WindowInsets.navigationBars.getBottom(LocalDensity.current).dp
           }
         var sheetHeightPx by remember { mutableFloatStateOf(0f) }
         val transitionProgress =
@@ -165,10 +169,11 @@ class MainActivity : ComponentActivity() {
               state = placesSheetState,
               modifier =
                 if (isCompactHeight) {
-                  Modifier.width(320.dp)
+                  Modifier.width(sideSheetWidthDp.dp)
                     .fillMaxHeight()
                     .systemBarsPadding()
                     .navigationBarsPadding()
+                    .windowInsetsPadding(WindowInsets.displayCutout.only(WindowInsetsSides.End))
                     .padding(horizontal = 16.dp)
                 } else {
                   Modifier.fillMaxSize()
@@ -206,39 +211,28 @@ class MainActivity : ComponentActivity() {
                       BottomSheetDefaults.DragHandle()
                     }
                   },
+                  sheetContainerColor = BottomSheetDefaults.ContainerColor.copy(alpha = .5f),
                   sheetPeekHeight = sheetPeekHeight,
                   sheetContent = { placesSheetContent() },
                 ) { innerPadding ->
                   Box(
-                    modifier = Modifier.fillMaxSize().padding(innerPadding),
+                    modifier =
+                      Modifier.fillMaxSize()
+                        .padding(
+                          top = innerPadding.calculateTopPadding(),
+                          bottom =
+                            if (isCompactHeight) innerPadding.calculateBottomPadding() else 0.dp,
+                          start = innerPadding.calculateStartPadding(LocalLayoutDirection.current),
+                          end = innerPadding.calculateEndPadding(LocalLayoutDirection.current),
+                        ),
                     contentAlignment = Alignment.Center,
                   ) {
-                    HorizontalPager(
-                      state = pagerState,
-                      modifier = Modifier.fillMaxSize(),
-                      beyondViewportPageCount = 1,
-                      userScrollEnabled = false,
-                    ) { page ->
-                      when (MainPage.entries[page]) {
-                        MainPage.Camera -> {
-                          CameraContent(
-                            previewEnabled = pagerState.currentPage == MainPage.Camera.ordinal,
-                            location = location,
-                            markers = markers,
-                            blurredRectFs =
-                              listOf(
-                                RoundedRectF(
-                                  rectF = if (isCompactHeight) sideSheetRectF else bottomSheetRectF,
-                                  cornerRadius = 0f,
-                                )
-                              ),
-                          )
-                        }
-                        MainPage.Map -> {
-                          MapPreview(markers = markers, modifier = Modifier.fillMaxSize())
-                        }
-                      }
-                    }
+                    MainPager(
+                      pagerState = pagerState,
+                      location = location,
+                      markers = markers,
+                      isCompactHeight = isCompactHeight,
+                    )
 
                     MainPagerToolbar(
                       isCompactHeight = isCompactHeight,
@@ -246,13 +240,12 @@ class MainActivity : ComponentActivity() {
                       onPageSelected = { page ->
                         scope.launch { pagerState.animateScrollToPage(page.ordinal) }
                       },
-                      modifier = Modifier.align(Alignment.BottomStart),
                     )
 
                     if (isCompactHeight) {
                       Surface(
                         modifier = Modifier.fillMaxHeight().align(Alignment.CenterEnd),
-                        color = MaterialTheme.colorScheme.surfaceContainerLow,
+                        color = BottomSheetDefaults.ContainerColor.copy(alpha = .5f),
                         tonalElevation = 1.dp,
                       ) {
                         placesSheetContent()

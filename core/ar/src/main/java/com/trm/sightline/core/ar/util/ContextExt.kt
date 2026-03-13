@@ -10,21 +10,26 @@ import android.view.Surface
 import android.view.WindowInsets
 import android.view.WindowManager
 import androidx.core.view.WindowInsetsCompat
-import kotlin.math.ceil
 
 val Context.phoneRotation: Int
   get() =
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
       display.rotation
     } else {
-      @Suppress("DEPRECATION")
-      (getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay?.rotation
+      @Suppress("DEPRECATION") getSystemService(WindowManager::class.java).defaultDisplay?.rotation
     } ?: Surface.ROTATION_0
+
+const val sideSheetWidthDp = 400
+const val collapsedBottomSheetContentHeightDp = 186
+const val collapsedBottomSheetDragHandleHeightDp = 48
+
+val Context.cameraPreviewVerticalPaddingPx: Float
+  get() = dpToPx(16f)
 
 val Context.bottomSheetHeightPx: Float
   get() {
-    val heightDp = 186 + navigationBarsBottomInsetPx
-    return ceil(heightDp * resources.displayMetrics.density)
+    val heightDp = collapsedBottomSheetContentHeightDp + collapsedBottomSheetDragHandleHeightDp
+    return dpToPx(heightDp.toFloat())
   }
 
 val Context.navigationBarsBottomInsetPx: Float
@@ -61,7 +66,7 @@ val Context.sideSheetRectF: RectF
   get() {
     val screenSize = getScreenSize(includeTopInset = true)
     return RectF(
-      screenSize.width - dpToPx(320f),
+      screenSize.width - dpToPx(sideSheetWidthDp.toFloat()),
       0f,
       screenSize.width.toFloat(),
       screenSize.height.toFloat(),

@@ -1,6 +1,7 @@
 package com.trm.sightline
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -23,14 +24,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import com.trm.sightline.core.ar.util.collapsedBottomSheetContentHeightDp
+import com.trm.sightline.core.ar.util.collapsedBottomSheetDragHandleHeightDp
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun MainPagerToolbar(
+fun BoxScope.MainPagerToolbar(
   isCompactHeight: Boolean,
   selectedPage: MainPage,
   onPageSelected: (MainPage) -> Unit,
-  modifier: Modifier = Modifier,
 ) {
   val toolbarContent =
     @Composable { showLabel: Boolean ->
@@ -49,7 +51,7 @@ fun MainPagerToolbar(
     VerticalFloatingToolbar(
       expanded = true,
       modifier =
-        modifier
+        Modifier.align(Alignment.BottomStart)
           .windowInsetsPadding(
             WindowInsets.safeDrawing.only(WindowInsetsSides.Start + WindowInsetsSides.Bottom)
           )
@@ -60,9 +62,16 @@ fun MainPagerToolbar(
     HorizontalFloatingToolbar(
       expanded = true,
       modifier =
-        modifier
-          .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Start))
-          .padding(16.dp),
+        Modifier.align(Alignment.BottomStart)
+          .windowInsetsPadding(
+            WindowInsets.safeDrawing.only(WindowInsetsSides.Start + WindowInsetsSides.Bottom)
+          )
+          .padding(
+            start = 16.dp,
+            end = 16.dp,
+            bottom =
+              (16 + collapsedBottomSheetContentHeightDp + collapsedBottomSheetDragHandleHeightDp).dp,
+          ),
       content = { toolbarContent(true) },
     )
   }
