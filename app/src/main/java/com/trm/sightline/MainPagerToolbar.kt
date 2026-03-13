@@ -1,5 +1,8 @@
 package com.trm.sightline
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Row
@@ -30,6 +33,7 @@ import com.trm.sightline.core.ar.util.collapsedBottomSheetDragHandleHeightDp
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun BoxScope.MainPagerToolbar(
+  visible: Boolean,
   isCompactHeight: Boolean,
   selectedPage: MainPage,
   onPageSelected: (MainPage) -> Unit,
@@ -47,21 +51,18 @@ fun BoxScope.MainPagerToolbar(
         }
       }
     }
-  if (isCompactHeight) {
-    VerticalFloatingToolbar(
-      expanded = true,
-      modifier =
+  AnimatedVisibility(
+    visible = visible,
+    enter = fadeIn(),
+    exit = fadeOut(),
+    modifier =
+      if (isCompactHeight) {
         Modifier.align(Alignment.BottomStart)
           .windowInsetsPadding(
             WindowInsets.safeDrawing.only(WindowInsetsSides.Start + WindowInsetsSides.Bottom)
           )
-          .padding(16.dp),
-      content = { toolbarContent(false) },
-    )
-  } else {
-    HorizontalFloatingToolbar(
-      expanded = true,
-      modifier =
+          .padding(16.dp)
+      } else {
         Modifier.align(Alignment.BottomStart)
           .windowInsetsPadding(
             WindowInsets.safeDrawing.only(WindowInsetsSides.Start + WindowInsetsSides.Bottom)
@@ -71,9 +72,14 @@ fun BoxScope.MainPagerToolbar(
             end = 16.dp,
             bottom =
               (16 + collapsedBottomSheetContentHeightDp + collapsedBottomSheetDragHandleHeightDp).dp,
-          ),
-      content = { toolbarContent(true) },
-    )
+          )
+      },
+  ) {
+    if (isCompactHeight) {
+      VerticalFloatingToolbar(expanded = true, content = { toolbarContent(false) })
+    } else {
+      HorizontalFloatingToolbar(expanded = true, content = { toolbarContent(true) })
+    }
   }
 }
 

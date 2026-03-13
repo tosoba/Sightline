@@ -37,6 +37,7 @@ fun MainPager(
   pagerState: PagerState,
   location: Location,
   markers: List<Marker>,
+  cameraPreviewBlurred: Boolean,
   isCompactHeight: Boolean,
 ) {
   HorizontalPager(
@@ -50,6 +51,7 @@ fun MainPager(
         val context = LocalContext.current
         CameraContent(
           previewEnabled = pagerState.currentPage == MainPage.Camera.ordinal,
+          previewBlurred = cameraPreviewBlurred,
           location = location,
           markers = markers,
           blurredRectFs =
@@ -62,7 +64,7 @@ fun MainPager(
         ) { renderer ->
           val markersPagingState by renderer.markersPagingState.collectAsStateWithLifecycle()
           AnimatedVisibility(
-            visible = markersPagingState.maxPage > 0,
+            visible = !cameraPreviewBlurred && markersPagingState.maxPage > 0,
             enter = fadeIn(),
             exit = fadeOut(),
             modifier =

@@ -17,6 +17,7 @@ import com.trm.sightline.core.model.Marker
 @Composable
 fun CameraContent(
   previewEnabled: Boolean,
+  previewBlurred: Boolean,
   location: Location,
   markers: List<Marker>,
   blurredRectFs: List<RoundedRectF>,
@@ -30,9 +31,10 @@ fun CameraContent(
   AnimatedContent(cameraPermissionState.isGranted) {
     if (it) {
       CameraPreview(
+        enabled = previewEnabled,
+        blurred = previewBlurred,
         location = location,
         markers = markers,
-        enabled = previewEnabled,
         blurredRectFs = blurredRectFs,
         overlayContent = overlayContent,
       )

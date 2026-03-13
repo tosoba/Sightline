@@ -231,10 +231,12 @@ class MainActivity : ComponentActivity() {
                       pagerState = pagerState,
                       location = location,
                       markers = markers,
+                      cameraPreviewBlurred = !isCompactHeight && expandedProgress != 0f,
                       isCompactHeight = isCompactHeight,
                     )
 
                     MainPagerToolbar(
+                      visible = isCompactHeight || sheetState.targetValue != SheetValue.Expanded,
                       isCompactHeight = isCompactHeight,
                       selectedPage = selectedPage,
                       onPageSelected = { page ->

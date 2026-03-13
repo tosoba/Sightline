@@ -42,9 +42,10 @@ import timber.log.Timber
 
 @Composable
 fun CameraPreview(
+  enabled: Boolean,
+  blurred: Boolean,
   location: Location,
   markers: List<Marker>,
-  enabled: Boolean,
   blurredRectFs: List<RoundedRectF>,
   overlayContent: @Composable BoxScope.(ARMarkerRenderer) -> Unit = {},
 ) {
@@ -117,6 +118,7 @@ fun CameraPreview(
         }
       }
       LaunchedEffect(blurredRectFs) { openGLRenderer.otherRectFs = blurredRectFs }
+      LaunchedEffect(blurred) { openGLRenderer.setBlurEnabled(enabled = blurred, animated = true) }
 
       overlayContent(arView.markerRenderer)
     }
