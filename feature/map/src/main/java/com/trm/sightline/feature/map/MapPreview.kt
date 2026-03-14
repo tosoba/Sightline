@@ -47,6 +47,8 @@ fun MapPreview(markers: List<Marker>, modifier: Modifier = Modifier) {
       ),
     options = MapOptions(ornamentOptions = OrnamentOptions.AllDisabled),
   ) {
+    if (markers.isEmpty()) return@MaplibreMap
+
     val source =
       rememberGeoJsonSource(
         GeoJsonData.Features(

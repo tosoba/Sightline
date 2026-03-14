@@ -24,10 +24,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.trm.sightline.core.model.PlaceCategory
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PlacesContent(state: PlacesState, modifier: Modifier = Modifier) {
+fun PlacesContent(
+  state: PlacesState,
+  selectedCategories: Set<PlaceCategory>,
+  onTogglePlaceCategory: (PlaceCategory) -> Unit,
+  modifier: Modifier = Modifier,
+) {
   Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
     SearchBar(
       expanded = false,
@@ -59,19 +65,18 @@ fun PlacesContent(state: PlacesState, modifier: Modifier = Modifier) {
     Spacer(modifier = Modifier.height(16.dp))
 
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-      state.categories.forEach { category ->
+      PlaceCategory.entries.forEach { category ->
         PlaceCategoryToggleButton(
-          label = category,
+          category = category,
           icon =
             when (category) {
-              "Attractions" -> Icons.Default.Place
-              "Food" -> Icons.Default.Restaurant
-              "Accommodation" -> Icons.Default.Hotel
-              "Stores" -> Icons.Default.Storefront
-              else -> throw IllegalStateException()
+              PlaceCategory.ATTRACTIONS -> Icons.Default.Place
+              PlaceCategory.FOOD -> Icons.Default.Restaurant
+              PlaceCategory.ACCOMMODATION -> Icons.Default.Hotel
+              PlaceCategory.STORES -> Icons.Default.Storefront
             },
-          isSelected = category in state.selectedCategories,
-          onClick = { state.toggleCategory(category) },
+          isSelected = category in selectedCategories,
+          onClick = { onTogglePlaceCategory(category) },
         )
       }
     }

@@ -18,18 +18,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import com.trm.sightline.core.model.PlaceCategory
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 internal fun RowScope.PlaceCategoryToggleButton(
-  label: String,
+  category: PlaceCategory,
   icon: ImageVector,
   isSelected: Boolean,
-  onClick: () -> Unit,
+  onClick: (PlaceCategory) -> Unit,
 ) {
   ToggleButton(
     checked = isSelected,
-    onCheckedChange = { onClick() },
+    onCheckedChange = { onClick(category) },
     modifier = Modifier.weight(1f),
   ) {
     Column(
@@ -42,7 +43,7 @@ internal fun RowScope.PlaceCategoryToggleButton(
       Spacer(modifier = Modifier.height(4.dp))
 
       Text(
-        text = label,
+        text = category.name.lowercase().replaceFirstChar(Char::uppercase),
         style = MaterialTheme.typography.labelSmall,
         maxLines = 1,
         modifier = Modifier.basicMarquee(iterations = Int.MAX_VALUE),

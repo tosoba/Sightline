@@ -1,6 +1,5 @@
 package com.trm.sightline
 
-import android.location.Location
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -53,13 +52,13 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import com.trm.sightline.core.ar.util.collapsedBottomSheetContentHeightDp
 import com.trm.sightline.core.ar.util.sideSheetWidthDp
-import com.trm.sightline.core.model.Marker
 import com.trm.sightline.feature.places.PlacesContent
 import com.trm.sightline.feature.places.rememberPlacesState
 import com.trm.sightline.ui.theme.SightlineTheme
@@ -78,6 +77,8 @@ class MainActivity : ComponentActivity() {
     setContent {
       SightlineTheme {
         val scope = rememberCoroutineScope()
+        val viewModel = viewModel<MainViewModel>()
+        val markers = viewModel.markers.values.flatten()
 
         val pagerState = rememberPagerState(pageCount = MainPage.entries::size)
         val selectedPage = MainPage.entries[pagerState.currentPage]
@@ -96,22 +97,6 @@ class MainActivity : ComponentActivity() {
           }
         val scaffoldState = rememberBottomSheetScaffoldState(sheetState)
         LaunchedEffect(isCompactHeight) { if (isCompactHeight) sheetState.hide() }
-
-        val location = remember {
-          Location(null).apply {
-            latitude = 52.237049
-            longitude = 21.017532
-          }
-        }
-        val markers = remember {
-          List(10) { index ->
-            Marker(
-              name = "Marker ${index + 1}",
-              latitude = 52.237049 + ((index + 1) * 0.001),
-              longitude = 21.017532 + ((index + 1) * 0.001),
-            )
-          }
-        }
 
         val density = LocalDensity.current
         val sheetOffset = runCatching { sheetState.requireOffset() }.getOrDefault(0f)
@@ -143,6 +128,8 @@ class MainActivity : ComponentActivity() {
           @Composable {
             PlacesContent(
               state = placesSheetState,
+              selectedCategories = viewModel.markers.keys,
+              onTogglePlaceCategory = viewModel::onTogglePlaceCategory,
               modifier =
                 if (isCompactHeight) {
                   Modifier.width(sideSheetWidthDp.dp)
@@ -205,7 +192,7 @@ class MainActivity : ComponentActivity() {
                   ) {
                     MainPager(
                       pagerState = pagerState,
-                      location = location,
+                      location = viewModel.currentLocation,
                       markers = markers,
                       isCompactHeight = isCompactHeight,
                       cameraPreviewBlurred = !isCompactHeight && expandedProgress != 0f,

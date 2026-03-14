@@ -1,26 +1,37 @@
 package com.trm.sightline.api.overpass;
 
+import com.squareup.moshi.Moshi;
 import com.trm.sightline.api.overpass.models.response.OverpassResponse;
+import com.trm.sightline.api.overpass.models.response.adapters.ElementAdapter;
+import com.trm.sightline.api.overpass.models.response.adapters.Iso8601Adapter;
+import com.trm.sightline.api.overpass.models.response.adapters.MemberAdapter;
+
+import java.util.Date;
+
 import retrofit2.Call;
+import retrofit2.Retrofit;
+import retrofit2.converter.moshi.MoshiConverterFactory;
 import retrofit2.http.GET;
 import retrofit2.http.Query;
 
-/**
- * API to query OverpassApi-Language. Example query:
- * http://overpass-api.de/api/interpreter?data=[out:json];node(around:1600,52.516667,13.383333)["amenity"="post_box"];out
- * qt 13;
- */
 public interface OverpassApi {
 
-  String BASE_URL = "http://overpass-api.de";
+  String BASE_URL = "https://overpass-api.de";
 
-  /**
-   * Returns a OverpassApi response for the given query.
-   *
-   * @param data OverpassApi QL string data part Example:
-   *     [out:json];node(around:1600,52.516667,13.383333)["amenity"="post_box"];out qt 13;
-   * @return a call to execute the actual query.
-   */
   @GET("/api/interpreter")
   Call<OverpassResponse> ask(@Query("data") String data);
+
+  static OverpassApi create() {
+    return new Retrofit.Builder()
+        .baseUrl(BASE_URL)
+        .addConverterFactory(
+            MoshiConverterFactory.create(
+                new Moshi.Builder()
+                    .add(new MemberAdapter())
+                    .add(new ElementAdapter())
+                    .add(Date.class, new Iso8601Adapter())
+                    .build()))
+        .build()
+        .create(OverpassApi.class);
+  }
 }

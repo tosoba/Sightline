@@ -9,7 +9,7 @@ dependencies {
   implementation(libs.okhttp)
   implementation(libs.moshi)
   implementation(libs.moshi.adapters)
-  implementation(libs.retrofit)
+  api(libs.retrofit)
   implementation(libs.retrofit.converter.moshi)
 
   testImplementation(libs.junit)

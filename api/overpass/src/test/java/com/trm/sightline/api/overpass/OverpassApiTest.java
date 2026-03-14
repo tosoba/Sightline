@@ -3,23 +3,10 @@ package com.trm.sightline.api.overpass;
 import com.trm.sightline.api.overpass.models.query.settings.Filter;
 import com.trm.sightline.api.overpass.models.query.statements.NodeQuery;
 import java.io.IOException;
-import org.junit.Before;
 import org.junit.Test;
-import retrofit2.Retrofit;
-import retrofit2.converter.moshi.MoshiConverterFactory;
 
 public class OverpassApiTest {
-  private OverpassApi overpassApi;
-
-  @Before
-  public void setUp() {
-    overpassApi =
-        new Retrofit.Builder()
-            .baseUrl(OverpassApi.BASE_URL)
-            .addConverterFactory(MoshiConverterFactory.create())
-            .build()
-            .create(OverpassApi.class);
-  }
+  private final OverpassApi overpassApi = OverpassApi.create();
 
   @Test
   public void singleAmenity() throws IOException {
@@ -54,7 +41,7 @@ public class OverpassApiTest {
   }
 
   @Test
-  public void multipleAmenities() throws IOException {
+  public void foodAmenities() throws IOException {
     final String query =
         new NodeQuery.Builder()
             .timeout(25)
