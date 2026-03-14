@@ -35,3 +35,5 @@ include(":core:model")
 include(":feature:camera")
 
 include(":feature:map")
+
+include(":feature:places")

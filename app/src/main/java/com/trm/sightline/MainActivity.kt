@@ -5,12 +5,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.basicMarquee
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -27,32 +23,16 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Apps
-import androidx.compose.material.icons.filled.Category
-import androidx.compose.material.icons.filled.Hotel
-import androidx.compose.material.icons.filled.MyLocation
-import androidx.compose.material.icons.filled.Place
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FilledTonalIconToggleButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SearchBar
-import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.ToggleButton
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
@@ -60,21 +40,15 @@ import androidx.compose.material3.windowsizeclass.WindowHeightSizeClass
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.Saver
-import androidx.compose.runtime.saveable.listSaver
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -86,6 +60,8 @@ import androidx.navigation3.ui.NavDisplay
 import com.trm.sightline.core.ar.util.collapsedBottomSheetContentHeightDp
 import com.trm.sightline.core.ar.util.sideSheetWidthDp
 import com.trm.sightline.core.model.Marker
+import com.trm.sightline.feature.places.PlacesContent
+import com.trm.sightline.feature.places.rememberPlacesState
 import com.trm.sightline.ui.theme.SightlineTheme
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
@@ -165,7 +141,7 @@ class MainActivity : ComponentActivity() {
         val placesSheetState = rememberPlacesState()
         val placesSheetContent =
           @Composable {
-            PlacesSheetContent(
+            PlacesContent(
               state = placesSheetState,
               modifier =
                 if (isCompactHeight) {
@@ -268,136 +244,3 @@ class MainActivity : ComponentActivity() {
 }
 
 @Serializable private data object MainRoute : NavKey
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun PlacesSheetContent(state: PlacesState, modifier: Modifier = Modifier) {
-  Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-    SearchBar(
-      expanded = false,
-      onExpandedChange = {},
-      modifier = Modifier.fillMaxWidth(),
-      windowInsets = WindowInsets(),
-      inputField = {
-        SearchBarDefaults.InputField(
-          query = state.location,
-          onQueryChange = { state.location = it },
-          onSearch = {},
-          expanded = false,
-          enabled = !state.userLocation,
-          onExpandedChange = {},
-          placeholder = { Text("Current location") },
-          leadingIcon = { Icon(imageVector = Icons.Default.Search, contentDescription = null) },
-          trailingIcon = {
-            FilledTonalIconToggleButton(
-              checked = state.userLocation,
-              onCheckedChange = { state.userLocation = it },
-            ) {
-              Icon(imageVector = Icons.Default.MyLocation, contentDescription = "My location")
-            }
-          },
-        )
-      },
-    ) {}
-
-    Spacer(modifier = Modifier.height(16.dp))
-
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-      PlaceCategoryToggleButton(
-        label = "All",
-        icon = Icons.Default.Apps,
-        isSelected = state.isAllSelected,
-        onClick = state::toggleAll,
-      )
-
-      state.categories.forEach { category ->
-        PlaceCategoryToggleButton(
-          label = category,
-          icon =
-            when (category) {
-              "Attractions" -> Icons.Default.Place
-              "Accommodation" -> Icons.Default.Hotel
-              "Stores" -> Icons.Default.Storefront
-              else -> Icons.Default.Category
-            },
-          isSelected = category in state.selectedCategories,
-          onClick = { state.toggleCategory(category) },
-        )
-      }
-    }
-  }
-}
-
-@Stable
-class PlacesState(
-  location: String = "",
-  userLocation: Boolean = false,
-  selectedCategories: List<String> = emptyList(),
-) {
-  var location by mutableStateOf(location)
-  var userLocation by mutableStateOf(userLocation)
-  val selectedCategories = mutableStateSetOf(*selectedCategories.toTypedArray())
-
-  val categories = listOf("Attractions", "Accommodation", "Stores")
-  val isAllSelected: Boolean
-    get() = selectedCategories.size == categories.size
-
-  fun toggleCategory(category: String) {
-    if (!selectedCategories.remove(category)) selectedCategories.add(category)
-  }
-
-  fun toggleAll() {
-    if (isAllSelected) selectedCategories.clear() else selectedCategories.addAll(categories)
-  }
-
-  companion object {
-    val Saver: Saver<PlacesState, *> =
-      listSaver(
-        save = { listOf(it.location, it.userLocation, it.selectedCategories.toList()) },
-        restore = {
-          @Suppress("UNCHECKED_CAST")
-          PlacesState(
-            location = it[0] as String,
-            userLocation = it[1] as Boolean,
-            selectedCategories = it[2] as List<String>,
-          )
-        },
-      )
-  }
-}
-
-@Composable
-fun rememberPlacesState(): PlacesState =
-  rememberSaveable(saver = PlacesState.Saver, init = ::PlacesState)
-
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-@Composable
-fun RowScope.PlaceCategoryToggleButton(
-  label: String,
-  icon: ImageVector,
-  isSelected: Boolean,
-  onClick: () -> Unit,
-) {
-  ToggleButton(
-    checked = isSelected,
-    onCheckedChange = { onClick() },
-    modifier = Modifier.weight(1f),
-  ) {
-    Column(
-      horizontalAlignment = Alignment.CenterHorizontally,
-      verticalArrangement = Arrangement.Center,
-      modifier = Modifier.padding(vertical = 8.dp),
-    ) {
-      Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(32.dp))
-
-      Spacer(modifier = Modifier.height(4.dp))
-
-      Text(
-        text = label,
-        style = MaterialTheme.typography.labelSmall,
-        maxLines = 1,
-        modifier = Modifier.basicMarquee(iterations = Int.MAX_VALUE),
-      )
-    }
-  }
-}
