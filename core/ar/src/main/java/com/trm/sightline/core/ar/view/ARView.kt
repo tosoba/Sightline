@@ -159,7 +159,7 @@ class ARView : View {
           false
         }
       } ?: false
-    if (!markerPressed) onTouch?.invoke()
+    if (!markerPressed && event.action == MotionEvent.ACTION_DOWN) onTouch?.invoke()
     return super.onTouchEvent(event)
   }
 

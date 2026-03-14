@@ -37,8 +37,10 @@ fun MainPager(
   pagerState: PagerState,
   location: Location,
   markers: List<Marker>,
-  cameraPreviewBlurred: Boolean,
   isCompactHeight: Boolean,
+  cameraPreviewBlurred: Boolean,
+  cameraPreviewOverlayVisible: Boolean,
+  onCameraPreviewTouch: () -> Unit,
 ) {
   HorizontalPager(
     state = pagerState,
@@ -61,10 +63,14 @@ fun MainPager(
                 cornerRadius = if (isCompactHeight) 0f else context.dpToPx(64f),
               )
             ),
+          onCameraPreviewTouch = onCameraPreviewTouch,
         ) { renderer ->
           val markersPagingState by renderer.markersPagingState.collectAsStateWithLifecycle()
           AnimatedVisibility(
-            visible = !cameraPreviewBlurred && markersPagingState.maxPage > 0,
+            visible =
+              cameraPreviewOverlayVisible &&
+                !cameraPreviewBlurred &&
+                markersPagingState.maxPage > 0,
             enter = fadeIn(),
             exit = fadeOut(),
             modifier =

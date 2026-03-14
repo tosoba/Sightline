@@ -21,6 +21,7 @@ fun CameraContent(
   location: Location,
   markers: List<Marker>,
   blurredRectFs: List<RoundedRectF>,
+  onCameraPreviewTouch: () -> Unit,
   overlayContent: @Composable BoxScope.(ARMarkerRenderer) -> Unit = {},
 ) {
   val cameraPermissionState = rememberCameraPermissionState()
@@ -36,6 +37,7 @@ fun CameraContent(
         location = location,
         markers = markers,
         blurredRectFs = blurredRectFs,
+        onCameraPreviewTouch = onCameraPreviewTouch,
         overlayContent = overlayContent,
       )
     } else {

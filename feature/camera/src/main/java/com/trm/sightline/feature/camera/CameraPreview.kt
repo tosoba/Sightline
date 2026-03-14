@@ -47,6 +47,7 @@ fun CameraPreview(
   location: Location,
   markers: List<Marker>,
   blurredRectFs: List<RoundedRectF>,
+  onCameraPreviewTouch: () -> Unit = {},
   overlayContent: @Composable BoxScope.(ARMarkerRenderer) -> Unit = {},
 ) {
   val context = LocalContext.current
@@ -90,6 +91,7 @@ fun CameraPreview(
           view.povLocation = location
           view.markers = markers.map(::ARMarker)
           view.markerRenderer.disabled = !enabled
+          view.onTouch = onCameraPreviewTouch
         },
       )
 
