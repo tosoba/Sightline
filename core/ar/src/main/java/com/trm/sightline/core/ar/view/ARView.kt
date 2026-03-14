@@ -29,13 +29,11 @@ class ARView : View {
     set(value) {
       field = value
       value?.let { calculateDistancesBetween(it, markers) }
-      maxRange =
-        (markers.lastOrNull()?.distance?.toDouble() ?: DEFAULT_MAX_RANGE_METERS) *
-          RANGE_MARGIN_MULTIPLIER
+      maxRange = calculateMaxRageFor(markers)
       markerRenderer.povLocation = value
     }
 
-  private var maxRange: Double = DEFAULT_MAX_RANGE_METERS
+  private var maxRange: Double = DEFAULT_MAX_RANGE_METERS * RANGE_MARGIN_MULTIPLIER
     @MainThread
     set(value) {
       field = value
@@ -47,11 +45,13 @@ class ARView : View {
     set(value) {
       field = value
       povLocation?.let { calculateDistancesBetween(it, value) }
-      maxRange =
-        (value.lastOrNull()?.distance?.toDouble() ?: DEFAULT_MAX_RANGE_METERS) *
-          RANGE_MARGIN_MULTIPLIER
+      maxRange = calculateMaxRageFor(value)
       markerRenderer.setMarkers(value)
     }
+
+  private fun calculateMaxRageFor(value: List<ARMarker>): Double =
+    (value.maxByOrNull(ARMarker::distance)?.distance?.toDouble() ?: DEFAULT_MAX_RANGE_METERS) *
+      RANGE_MARGIN_MULTIPLIER
 
   val markerRenderer: ARMarkerRenderer = ARMarkerRenderer(context)
 
