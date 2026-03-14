@@ -52,7 +52,8 @@ fun MainPager(
       MainPage.Camera -> {
         val context = LocalContext.current
         CameraContent(
-          previewEnabled = pagerState.currentPage == MainPage.Camera.ordinal,
+          previewEnabled =
+            pagerState.currentPage == MainPage.Camera.ordinal && !cameraPreviewBlurred,
           previewBlurred = cameraPreviewBlurred,
           location = location,
           markers = markers,
