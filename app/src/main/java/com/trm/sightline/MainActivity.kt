@@ -9,14 +9,12 @@ import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.displayCutout
@@ -34,7 +32,6 @@ import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Category
@@ -50,7 +47,8 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalIconToggleButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SearchBar
+import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -271,33 +269,36 @@ class MainActivity : ComponentActivity() {
 
 @Serializable private data object MainRoute : NavKey
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlacesSheetContent(state: PlacesState, modifier: Modifier = Modifier) {
   Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-    Row(
-      modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
-      verticalAlignment = Alignment.CenterVertically,
-    ) {
-      OutlinedTextField(
-        value = state.location,
-        onValueChange = { state.location = it },
-        modifier = Modifier.weight(1f),
-        placeholder = { Text("Current location") },
-        leadingIcon = { Icon(imageVector = Icons.Default.Search, contentDescription = null) },
-        singleLine = true,
-        shape = RoundedCornerShape(16.dp),
-      )
-
-      Spacer(modifier = Modifier.width(16.dp))
-
-      FilledTonalIconToggleButton(
-        checked = state.userLocation,
-        onCheckedChange = { state.userLocation = it },
-        modifier = Modifier.fillMaxHeight().aspectRatio(1f),
-      ) {
-        Icon(imageVector = Icons.Default.MyLocation, contentDescription = "My location")
-      }
-    }
+    SearchBar(
+      expanded = false,
+      onExpandedChange = {},
+      modifier = Modifier.fillMaxWidth(),
+      windowInsets = WindowInsets(),
+      inputField = {
+        SearchBarDefaults.InputField(
+          query = state.location,
+          onQueryChange = { state.location = it },
+          onSearch = {},
+          expanded = false,
+          enabled = !state.userLocation,
+          onExpandedChange = {},
+          placeholder = { Text("Current location") },
+          leadingIcon = { Icon(imageVector = Icons.Default.Search, contentDescription = null) },
+          trailingIcon = {
+            FilledTonalIconToggleButton(
+              checked = state.userLocation,
+              onCheckedChange = { state.userLocation = it },
+            ) {
+              Icon(imageVector = Icons.Default.MyLocation, contentDescription = "My location")
+            }
+          },
+        )
+      },
+    ) {}
 
     Spacer(modifier = Modifier.height(16.dp))
 
