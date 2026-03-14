@@ -4,7 +4,6 @@ import com.trm.sightline.api.overpass.OverpassApi
 import com.trm.sightline.api.overpass.models.query.settings.Filter
 import com.trm.sightline.api.overpass.models.query.statements.ComplexQuery
 import com.trm.sightline.api.overpass.models.query.statements.NodeQuery
-import com.trm.sightline.api.overpass.models.query.statements.base.Query
 import com.trm.sightline.api.overpass.models.response.geometries.Node
 import com.trm.sightline.core.domain.PlacesRepository
 import com.trm.sightline.core.model.Place
@@ -20,7 +19,14 @@ class PlacesNetworkRepository : PlacesRepository {
     radiusMeters: Float,
   ): List<Place> =
     overpassApi
-      .ask(buildQueryFor(category, latitude, longitude, radiusMeters).toQuery())
+      .ask(
+        buildQueryFor(
+          category = category,
+          latitude = latitude,
+          longitude = longitude,
+          radiusMeters = radiusMeters,
+        )
+      )
       .elements
       ?.filterIsInstance<Node>()
       ?.filter { !it.tags?.get("name").isNullOrBlank() }
@@ -40,7 +46,7 @@ class PlacesNetworkRepository : PlacesRepository {
     latitude: Double,
     longitude: Double,
     radiusMeters: Float,
-  ): Query =
+  ): String =
     when (category) {
       PlaceCategory.ATTRACTIONS -> {
         ComplexQuery.Builder()
@@ -92,7 +98,7 @@ class PlacesNetworkRepository : PlacesRepository {
           .tag("shop", "department_store|general|kiosk|mall|supermarket|wholesale", Filter.LIKE)
           .build()
       }
-    }
+    }.toQuery()
 
   companion object {
     private const val DEFAULT_TIMEOUT_SECONDS = 25
