@@ -29,7 +29,7 @@ val Context.cameraPreviewVerticalPaddingPx: Float
 val Context.bottomSheetHeightPx: Float
   get() {
     val heightDp = collapsedBottomSheetContentHeightDp + collapsedBottomSheetDragHandleHeightDp
-    return dpToPx(heightDp.toFloat())
+    return dpToPx(heightDp.toFloat()) + navigationBarsBottomInsetPx
   }
 
 val Context.navigationBarsBottomInsetPx: Float
@@ -56,7 +56,7 @@ fun Context.spToPx(value: Float): Float =
 
 val Context.bottomSheetRectF: RectF
   get() {
-    val screenSize = getScreenSize(includeTopInset = true)
+    val screenSize = getScreenSize()
     return RectF(
       0f,
       screenSize.height - bottomSheetHeightPx,
@@ -67,7 +67,7 @@ val Context.bottomSheetRectF: RectF
 
 val Context.sideSheetRectF: RectF
   get() {
-    val screenSize = getScreenSize(includeTopInset = true)
+    val screenSize = getScreenSize()
     return RectF(
       screenSize.width - dpToPx(sideSheetWidthDp.toFloat()),
       0f,
@@ -76,14 +76,14 @@ val Context.sideSheetRectF: RectF
     )
   }
 
-fun Context.getScreenSize(
-  includeLeftInset: Boolean = false,
-  includeTopInset: Boolean = false,
-  includeRightInset: Boolean = false,
-  includeBottomInset: Boolean = false,
+private fun Context.getScreenSize(
+  includeLeftInset: Boolean = true,
+  includeTopInset: Boolean = true,
+  includeRightInset: Boolean = true,
+  includeBottomInset: Boolean = true,
 ): Size =
   if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-    val metrics = (getSystemService(Context.WINDOW_SERVICE) as WindowManager).currentWindowMetrics
+    val metrics = getSystemService(WindowManager::class.java).currentWindowMetrics
     val insets =
       metrics.windowInsets.getInsetsIgnoringVisibility(
         WindowInsets.Type.navigationBars() or WindowInsets.Type.statusBars()

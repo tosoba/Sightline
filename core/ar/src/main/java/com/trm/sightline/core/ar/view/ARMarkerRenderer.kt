@@ -11,7 +11,6 @@ import android.os.Bundle
 import android.text.TextPaint
 import android.text.TextUtils
 import androidx.annotation.MainThread
-import androidx.core.os.bundleOf
 import com.trm.sightline.core.ar.model.ARMarker
 import com.trm.sightline.core.ar.model.MarkersPagingState
 import com.trm.sightline.core.ar.model.RoundedRectF
@@ -80,7 +79,7 @@ class ARMarkerRenderer(private val context: Context) {
     @MainThread set
 
   private val pagedMarkers = HashMap<UUID, PagedMarker>()
-  private val pagedMarkerPositions = TreeMap<Float, MutableSet<PagedPosition>>()
+  private val pagedMarkerPositions = TreeMap<Float, MutableSet<PagedYPosition>>()
 
   private val numberOfRows: Int
     get() =
@@ -153,7 +152,7 @@ class ARMarkerRenderer(private val context: Context) {
         )
       marker.y = pagedPosition.y
       storeMarkerPosition(pagedMarker)
-      pagedMarker.pagedPosition?.page?.let { if (it > maxPageThisFrame) maxPageThisFrame = it }
+      pagedMarker.position?.page?.let { if (it > maxPageThisFrame) maxPageThisFrame = it }
       if (
         firstFrame &&
           lastDrawnMarkerIds.contains(marker.wrapped.id) &&
@@ -161,7 +160,7 @@ class ARMarkerRenderer(private val context: Context) {
       ) {
         currentPageAfterScreenRotation = pagedPosition.page
       }
-      if (pagedMarker.pagedPosition?.page != currentPage) return
+      if (pagedMarker.position?.page != currentPage) return
 
       drawnMarkerIds.add(marker.wrapped.id)
 
@@ -179,8 +178,7 @@ class ARMarkerRenderer(private val context: Context) {
 
     val (lastDrawnMarkers, newlyAppearedMarkers) =
       markers.partition {
-        lastDrawnMarkerIds.contains(it.wrapped.id) &&
-          pagedMarkers[it.wrapped.id]?.pagedPosition != null
+        lastDrawnMarkerIds.contains(it.wrapped.id) && pagedMarkers[it.wrapped.id]?.position != null
       }
     lastDrawnMarkers.forEach { drawMarker(it, lastDrawn = true) }
     newlyAppearedMarkers.forEach { drawMarker(it, lastDrawn = false) }
@@ -202,7 +200,7 @@ class ARMarkerRenderer(private val context: Context) {
       bits[i++] = uuid.mostSignificantBits
       bits[i++] = uuid.leastSignificantBits
     }
-    return bundleOf(SavedStateKeys.LAST_DRAWN_MARKER_IDS_BITS.name to bits)
+    return Bundle().apply { putLongArray(SavedStateKeys.LAST_DRAWN_MARKER_IDS_BITS.name, bits) }
   }
 
   internal fun onRestoreInstanceState(bundle: Bundle?) {
@@ -228,31 +226,30 @@ class ARMarkerRenderer(private val context: Context) {
   }
 
   internal fun isOnCurrentPage(marker: ARMarker): Boolean =
-    pagedMarkers[marker.wrapped.id]?.pagedPosition?.page == currentPage
+    pagedMarkers[marker.wrapped.id]?.position?.page == currentPage
 
   private fun pagedPositionOf(
     pagedMarker: PagedMarker,
     requireAlreadyCalculated: Boolean,
-  ): PagedPosition {
+  ): PagedYPosition {
     if (requireAlreadyCalculated) {
-      return requireNotNull(pagedMarker.pagedPosition) {
-        "Last drawn marker's paged position is null."
-      }
+      return checkNotNull(pagedMarker.position) { "Last drawn marker's paged position is null." }
     }
 
     val takenPositions =
       pagedMarkerPositions
         .subMap(
-          pagedMarker.wrapped.x - markerWidthPx * MARKER_WIDTH_TAKEN_X_MULTIPLIER,
-          pagedMarker.wrapped.x + markerWidthPx * MARKER_WIDTH_TAKEN_X_MULTIPLIER,
+          pagedMarker.marker.x - markerWidthPx * MARKER_WIDTH_TAKEN_X_MULTIPLIER,
+          pagedMarker.marker.x + markerWidthPx * MARKER_WIDTH_TAKEN_X_MULTIPLIER,
         )
         .values
         .flatten()
         .toSet()
-    pagedMarker.pagedPosition?.let { if (!takenPositions.contains(it)) return it }
+    pagedMarker.position?.let { if (!takenPositions.contains(it)) return it }
 
-    val baseY = context.statusBarTopInsetPx + markerHeightPx / 2f
-    val position = PagedPosition(baseY, 0)
+    val baseY =
+      context.statusBarTopInsetPx + markerHeightPx / 2f + context.cameraPreviewVerticalPaddingPx
+    val position = PagedYPosition(baseY, 0)
     var row = 0
     while (takenPositions.contains(position)) {
       position.y += markerHeightPx + MARKER_VERTICAL_SPACING_PX
@@ -263,16 +260,15 @@ class ARMarkerRenderer(private val context: Context) {
         ++position.page
       }
     }
-    pagedMarker.pagedPosition = position
+    pagedMarker.position = position
     return position
   }
 
   private fun storeMarkerPosition(marker: PagedMarker) {
-    val pagedPosition =
-      marker.pagedPosition ?: throw IllegalArgumentException("Marker must have a PagedPosition.")
-    val existingMarkerSet = pagedMarkerPositions[marker.wrapped.x]
+    val pagedPosition = checkNotNull(marker.position) { "Marker must have a PagedPosition." }
+    val existingMarkerSet = pagedMarkerPositions[marker.marker.x]
     existingMarkerSet?.add(pagedPosition)
-      ?: run { pagedMarkerPositions[marker.wrapped.x] = mutableSetOf(pagedPosition) }
+      ?: run { pagedMarkerPositions[marker.marker.x] = mutableSetOf(pagedPosition) }
   }
 
   private fun Canvas.drawTitleText(marker: ARMarker, rectF: RectF) {
@@ -305,14 +301,14 @@ class ARMarkerRenderer(private val context: Context) {
     )
   }
 
-  private class PagedMarker(val wrapped: ARMarker, var pagedPosition: PagedPosition? = null) {
+  private class PagedMarker(val marker: ARMarker, var position: PagedYPosition? = null) {
     override fun equals(other: Any?): Boolean =
-      this === other || (other is PagedMarker && other.wrapped == wrapped)
+      this === other || (other is PagedMarker && other.marker == marker)
 
-    override fun hashCode(): Int = Objects.hash(wrapped)
+    override fun hashCode(): Int = Objects.hash(marker)
   }
 
-  private data class PagedPosition(var y: Float, var page: Int)
+  private data class PagedYPosition(var y: Float, var page: Int)
 
   private enum class SavedStateKeys {
     LAST_DRAWN_MARKER_IDS_BITS
