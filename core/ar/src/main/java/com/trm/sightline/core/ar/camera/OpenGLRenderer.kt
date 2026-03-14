@@ -18,6 +18,7 @@ import androidx.core.content.ContextCompat
 import com.google.common.util.concurrent.ListenableFuture
 import com.trm.sightline.core.ar.camera.surface.SurfaceViewRenderSurface
 import com.trm.sightline.core.ar.camera.surface.TextureViewRenderSurface
+import com.trm.sightline.core.ar.model.ARConstants.MARKER_RECT_F_CORNER_RADIUS
 import com.trm.sightline.core.ar.model.RoundedRectF
 import com.trm.sightline.core.ar.util.shouldUseTextureView
 import kotlinx.coroutines.channels.BufferOverflow
@@ -42,8 +43,7 @@ class OpenGLRenderer {
 
     private val RENDERER_COUNT = AtomicInteger(0)
 
-    private const val MARKER_RECTF_CORNER_RADIUS = 100f
-    private const val COORDINATES_PER_RECTF = 5
+    private const val COORDINATES_PER_RECT_F = 5
   }
 
   private val executor =
@@ -83,7 +83,7 @@ class OpenGLRenderer {
 
   private val rectFsCoordinates: FloatArray
     get() {
-      val coordinates = FloatArray((markerRectFs.size + otherRectFs.size) * COORDINATES_PER_RECTF)
+      val coordinates = FloatArray((markerRectFs.size + otherRectFs.size) * COORDINATES_PER_RECT_F)
       var index = 0
 
       fun fillCoordinatesOf(rectFs: Collection<RoundedRectF>) {
@@ -103,7 +103,7 @@ class OpenGLRenderer {
     }
 
   fun setMarkerRectFs(rectFs: Iterable<RectF>) {
-    markerRectFs = rectFs.map { RoundedRectF(it, MARKER_RECTF_CORNER_RADIUS) }
+    markerRectFs = rectFs.map { RoundedRectF(it, MARKER_RECT_F_CORNER_RADIUS) }
   }
 
   @MainThread

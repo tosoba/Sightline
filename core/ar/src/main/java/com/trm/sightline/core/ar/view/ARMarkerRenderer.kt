@@ -12,6 +12,7 @@ import android.text.TextPaint
 import android.text.TextUtils
 import androidx.annotation.MainThread
 import androidx.core.os.bundleOf
+import com.trm.sightline.core.ar.model.ARConstants.MARKER_RECT_F_CORNER_RADIUS
 import com.trm.sightline.core.ar.model.ARMarker
 import com.trm.sightline.core.ar.model.MarkersPagingState
 import com.trm.sightline.core.ar.util.bottomSheetHeightPx
@@ -112,6 +113,17 @@ class ARMarkerRenderer(private val context: Context) {
       }
     }
 
+  private val borderPaint: Paint by
+    lazy(LazyThreadSafetyMode.NONE) {
+      Paint().apply {
+        color = Color.WHITE
+        alpha = (.1f * 255).toInt()
+        style = Paint.Style.STROKE
+        strokeWidth = 5f
+        isAntiAlias = true
+      }
+    }
+
   private val ARMarker.rectF: RectF
     get() =
       RectF(
@@ -152,14 +164,20 @@ class ARMarkerRenderer(private val context: Context) {
 
       drawnMarkerIds.add(marker.wrapped.id)
 
-      val markerRect = marker.rectF
-      val canvasRect = RectF(0f, 0f, canvas.width.toFloat(), canvas.height.toFloat())
-      if (!RectF.intersects(canvasRect, markerRect)) return
+      val markerRectF = marker.rectF
+      val canvasRectF = RectF(0f, 0f, canvas.width.toFloat(), canvas.height.toFloat())
+      if (!RectF.intersects(canvasRectF, markerRectF)) return
 
-      canvas.drawTitleText(marker, markerRect)
-      canvas.drawDistanceText(marker, markerRect)
+      canvas.drawRoundRect(
+        markerRectF,
+        MARKER_RECT_F_CORNER_RADIUS,
+        MARKER_RECT_F_CORNER_RADIUS,
+        borderPaint,
+      )
+      canvas.drawTitleText(marker, markerRectF)
+      canvas.drawDistanceText(marker, markerRectF)
 
-      drawnRects.add(markerRect)
+      drawnRects.add(markerRectF)
     }
 
     val (lastDrawnMarkers, newlyAppearedMarkers) =
