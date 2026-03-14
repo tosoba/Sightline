@@ -1,17 +1,37 @@
 plugins {
-  id("java-library")
-  alias(libs.plugins.kotlin.jvm)
+  alias(libs.plugins.android.library)
+  alias(libs.plugins.hilt)
+  alias(libs.plugins.ksp)
 }
 
-java {
-  sourceCompatibility = JavaVersion.VERSION_11
-  targetCompatibility = JavaVersion.VERSION_11
-}
+android {
+  namespace = "com.trm.sightline.core.data"
+  compileSdk { version = release(36) { minorApiLevel = 1 } }
 
-kotlin { compilerOptions { jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11 } }
+  defaultConfig {
+    minSdk = libs.versions.minSdk.get().toInt()
+    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    consumerProguardFiles("consumer-rules.pro")
+  }
+
+  buildTypes {
+    release {
+      isMinifyEnabled = false
+      proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+    }
+  }
+
+  compileOptions {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+  }
+}
 
 dependencies {
   implementation(project(":core:domain"))
   implementation(project(":api:overpass"))
   implementation(libs.kotlinx.coroutines.core)
+
+  implementation(libs.hilt.android)
+  ksp(libs.hilt.compiler)
 }

@@ -17,7 +17,7 @@ interface OverpassApi {
   companion object {
     private const val BASE_URL = "https://overpass-api.de"
 
-    fun create(): OverpassApi =
+    internal fun create(): OverpassApi =
       Retrofit.Builder()
         .baseUrl(BASE_URL)
         .addConverterFactory(

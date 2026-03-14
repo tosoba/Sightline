@@ -7,16 +7,16 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.trm.sightline.core.data.PlacesNetworkRepository
 import com.trm.sightline.core.domain.PlacesRepository
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class MainViewModel : ViewModel() {
-  private val repository: PlacesRepository = PlacesNetworkRepository()
-
+@HiltViewModel
+class MainViewModel @Inject constructor(private val repository: PlacesRepository) : ViewModel() {
   val places = mutableStateMapOf<PlaceCategory, List<Place>>()
   private val fetchJobs = mutableMapOf<PlaceCategory, Job>()
 

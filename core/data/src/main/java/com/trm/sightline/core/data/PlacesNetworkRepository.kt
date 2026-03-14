@@ -8,10 +8,10 @@ import com.trm.sightline.api.overpass.models.response.geometries.Node
 import com.trm.sightline.core.domain.PlacesRepository
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
+import javax.inject.Inject
 
-class PlacesNetworkRepository : PlacesRepository {
-  private val overpassApi = OverpassApi.create()
-
+class PlacesNetworkRepository @Inject constructor(private val overpassApi: OverpassApi) :
+  PlacesRepository {
   override suspend fun fetchPlaces(
     category: PlaceCategory,
     latitude: Double,

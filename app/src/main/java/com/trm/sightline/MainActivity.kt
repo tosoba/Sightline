@@ -52,7 +52,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
@@ -62,6 +62,7 @@ import com.trm.sightline.core.ar.util.sideSheetWidthDp
 import com.trm.sightline.feature.places.PlacesContent
 import com.trm.sightline.feature.places.rememberPlacesState
 import com.trm.sightline.ui.theme.SightlineTheme
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
@@ -70,6 +71,7 @@ import kotlinx.serialization.Serializable
   ExperimentalMaterial3ExpressiveApi::class,
   ExperimentalMaterial3WindowSizeClassApi::class,
 )
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -77,7 +79,7 @@ class MainActivity : ComponentActivity() {
     setContent {
       SightlineTheme {
         val scope = rememberCoroutineScope()
-        val viewModel = viewModel<MainViewModel>()
+        val viewModel = hiltViewModel<MainViewModel>()
         val places = viewModel.places.values.flatten()
 
         val pagerState = rememberPagerState(pageCount = MainPage.entries::size)
