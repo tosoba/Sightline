@@ -9,7 +9,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.trm.sightline.core.data.PlacesNetworkRepository
 import com.trm.sightline.core.domain.PlacesRepository
-import com.trm.sightline.core.model.Marker
+import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -17,7 +17,7 @@ import kotlinx.coroutines.launch
 class MainViewModel : ViewModel() {
   private val repository: PlacesRepository = PlacesNetworkRepository()
 
-  val markers = mutableStateMapOf<PlaceCategory, List<Marker>>()
+  val places = mutableStateMapOf<PlaceCategory, List<Place>>()
   private val fetchJobs = mutableMapOf<PlaceCategory, Job>()
 
   var currentLocation by
@@ -32,17 +32,17 @@ class MainViewModel : ViewModel() {
   fun onTogglePlaceCategory(category: PlaceCategory) {
     fetchJobs.remove(category)?.cancel()
 
-    if (markers.containsKey(category)) {
-      markers.remove(category)
+    if (places.containsKey(category)) {
+      places.remove(category)
     } else {
       fetchJobs[category] =
         viewModelScope.launch {
-          markers[category] =
+          places[category] =
             repository.fetchPlaces(
+              category = category,
               latitude = currentLocation.latitude,
               longitude = currentLocation.longitude,
               radiusMeters = 1000f,
-              category = category,
             )
         }
     }

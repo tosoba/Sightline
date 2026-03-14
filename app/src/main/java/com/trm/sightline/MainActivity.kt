@@ -78,7 +78,7 @@ class MainActivity : ComponentActivity() {
       SightlineTheme {
         val scope = rememberCoroutineScope()
         val viewModel = viewModel<MainViewModel>()
-        val markers = viewModel.markers.values.flatten()
+        val places = viewModel.places.values.flatten()
 
         val pagerState = rememberPagerState(pageCount = MainPage.entries::size)
         val selectedPage = MainPage.entries[pagerState.currentPage]
@@ -128,7 +128,7 @@ class MainActivity : ComponentActivity() {
           @Composable {
             PlacesContent(
               state = placesSheetState,
-              selectedCategories = viewModel.markers.keys,
+              selectedCategories = viewModel.places.keys,
               onTogglePlaceCategory = viewModel::onTogglePlaceCategory,
               modifier =
                 if (isCompactHeight) {
@@ -193,7 +193,7 @@ class MainActivity : ComponentActivity() {
                     MainPager(
                       pagerState = pagerState,
                       location = viewModel.currentLocation,
-                      markers = markers,
+                      places = places,
                       isCompactHeight = isCompactHeight,
                       cameraPreviewBlurred = !isCompactHeight && expandedProgress != 0f,
                       cameraPreviewOverlayVisible = toolbarsVisible,

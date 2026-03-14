@@ -37,7 +37,7 @@ import com.trm.sightline.core.ar.orientation.OrientationManager
 import com.trm.sightline.core.ar.util.phoneRotation
 import com.trm.sightline.core.ar.view.ARMarkerRenderer
 import com.trm.sightline.core.ar.view.ARView
-import com.trm.sightline.core.model.Marker
+import com.trm.sightline.core.model.Place
 import timber.log.Timber
 
 @Composable
@@ -45,7 +45,7 @@ fun CameraPreview(
   enabled: Boolean,
   blurred: Boolean,
   location: Location,
-  markers: List<Marker>,
+  places: List<Place>,
   blurredRectFs: List<RoundedRectF>,
   onCameraPreviewTouch: () -> Unit = {},
   overlayContent: @Composable BoxScope.(ARMarkerRenderer) -> Unit = {},
@@ -89,7 +89,7 @@ fun CameraPreview(
         factory = { arView },
         update = { view ->
           view.povLocation = location
-          view.markers = markers.map(::ARMarker)
+          view.markers = places.map(::ARMarker)
           view.markerRenderer.disabled = !enabled
           view.onTouch = onCameraPreviewTouch
         },

@@ -27,7 +27,7 @@ import com.trm.sightline.core.ar.util.collapsedBottomSheetDragHandleHeightDp
 import com.trm.sightline.core.ar.util.dpToPx
 import com.trm.sightline.core.ar.util.sideSheetRectF
 import com.trm.sightline.core.ar.util.sideSheetWidthDp
-import com.trm.sightline.core.model.Marker
+import com.trm.sightline.core.model.Place
 import com.trm.sightline.feature.camera.CameraContent
 import com.trm.sightline.feature.camera.CameraPreviewPagePicker
 import com.trm.sightline.feature.map.MapPreview
@@ -36,7 +36,7 @@ import com.trm.sightline.feature.map.MapPreview
 fun MainPager(
   pagerState: PagerState,
   location: Location,
-  markers: List<Marker>,
+  places: List<Place>,
   isCompactHeight: Boolean,
   cameraPreviewBlurred: Boolean,
   cameraPreviewOverlayVisible: Boolean,
@@ -56,7 +56,7 @@ fun MainPager(
             pagerState.currentPage == MainPage.Camera.ordinal && !cameraPreviewBlurred,
           previewBlurred = cameraPreviewBlurred,
           location = location,
-          markers = markers,
+          places = places,
           blurredRectFs =
             listOf(
               RoundedRectF(
@@ -100,7 +100,7 @@ fun MainPager(
         }
       }
       MainPage.Map -> {
-        MapPreview(markers = markers, modifier = Modifier.fillMaxSize())
+        MapPreview(places = places, modifier = Modifier.fillMaxSize())
       }
     }
   }

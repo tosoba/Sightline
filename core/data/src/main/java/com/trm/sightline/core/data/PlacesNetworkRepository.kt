@@ -7,25 +7,26 @@ import com.trm.sightline.api.overpass.models.query.statements.NodeQuery
 import com.trm.sightline.api.overpass.models.query.statements.base.Query
 import com.trm.sightline.api.overpass.models.response.geometries.Node
 import com.trm.sightline.core.domain.PlacesRepository
-import com.trm.sightline.core.model.Marker
+import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
 
 class PlacesNetworkRepository : PlacesRepository {
   private val overpassApi = OverpassApi.create()
 
   override suspend fun fetchPlaces(
+    category: PlaceCategory,
     latitude: Double,
     longitude: Double,
     radiusMeters: Float,
-    category: PlaceCategory,
-  ): List<Marker> =
+  ): List<Place> =
     overpassApi
       .ask(buildQueryFor(category, latitude, longitude, radiusMeters).toQuery())
       .elements
       ?.filterIsInstance<Node>()
       ?.filter { !it.tags?.get("name").isNullOrBlank() }
       ?.map { node ->
-        Marker(
+        Place(
+          id = node.id,
           name = requireNotNull(node.tags["name"]),
           latitude = node.lat,
           longitude = node.lon,

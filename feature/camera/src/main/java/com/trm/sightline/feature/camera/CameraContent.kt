@@ -12,14 +12,14 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import com.trm.sightline.core.ar.model.RoundedRectF
 import com.trm.sightline.core.ar.view.ARMarkerRenderer
-import com.trm.sightline.core.model.Marker
+import com.trm.sightline.core.model.Place
 
 @Composable
 fun CameraContent(
   previewEnabled: Boolean,
   previewBlurred: Boolean,
   location: Location,
-  markers: List<Marker>,
+  places: List<Place>,
   blurredRectFs: List<RoundedRectF>,
   onCameraPreviewTouch: () -> Unit,
   overlayContent: @Composable BoxScope.(ARMarkerRenderer) -> Unit = {},
@@ -35,7 +35,7 @@ fun CameraContent(
         enabled = previewEnabled,
         blurred = previewBlurred,
         location = location,
-        markers = markers,
+        places = places,
         blurredRectFs = blurredRectFs,
         onCameraPreviewTouch = onCameraPreviewTouch,
         overlayContent = overlayContent,

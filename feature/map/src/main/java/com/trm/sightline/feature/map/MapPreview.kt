@@ -11,7 +11,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import com.trm.sightline.core.model.Marker
+import com.trm.sightline.core.model.Place
 import kotlinx.serialization.json.JsonPrimitive
 import org.maplibre.compose.expressions.dsl.asNumber
 import org.maplibre.compose.expressions.dsl.asString
@@ -38,7 +38,7 @@ import org.maplibre.spatialk.geojson.Point
 import org.maplibre.spatialk.geojson.Position
 
 @Composable
-fun MapPreview(markers: List<Marker>, modifier: Modifier = Modifier) {
+fun MapPreview(places: List<Place>, modifier: Modifier = Modifier) {
   MaplibreMap(
     modifier = modifier,
     baseStyle =
@@ -47,14 +47,14 @@ fun MapPreview(markers: List<Marker>, modifier: Modifier = Modifier) {
       ),
     options = MapOptions(ornamentOptions = OrnamentOptions.AllDisabled),
   ) {
-    if (markers.isEmpty()) return@MaplibreMap
+    if (places.isEmpty()) return@MaplibreMap
 
     val source =
       rememberGeoJsonSource(
         GeoJsonData.Features(
-          remember(markers) {
+          remember(places) {
             FeatureCollection(
-              markers.map {
+              places.map {
                 Feature(
                   id = JsonPrimitive(it.id.toString()),
                   geometry = Point(Position(longitude = it.longitude, latitude = it.latitude)),

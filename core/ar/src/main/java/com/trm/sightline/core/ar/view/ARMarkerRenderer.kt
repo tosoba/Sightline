@@ -29,7 +29,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.util.Objects
 import java.util.TreeMap
-import java.util.UUID
 
 class ARMarkerRenderer(private val context: Context) {
   private val markerPaddingPx: Float = context.dpToPx(MARKER_PADDING_DP)
@@ -67,7 +66,7 @@ class ARMarkerRenderer(private val context: Context) {
   private var maxPage: Int = 0
 
   private var firstFrame: Boolean = true
-  private var lastDrawnMarkerIds = HashSet<UUID>()
+  private var lastDrawnMarkerIds = HashSet<Long>()
 
   private val _markersPagingState = MutableStateFlow(MarkersPagingState(currentPage, maxPage))
   val markersPagingState: StateFlow<MarkersPagingState> = _markersPagingState.asStateFlow()
@@ -78,7 +77,7 @@ class ARMarkerRenderer(private val context: Context) {
   var disabled: Boolean = false
     @MainThread set
 
-  private val pagedMarkers = HashMap<UUID, PagedMarker>()
+  private val pagedMarkers = HashMap<Long, PagedMarker>()
   private val pagedMarkerPositions = TreeMap<Float, MutableSet<PagedYPosition>>()
 
   private val numberOfRows: Int
@@ -138,12 +137,12 @@ class ARMarkerRenderer(private val context: Context) {
 
     pagedMarkerPositions.clear()
     val drawnRects = mutableListOf<RoundedRectF>()
-    val drawnMarkerIds = HashSet<UUID>()
+    val drawnMarkerIds = HashSet<Long>()
     var maxPageThisFrame = 0
     var currentPageAfterScreenRotation = Int.MAX_VALUE
 
     fun drawMarker(marker: ARMarker, lastDrawn: Boolean) {
-      val pagedMarker = pagedMarkers[marker.wrapped.id] ?: return
+      val pagedMarker = pagedMarkers[marker.place.id] ?: return
 
       val pagedPosition =
         pagedPositionOf(
@@ -155,14 +154,14 @@ class ARMarkerRenderer(private val context: Context) {
       pagedMarker.position?.page?.let { if (it > maxPageThisFrame) maxPageThisFrame = it }
       if (
         firstFrame &&
-          lastDrawnMarkerIds.contains(marker.wrapped.id) &&
+          lastDrawnMarkerIds.contains(marker.place.id) &&
           pagedPosition.page < currentPageAfterScreenRotation
       ) {
         currentPageAfterScreenRotation = pagedPosition.page
       }
       if (pagedMarker.position?.page != currentPage) return
 
-      drawnMarkerIds.add(marker.wrapped.id)
+      drawnMarkerIds.add(marker.place.id)
 
       val markerRectF = marker.rectF
       val canvasRectF = RectF(0f, 0f, canvas.width.toFloat(), canvas.height.toFloat())
@@ -178,7 +177,7 @@ class ARMarkerRenderer(private val context: Context) {
 
     val (lastDrawnMarkers, newlyAppearedMarkers) =
       markers.partition {
-        lastDrawnMarkerIds.contains(it.wrapped.id) && pagedMarkers[it.wrapped.id]?.position != null
+        lastDrawnMarkerIds.contains(it.place.id) && pagedMarkers[it.place.id]?.position != null
       }
     lastDrawnMarkers.forEach { drawMarker(it, lastDrawn = true) }
     newlyAppearedMarkers.forEach { drawMarker(it, lastDrawn = false) }
@@ -193,40 +192,31 @@ class ARMarkerRenderer(private val context: Context) {
     firstFrame = false
   }
 
-  internal fun onSaveInstanceState(): Bundle {
-    val bits = LongArray(lastDrawnMarkerIds.size * 2)
-    var i = 0
-    for (uuid in lastDrawnMarkerIds) {
-      bits[i++] = uuid.mostSignificantBits
-      bits[i++] = uuid.leastSignificantBits
+  internal fun onSaveInstanceState(): Bundle =
+    Bundle().apply {
+      putLongArray(SavedStateKeys.LAST_DRAWN_MARKER_IDS_BITS.name, lastDrawnMarkerIds.toLongArray())
     }
-    return Bundle().apply { putLongArray(SavedStateKeys.LAST_DRAWN_MARKER_IDS_BITS.name, bits) }
-  }
 
   internal fun onRestoreInstanceState(bundle: Bundle?) {
-    val bits = bundle?.getLongArray(SavedStateKeys.LAST_DRAWN_MARKER_IDS_BITS.name) ?: return
-    val ids = HashSet<UUID>(bits.size / 2)
-    for (i in 0 until bits.size step 2) {
-      ids.add(UUID(bits[i], bits[i + 1]))
-    }
-    lastDrawnMarkerIds = ids
+    lastDrawnMarkerIds =
+      bundle?.getLongArray(SavedStateKeys.LAST_DRAWN_MARKER_IDS_BITS.name)?.toHashSet() ?: return
   }
 
   @MainThread
   internal fun setMarkers(markers: Collection<ARMarker>) {
     if (
-      pagedMarkers.keys.containsAll(markers.map { it.wrapped.id }) &&
+      pagedMarkers.keys.containsAll(markers.map { it.place.id }) &&
         pagedMarkers.size == markers.size
     ) {
       return
     }
     pagedMarkers.clear()
-    markers.forEach { marker -> pagedMarkers[marker.wrapped.id] = PagedMarker(marker) }
+    markers.forEach { marker -> pagedMarkers[marker.place.id] = PagedMarker(marker) }
     currentPage = 0
   }
 
   internal fun isOnCurrentPage(marker: ARMarker): Boolean =
-    pagedMarkers[marker.wrapped.id]?.position?.page == currentPage
+    pagedMarkers[marker.place.id]?.position?.page == currentPage
 
   private fun pagedPositionOf(
     pagedMarker: PagedMarker,
@@ -273,7 +263,7 @@ class ARMarkerRenderer(private val context: Context) {
 
   private fun Canvas.drawTitleText(marker: ARMarker, rectF: RectF) {
     drawMultilineText(
-      text = marker.wrapped.name,
+      text = marker.place.name,
       textPaint = titleTextPaint,
       width = (rectF.width() - MARKER_PADDING_DP * 2 - ELLIPSIS_WIDTH_PX).toInt(),
       x = marker.x - markerWidthPx / 2 + markerPaddingPx,
