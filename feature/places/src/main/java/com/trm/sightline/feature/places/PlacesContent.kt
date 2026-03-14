@@ -8,11 +8,10 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Apps
-import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Hotel
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -60,22 +59,16 @@ fun PlacesContent(state: PlacesState, modifier: Modifier = Modifier) {
     Spacer(modifier = Modifier.height(16.dp))
 
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-      PlaceCategoryToggleButton(
-        label = "All",
-        icon = Icons.Default.Apps,
-        isSelected = state.isAllSelected,
-        onClick = state::toggleAll,
-      )
-
       state.categories.forEach { category ->
         PlaceCategoryToggleButton(
           label = category,
           icon =
             when (category) {
               "Attractions" -> Icons.Default.Place
+              "Food" -> Icons.Default.Restaurant
               "Accommodation" -> Icons.Default.Hotel
               "Stores" -> Icons.Default.Storefront
-              else -> Icons.Default.Category
+              else -> throw IllegalStateException()
             },
           isSelected = category in state.selectedCategories,
           onClick = { state.toggleCategory(category) },

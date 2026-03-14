@@ -16,20 +16,14 @@ class PlacesState(
   userLocation: Boolean = false,
   selectedCategories: List<String> = emptyList(),
 ) {
-  var location by mutableStateOf(location)
-  var userLocation by mutableStateOf(userLocation)
-  val selectedCategories = mutableStateSetOf(*selectedCategories.toTypedArray())
+  internal var location by mutableStateOf(location)
+  internal var userLocation by mutableStateOf(userLocation)
+  internal val selectedCategories = mutableStateSetOf(*selectedCategories.toTypedArray())
 
-  val categories = listOf("Attractions", "Accommodation", "Stores")
-  val isAllSelected: Boolean
-    get() = selectedCategories.size == categories.size
+  internal val categories = listOf("Attractions", "Food", "Accommodation", "Stores")
 
-  fun toggleCategory(category: String) {
+  internal fun toggleCategory(category: String) {
     if (!selectedCategories.remove(category)) selectedCategories.add(category)
-  }
-
-  fun toggleAll() {
-    if (isAllSelected) selectedCategories.clear() else selectedCategories.addAll(categories)
   }
 
   companion object {
