@@ -48,6 +48,7 @@ junit = { group = "junit", name = "junit", version.ref = "junit" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
 kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }
+kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
 maplibre-compose = { module = "org.maplibre.compose:maplibre-compose", version.ref = "mapLibre" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 moshi = { group = "com.squareup.moshi", name = "moshi", version.ref = "moshi" }
