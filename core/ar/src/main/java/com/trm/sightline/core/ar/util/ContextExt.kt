@@ -45,6 +45,9 @@ val Context.rootWindowInsets: WindowInsetsCompat
 val Context.isCompactHeight: Boolean
   get() = resources.displayMetrics.run { heightPixels / density < 480f }
 
+val Context.isCompactWidth: Boolean
+  get() = resources.displayMetrics.run { widthPixels / density < 600f }
+
 fun Context.dpToPx(value: Float): Float =
   TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, value, resources.displayMetrics)
 

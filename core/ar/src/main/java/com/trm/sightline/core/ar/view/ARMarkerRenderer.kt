@@ -20,6 +20,7 @@ import com.trm.sightline.core.ar.util.cameraPreviewVerticalPaddingPx
 import com.trm.sightline.core.ar.util.dpToPx
 import com.trm.sightline.core.ar.util.drawMultilineText
 import com.trm.sightline.core.ar.util.isCompactHeight
+import com.trm.sightline.core.ar.util.isCompactWidth
 import com.trm.sightline.core.ar.util.navigationBarsBottomInsetPx
 import com.trm.sightline.core.ar.util.preciseFormattedDistance
 import com.trm.sightline.core.ar.util.spToPx
@@ -49,8 +50,8 @@ class ARMarkerRenderer(private val context: Context) {
         else context.bottomSheetHeightPx
     markerHeightPx = cameraViewHeight / numberOfRows - MARKER_VERTICAL_SPACING_PX
     val markerWidthDivisor =
-      if (context.isCompactHeight) MARKER_WIDTH_DIVISOR_COMPACT_HEIGHT
-      else MARKER_WIDTH_DIVISOR_NON_COMPACT_HEIGHT
+      if (context.isCompactWidth) MARKER_WIDTH_DIVISOR_COMPACT_WIDTH
+      else MARKER_WIDTH_DIVISOR_NON_COMPACT_WIDTH
     markerWidthPx = (displayMetrics.widthPixels / markerWidthDivisor).toFloat()
   }
 
@@ -322,8 +323,8 @@ class ARMarkerRenderer(private val context: Context) {
     private const val MARKER_VERTICAL_SPACING_PX = 50f
     private const val NUMBER_OF_ROWS_NON_COMPACT_HEIGHT = 5
     private const val NUMBER_OF_ROWS_COMPACT_HEIGHT = 2
-    private const val MARKER_WIDTH_DIVISOR_NON_COMPACT_HEIGHT = 2
-    private const val MARKER_WIDTH_DIVISOR_COMPACT_HEIGHT = 4
+    private const val MARKER_WIDTH_DIVISOR_COMPACT_WIDTH = 2
+    private const val MARKER_WIDTH_DIVISOR_NON_COMPACT_WIDTH = 4
     private const val MARKER_PADDING_DP = 16f
     private const val ELLIPSIS_WIDTH_PX = 10f
     private const val MARKER_TITLE_TEXT_SIZE_SP = 16f
