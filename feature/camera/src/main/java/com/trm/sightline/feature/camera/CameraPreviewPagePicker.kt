@@ -1,33 +1,23 @@
 package com.trm.sightline.feature.camera
 
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.VerticalFloatingToolbar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun CameraPreviewPagePicker(
   currentPage: Int,
@@ -35,62 +25,50 @@ fun CameraPreviewPagePicker(
   modifier: Modifier = Modifier,
   onPageSelected: (Int) -> Unit,
 ) {
-  val visibleIndices =
+  VerticalFloatingToolbar(expanded = true, modifier = modifier) {
     remember(currentPage, totalPages) {
-      when {
-        totalPages <= 3 -> (0 until totalPages).toList()
-        currentPage == 0 -> listOf(0, 1, 2)
-        currentPage >= totalPages - 1 -> listOf(totalPages - 3, totalPages - 2, totalPages - 1)
-        else -> listOf(currentPage - 1, currentPage, currentPage + 1)
-      }
-    }
-
-  Surface(shape = CircleShape, color = Color.Black.copy(alpha = 0.5f), modifier = modifier) {
-    Box(contentAlignment = Alignment.CenterStart) {
-      val selectedPosition = visibleIndices.indexOf(currentPage)
-      val thumbOffset by
-        animateFloatAsState(
-          targetValue = selectedPosition * 48f,
-          animationSpec = spring(stiffness = Spring.StiffnessLow),
-        )
-
-      Box(
-        modifier =
-          Modifier.offset { IntOffset(x = thumbOffset.dp.roundToPx(), y = 0) }
-            .size(48.dp)
-            .padding(4.dp)
-            .background(Color.White, CircleShape)
-      )
-
-      Row(verticalAlignment = Alignment.CenterVertically) {
-        visibleIndices.forEach { index ->
-          Box(
-            modifier =
-              Modifier.size(48.dp).clickable(
-                interactionSource = remember(::MutableInteractionSource),
-                indication = null,
-              ) {
-                onPageSelected(index)
-              },
-            contentAlignment = Alignment.Center,
-          ) {
-            Text(
-              text = (index + 1).toString(),
-              color = if (currentPage == index) Color.Black else Color.White,
-              style = MaterialTheme.typography.labelLarge,
-              fontWeight = FontWeight.Bold,
-            )
-          }
+        when {
+          totalPages <= 3 -> (0 until totalPages).toList()
+          currentPage == 0 -> listOf(0, 1, 2)
+          currentPage >= totalPages - 1 -> listOf(totalPages - 3, totalPages - 2, totalPages - 1)
+          else -> listOf(currentPage - 1, currentPage, currentPage + 1)
         }
       }
-    }
+      .forEach { index ->
+        CameraPreviewPagePickerItem(
+          pageNumber = index + 1,
+          isSelected = currentPage == index,
+          onClick = { onPageSelected(index) },
+        )
+      }
+  }
+}
+
+@Composable
+private fun CameraPreviewPagePickerItem(pageNumber: Int, isSelected: Boolean, onClick: () -> Unit) {
+  Surface(
+    selected = isSelected,
+    onClick = onClick,
+    shape = CircleShape,
+    color = if (isSelected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent,
+    contentColor =
+      if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer
+      else MaterialTheme.colorScheme.onSurfaceVariant,
+  ) {
+    Text(
+      text = pageNumber.toString(),
+      style = MaterialTheme.typography.labelLarge,
+      fontWeight = FontWeight.Bold,
+      modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+    )
   }
 }
 
 @Preview
 @Composable
 private fun CameraPreviewPagePickerPreview(
-  @PreviewParameter(ARPageControlProvider::class) params: CameraPreviewPagePickerParams
+  @PreviewParameter(CameraPreviewPagePickerParamsProvider::class)
+  params: CameraPreviewPagePickerParams
 ) {
   CameraPreviewPagePicker(
     currentPage = params.currentPage,
@@ -101,7 +79,8 @@ private fun CameraPreviewPagePickerPreview(
 
 private data class CameraPreviewPagePickerParams(val currentPage: Int, val totalPages: Int)
 
-private class ARPageControlProvider : PreviewParameterProvider<CameraPreviewPagePickerParams> {
+private class CameraPreviewPagePickerParamsProvider :
+  PreviewParameterProvider<CameraPreviewPagePickerParams> {
   override val values =
     sequenceOf(
       CameraPreviewPagePickerParams(currentPage = 0, totalPages = 2),
