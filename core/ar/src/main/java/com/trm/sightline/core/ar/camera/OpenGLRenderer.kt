@@ -1,7 +1,6 @@
 package com.trm.sightline.core.ar.camera
 
 import android.annotation.SuppressLint
-import android.graphics.RectF
 import android.graphics.SurfaceTexture
 import android.opengl.Matrix
 import android.os.Process
@@ -18,7 +17,6 @@ import androidx.core.content.ContextCompat
 import com.google.common.util.concurrent.ListenableFuture
 import com.trm.sightline.core.ar.camera.surface.SurfaceViewRenderSurface
 import com.trm.sightline.core.ar.camera.surface.TextureViewRenderSurface
-import com.trm.sightline.core.ar.model.ARConstants.MARKER_RECT_F_CORNER_RADIUS
 import com.trm.sightline.core.ar.model.RoundedRectF
 import com.trm.sightline.core.ar.util.shouldUseTextureView
 import kotlinx.coroutines.channels.BufferOverflow
@@ -78,7 +76,7 @@ class OpenGLRenderer {
   val oglFatalErrorsFlow: Flow<Unit>
     get() = oglFatalErrorsSharedFlow
 
-  private var markerRectFs: List<RoundedRectF> = emptyList()
+  var markerRectFs: List<RoundedRectF> = emptyList()
   var otherRectFs: List<RoundedRectF> = emptyList()
 
   private val rectFsCoordinates: FloatArray
@@ -101,10 +99,6 @@ class OpenGLRenderer {
       fillCoordinatesOf(markerRectFs)
       return coordinates
     }
-
-  fun setMarkerRectFs(rectFs: Iterable<RectF>) {
-    markerRectFs = rectFs.map { RoundedRectF(it, MARKER_RECT_F_CORNER_RADIUS) }
-  }
 
   @MainThread
   fun setBlurEnabled(enabled: Boolean, animated: Boolean) {

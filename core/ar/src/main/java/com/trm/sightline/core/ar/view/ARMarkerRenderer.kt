@@ -12,9 +12,9 @@ import android.text.TextPaint
 import android.text.TextUtils
 import androidx.annotation.MainThread
 import androidx.core.os.bundleOf
-import com.trm.sightline.core.ar.model.ARConstants.MARKER_RECT_F_CORNER_RADIUS
 import com.trm.sightline.core.ar.model.ARMarker
 import com.trm.sightline.core.ar.model.MarkersPagingState
+import com.trm.sightline.core.ar.model.RoundedRectF
 import com.trm.sightline.core.ar.util.bottomSheetHeightPx
 import com.trm.sightline.core.ar.util.cameraPreviewVerticalPaddingPx
 import com.trm.sightline.core.ar.util.dpToPx
@@ -72,8 +72,8 @@ class ARMarkerRenderer(private val context: Context) {
   private val _markersPagingState = MutableStateFlow(MarkersPagingState(currentPage, maxPage))
   val markersPagingState: StateFlow<MarkersPagingState> = _markersPagingState.asStateFlow()
 
-  private val _drawnMarkerRectFs = MutableStateFlow<List<RectF>>(emptyList())
-  val drawnMarkerRectFs: StateFlow<List<RectF>> = _drawnMarkerRectFs.asStateFlow()
+  private val _drawnMarkerRectFs = MutableStateFlow<List<RoundedRectF>>(emptyList())
+  val drawnMarkerRectFs: StateFlow<List<RoundedRectF>> = _drawnMarkerRectFs.asStateFlow()
 
   var disabled: Boolean = false
     @MainThread set
@@ -137,7 +137,7 @@ class ARMarkerRenderer(private val context: Context) {
     if (disabled) return
 
     pagedMarkerPositions.clear()
-    val drawnRects = mutableListOf<RectF>()
+    val drawnRects = mutableListOf<RoundedRectF>()
     val drawnMarkerIds = HashSet<UUID>()
     var maxPageThisFrame = 0
     var currentPageAfterScreenRotation = Int.MAX_VALUE
@@ -168,16 +168,12 @@ class ARMarkerRenderer(private val context: Context) {
       val canvasRectF = RectF(0f, 0f, canvas.width.toFloat(), canvas.height.toFloat())
       if (!RectF.intersects(canvasRectF, markerRectF)) return
 
-      canvas.drawRoundRect(
-        markerRectF,
-        MARKER_RECT_F_CORNER_RADIUS,
-        MARKER_RECT_F_CORNER_RADIUS,
-        borderPaint,
-      )
+      val cornerRadiusPx = context.dpToPx(MARKER_RECT_F_CORNER_RADIUS_DP)
+      canvas.drawRoundRect(markerRectF, cornerRadiusPx, cornerRadiusPx, borderPaint)
       canvas.drawTitleText(marker, markerRectF)
       canvas.drawDistanceText(marker, markerRectF)
 
-      drawnRects.add(markerRectF)
+      drawnRects.add(RoundedRectF(markerRectF, cornerRadiusPx))
     }
 
     val (lastDrawnMarkers, newlyAppearedMarkers) =
@@ -332,5 +328,6 @@ class ARMarkerRenderer(private val context: Context) {
     private const val ELLIPSIS_WIDTH_PX = 10f
     private const val MARKER_TITLE_TEXT_SIZE_SP = 16f
     private const val MARKER_DISTANCE_TEXT_SIZE_SP = 14f
+    private const val MARKER_RECT_F_CORNER_RADIUS_DP = 16f
   }
 }

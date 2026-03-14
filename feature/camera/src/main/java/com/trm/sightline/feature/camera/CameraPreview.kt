@@ -114,7 +114,7 @@ fun CameraPreview(
       val openGLRenderer = rememberOpenGLRenderer(preview.value, viewStub.value)
       LaunchedEffect(lifecycleOwner) {
         lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-          arView.markerRenderer.drawnMarkerRectFs.collect(openGLRenderer::setMarkerRectFs)
+          arView.markerRenderer.drawnMarkerRectFs.collect { openGLRenderer.markerRectFs = it }
         }
       }
       LaunchedEffect(blurredRectFs) { openGLRenderer.otherRectFs = blurredRectFs }
