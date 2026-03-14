@@ -82,8 +82,8 @@ class MainActivity : ComponentActivity() {
 
         val pagerState = rememberPagerState(pageCount = MainPage.entries::size)
         val selectedPage = MainPage.entries[pagerState.currentPage]
-        var bottomControlsVisible by remember { mutableStateOf(true) }
-        LaunchedEffect(pagerState.currentPage) { bottomControlsVisible = true }
+        var toolbarsVisible by remember { mutableStateOf(true) }
+        LaunchedEffect(pagerState.currentPage) { toolbarsVisible = true }
 
         val isCompactHeight =
           calculateWindowSizeClass(this).heightSizeClass == WindowHeightSizeClass.Compact
@@ -196,13 +196,13 @@ class MainActivity : ComponentActivity() {
                       markers = markers,
                       isCompactHeight = isCompactHeight,
                       cameraPreviewBlurred = !isCompactHeight && expandedProgress != 0f,
-                      cameraPreviewOverlayVisible = bottomControlsVisible,
-                      onCameraPreviewTouch = { bottomControlsVisible = !bottomControlsVisible },
+                      cameraPreviewOverlayVisible = toolbarsVisible,
+                      onCameraPreviewTouch = { toolbarsVisible = !toolbarsVisible },
                     )
 
                     MainPagerToolbar(
                       visible =
-                        bottomControlsVisible &&
+                        toolbarsVisible &&
                           (isCompactHeight || sheetState.targetValue != SheetValue.Expanded),
                       isCompactHeight = isCompactHeight,
                       selectedPage = selectedPage,
