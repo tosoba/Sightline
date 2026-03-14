@@ -34,7 +34,7 @@ import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Category
@@ -47,8 +47,8 @@ import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FilledTonalIconToggleButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SheetValue
@@ -284,12 +284,13 @@ fun PlacesSheetContent(state: PlacesState, modifier: Modifier = Modifier) {
         modifier = Modifier.weight(1f),
         placeholder = { Text("Current location") },
         leadingIcon = { Icon(imageVector = Icons.Default.Search, contentDescription = null) },
-        shape = CircleShape,
+        singleLine = true,
+        shape = RoundedCornerShape(16.dp),
       )
 
-      Spacer(modifier = Modifier.width(12.dp))
+      Spacer(modifier = Modifier.width(16.dp))
 
-      IconToggleButton(
+      FilledTonalIconToggleButton(
         checked = state.userLocation,
         onCheckedChange = { state.userLocation = it },
         modifier = Modifier.fillMaxHeight().aspectRatio(1f),
@@ -300,7 +301,7 @@ fun PlacesSheetContent(state: PlacesState, modifier: Modifier = Modifier) {
 
     Spacer(modifier = Modifier.height(16.dp))
 
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
       PlaceCategoryToggleButton(
         label = "All",
         icon = Icons.Default.Apps,
@@ -379,7 +380,7 @@ fun RowScope.PlaceCategoryToggleButton(
   ToggleButton(
     checked = isSelected,
     onCheckedChange = { onClick() },
-    modifier = Modifier.weight(1f).padding(horizontal = 4.dp),
+    modifier = Modifier.weight(1f),
   ) {
     Column(
       horizontalAlignment = Alignment.CenterHorizontally,
