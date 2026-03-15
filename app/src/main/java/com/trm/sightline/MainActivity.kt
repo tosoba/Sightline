@@ -131,7 +131,6 @@ class MainActivity : ComponentActivity() {
             PlacesContent(
               state = placesSheetState,
               selectedCategories = viewModel.places.keys,
-              onTogglePlaceCategory = viewModel::onTogglePlaceCategory,
               modifier =
                 if (isCompactHeight) {
                   Modifier.width(sideSheetWidthDp.dp)
@@ -150,6 +149,7 @@ class MainActivity : ComponentActivity() {
                           with(density) { sheetPeekHeight.toPx() }
                     }
                 },
+              onTogglePlaceCategory = viewModel::onTogglePlaceCategory,
             )
           }
 

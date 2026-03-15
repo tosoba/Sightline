@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Hotel
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Place
@@ -17,12 +18,19 @@ import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalIconToggleButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
 import com.trm.sightline.core.model.PlaceCategory
 
@@ -31,9 +39,12 @@ import com.trm.sightline.core.model.PlaceCategory
 fun PlacesContent(
   state: PlacesState,
   selectedCategories: Set<PlaceCategory>,
-  onTogglePlaceCategory: (PlaceCategory) -> Unit,
   modifier: Modifier = Modifier,
+  onTogglePlaceCategory: (PlaceCategory) -> Unit,
 ) {
+  val focusManager = LocalFocusManager.current
+  var isFocused by remember { mutableStateOf(false) }
+
   Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
     SearchBar(
       expanded = false,
@@ -49,7 +60,16 @@ fun PlacesContent(
           enabled = !state.userLocation,
           onExpandedChange = {},
           placeholder = { Text("Current location") },
-          leadingIcon = { Icon(imageVector = Icons.Default.Search, contentDescription = null) },
+          modifier = Modifier.onFocusChanged { isFocused = it.isFocused },
+          leadingIcon = {
+            if (isFocused) {
+              IconButton(onClick = focusManager::clearFocus) {
+                Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+              }
+            } else {
+              Icon(imageVector = Icons.Default.Search, contentDescription = null)
+            }
+          },
           trailingIcon = {
             FilledTonalIconToggleButton(
               checked = state.userLocation,
