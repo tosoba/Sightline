@@ -24,11 +24,11 @@ import com.trm.sightline.core.ar.util.navigationBarsBottomInsetPx
 import com.trm.sightline.core.ar.util.preciseFormattedDistance
 import com.trm.sightline.core.ar.util.spToPx
 import com.trm.sightline.core.ar.util.statusBarTopInsetPx
+import java.util.Objects
+import java.util.TreeMap
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import java.util.Objects
-import java.util.TreeMap
 
 class ARMarkerRenderer(private val context: Context) {
   private val markerPaddingPx: Float = context.dpToPx(MARKER_PADDING_DP)
@@ -222,20 +222,19 @@ class ARMarkerRenderer(private val context: Context) {
     pagedMarker: PagedMarker,
     requireAlreadyCalculated: Boolean,
   ): PagedYPosition {
-    if (requireAlreadyCalculated) {
-      return checkNotNull(pagedMarker.position) { "Last drawn marker's paged position is null." }
-    }
-
     val takenPositions =
       pagedMarkerPositions
-        .subMap(
-          pagedMarker.marker.x - markerWidthPx * MARKER_WIDTH_TAKEN_X_MULTIPLIER,
-          pagedMarker.marker.x + markerWidthPx * MARKER_WIDTH_TAKEN_X_MULTIPLIER,
-        )
+        .subMap(pagedMarker.marker.x - markerWidthPx, pagedMarker.marker.x + markerWidthPx)
         .values
         .flatten()
         .toSet()
-    pagedMarker.position?.let { if (!takenPositions.contains(it)) return it }
+    if (requireAlreadyCalculated) {
+      val existing =
+        checkNotNull(pagedMarker.position) { "Last drawn marker's paged position is null." }
+      if (!takenPositions.contains(existing)) return existing
+    } else {
+      pagedMarker.position?.let { if (!takenPositions.contains(it)) return it }
+    }
 
     val baseY =
       context.statusBarTopInsetPx + markerHeightPx / 2f + context.cameraPreviewVerticalPaddingPx
@@ -305,7 +304,6 @@ class ARMarkerRenderer(private val context: Context) {
   }
 
   companion object {
-    private const val MARKER_WIDTH_TAKEN_X_MULTIPLIER = 2.75f
     private const val MARKER_VERTICAL_SPACING_PX = 50f
     private const val NUMBER_OF_ROWS_NON_COMPACT_HEIGHT = 5
     private const val NUMBER_OF_ROWS_COMPACT_HEIGHT = 2
