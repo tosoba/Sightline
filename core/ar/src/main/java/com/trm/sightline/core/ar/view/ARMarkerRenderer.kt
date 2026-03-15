@@ -24,11 +24,13 @@ import com.trm.sightline.core.ar.util.navigationBarsBottomInsetPx
 import com.trm.sightline.core.ar.util.preciseFormattedDistance
 import com.trm.sightline.core.ar.util.spToPx
 import com.trm.sightline.core.ar.util.statusBarTopInsetPx
-import java.util.Objects
-import java.util.TreeMap
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.util.Objects
+import kotlin.math.abs
+import kotlin.math.atan
+import kotlin.math.cos
 
 class ARMarkerRenderer(private val context: Context) {
   private val markerPaddingPx: Float = context.dpToPx(MARKER_PADDING_DP)
@@ -37,6 +39,17 @@ class ARMarkerRenderer(private val context: Context) {
 
   internal val markerHeightPx: Float
   internal val markerWidthPx: Float
+
+  // The overlap guard is a fraction of markerWidthPx so it scales correctly across
+  // both screen sizes and compact/non-compact width configurations.
+  // Total effective width used for the angular threshold:
+  //   markerWidthPx * (1 + MARKER_OVERLAP_GUARD_FRACTION)
+  //
+  // At 0.5 this gives a 50% extra margin — enough to absorb roll (cos(30°)=0.866),
+  // pitch-induced Y→X cross-terms (vpY·sin(roll) in convert3dTo2d), and
+  // floating-point projection drift, without being so large that it forces
+  // excessive markers onto page 2+.
+  private val overlapGuardPx: Float
 
   init {
     val displayMetrics = context.resources.displayMetrics
@@ -51,10 +64,20 @@ class ARMarkerRenderer(private val context: Context) {
       if (context.isCompactWidth) MARKER_WIDTH_DIVISOR_COMPACT_WIDTH
       else MARKER_WIDTH_DIVISOR_NON_COMPACT_WIDTH
     markerWidthPx = (displayMetrics.widthPixels / markerWidthDivisor).toFloat()
+    overlapGuardPx = markerWidthPx * MARKER_OVERLAP_GUARD_FRACTION
   }
 
   var povLocation: Location? = null
-    @MainThread set
+    @MainThread
+    set(value) {
+      val previous = field
+      field = value
+      if (value != null) {
+        val shouldReassign =
+          previous == null || previous.distanceTo(value) > LOCATION_REASSIGN_THRESHOLD_METERS
+        if (shouldReassign) reassignSlots(value)
+      }
+    }
 
   var currentPage: Int = 0
     @MainThread
@@ -78,7 +101,25 @@ class ARMarkerRenderer(private val context: Context) {
     @MainThread set
 
   private val pagedMarkers = HashMap<Long, PagedMarker>()
-  private val pagedMarkerPositions = TreeMap<Float, MutableSet<PagedYPosition>>()
+
+  private var lastCanvasWidth: Int = 0
+  private var lastCanvasHeight: Int = 0
+
+  // Computed from actual canvas dimensions in reassignSlots.
+  //
+  // Full derivation:
+  //   In convert3dTo2d, the screen X separation for two markers at the same row Y is:
+  //     ΔscreenX = ΔvpX · cos(roll) - ΔvpY · sin(roll)
+  //   where ΔvpX = 2·tan(Δβ/2)·screenRatioX is minimised when the camera azimuth
+  //   bisects the two bearings, and ΔvpY is the viewport Y difference (non-zero
+  //   when the two places are at different elevations or pitches).
+  //
+  //   Worst case: roll at MAX_EXPECTED_ROLL_RADIANS shrinks ΔvpX contribution by
+  //   cos(maxRoll) and adds a ΔvpY·sin(roll) cross-term pulling markers together.
+  //   Both effects are absorbed by using overlapGuardPx = markerWidthPx * 0.5:
+  //
+  //     Δβ ≥ 2·atan((markerWidthPx + overlapGuardPx) / (2·screenRatioX·cos(maxRoll)))
+  private var markerAngularWidthDeg: Double = 0.0
 
   private val numberOfRows: Int
     get() =
@@ -132,40 +173,94 @@ class ARMarkerRenderer(private val context: Context) {
         y + markerHeightPx / 2,
       )
 
+  private fun reassignSlots(
+    povLocation: Location,
+    canvasWidth: Int = lastCanvasWidth,
+    canvasHeight: Int = lastCanvasHeight,
+  ) {
+    if (pagedMarkers.isEmpty()) return
+    if (canvasWidth == 0 || canvasHeight == 0) return
+
+    // Mirrors Math3D's preDraw formula exactly: screenRatio.x = (view.width + view.height) / 2
+    val screenRatioX = (canvasWidth + canvasHeight) / 2.0
+    // Divide by cos(maxRoll) so the threshold holds at all device tilts up to
+    // MAX_EXPECTED_ROLL_RADIANS, where cos(roll) shrinks the on-screen X separation.
+    val effectiveScreenRatioX = screenRatioX * cos(MAX_EXPECTED_ROLL_RADIANS)
+
+    markerAngularWidthDeg =
+      Math.toDegrees(2.0 * atan((markerWidthPx + overlapGuardPx) / (2.0 * effectiveScreenRatioX)))
+
+    val baseY =
+      context.statusBarTopInsetPx + markerHeightPx / 2f + context.cameraPreviewVerticalPaddingPx
+
+    // Closest markers win contested slots — natural UX priority.
+    val sorted = pagedMarkers.values.sortedBy { it.marker.distance }
+    val assigned = mutableListOf<Pair<Float, PagedYPosition>>()
+
+    sorted.forEach { pagedMarker ->
+      val bearing = normalizeBearing(povLocation.bearingTo(pagedMarker.marker.location))
+      pagedMarker.bearing = bearing
+
+      val conflicting =
+        assigned
+          .filter { (b, _) -> angularDistanceDeg(bearing, b) < markerAngularWidthDeg }
+          .map { (_, pos) -> pos }
+          .toSet()
+
+      val position = PagedYPosition(baseY, 0)
+      var row = 0
+      while (conflicting.contains(position)) {
+        position.y += markerHeightPx + MARKER_VERTICAL_SPACING_PX
+        ++row
+        if (row >= numberOfRows) {
+          row = 0
+          position.y = baseY
+          ++position.page
+        }
+      }
+      pagedMarker.position = position
+      assigned.add(Pair(bearing, position))
+    }
+  }
+
   internal fun draw(markers: List<ARMarker>, canvas: Canvas) {
     if (disabled) return
 
-    pagedMarkerPositions.clear()
+    if (canvas.width != lastCanvasWidth || canvas.height != lastCanvasHeight) {
+      lastCanvasWidth = canvas.width
+      lastCanvasHeight = canvas.height
+      povLocation?.let { reassignSlots(it, canvas.width, canvas.height) }
+    }
+
     val drawnRects = mutableListOf<RoundedRectF>()
-    val drawnMarkerIds = HashSet<Long>()
+    val renderedMarkerIds = HashSet<Long>()
     var maxPageThisFrame = 0
     var currentPageAfterScreenRotation = Int.MAX_VALUE
 
-    fun drawMarker(marker: ARMarker, lastDrawn: Boolean) {
-      val pagedMarker = pagedMarkers[marker.place.id] ?: return
+    markers.forEach { marker ->
+      val pagedMarker = pagedMarkers[marker.place.id] ?: return@forEach
+      val position = pagedMarker.position ?: return@forEach
 
-      val pagedPosition =
-        pagedPositionOf(
-          pagedMarker = pagedMarker,
-          requireAlreadyCalculated = lastDrawn && !firstFrame,
-        )
-      marker.y = pagedPosition.y
-      storeMarkerPosition(pagedMarker)
-      pagedMarker.position?.page?.let { if (it > maxPageThisFrame) maxPageThisFrame = it }
+      marker.y = position.y
+
+      if (position.page > maxPageThisFrame) maxPageThisFrame = position.page
+
       if (
         firstFrame &&
           lastDrawnMarkerIds.contains(marker.place.id) &&
-          pagedPosition.page < currentPageAfterScreenRotation
+          position.page < currentPageAfterScreenRotation
       ) {
-        currentPageAfterScreenRotation = pagedPosition.page
+        currentPageAfterScreenRotation = position.page
       }
-      if (pagedMarker.position?.page != currentPage) return
 
-      drawnMarkerIds.add(marker.place.id)
+      if (position.page != currentPage) return@forEach
+      if (!marker.isDrawn) return@forEach
 
       val markerRectF = marker.rectF
       val canvasRectF = RectF(0f, 0f, canvas.width.toFloat(), canvas.height.toFloat())
-      if (!RectF.intersects(canvasRectF, markerRectF)) return
+      if (!RectF.intersects(canvasRectF, markerRectF)) return@forEach
+
+      renderedMarkerIds.add(marker.place.id)
 
       val cornerRadiusPx = context.dpToPx(MARKER_RECT_F_CORNER_RADIUS_DP)
       canvas.drawRoundRect(markerRectF, cornerRadiusPx, cornerRadiusPx, borderPaint)
@@ -175,18 +270,14 @@ class ARMarkerRenderer(private val context: Context) {
       drawnRects.add(RoundedRectF(markerRectF, cornerRadiusPx))
     }
 
-    val (lastDrawnMarkers, newlyAppearedMarkers) =
-      markers.partition {
-        lastDrawnMarkerIds.contains(it.place.id) && pagedMarkers[it.place.id]?.position != null
-      }
-    lastDrawnMarkers.forEach { drawMarker(it, lastDrawn = true) }
-    newlyAppearedMarkers.forEach { drawMarker(it, lastDrawn = false) }
-
     maxPage = maxPageThisFrame
-    if (firstFrame) currentPage = currentPageAfterScreenRotation
+    if (firstFrame) {
+      currentPage =
+        if (currentPageAfterScreenRotation == Int.MAX_VALUE) 0 else currentPageAfterScreenRotation
+    }
     if (currentPage > maxPage) currentPage = maxPage
 
-    lastDrawnMarkerIds = drawnMarkerIds
+    lastDrawnMarkerIds = renderedMarkerIds
     _markersPagingState.value = MarkersPagingState(currentPage, maxPage)
     _drawnMarkerRectFs.value = drawnRects
     firstFrame = false
@@ -212,53 +303,19 @@ class ARMarkerRenderer(private val context: Context) {
     }
     pagedMarkers.clear()
     markers.forEach { marker -> pagedMarkers[marker.place.id] = PagedMarker(marker) }
+    povLocation?.let { reassignSlots(it) }
     currentPage = 0
   }
 
   internal fun isOnCurrentPage(marker: ARMarker): Boolean =
     pagedMarkers[marker.place.id]?.position?.page == currentPage
 
-  private fun pagedPositionOf(
-    pagedMarker: PagedMarker,
-    requireAlreadyCalculated: Boolean,
-  ): PagedYPosition {
-    val takenPositions =
-      pagedMarkerPositions
-        .subMap(pagedMarker.marker.x - markerWidthPx, pagedMarker.marker.x + markerWidthPx)
-        .values
-        .flatten()
-        .toSet()
-    if (requireAlreadyCalculated) {
-      val existing =
-        checkNotNull(pagedMarker.position) { "Last drawn marker's paged position is null." }
-      if (!takenPositions.contains(existing)) return existing
-    } else {
-      pagedMarker.position?.let { if (!takenPositions.contains(it)) return it }
-    }
-
-    val baseY =
-      context.statusBarTopInsetPx + markerHeightPx / 2f + context.cameraPreviewVerticalPaddingPx
-    val position = PagedYPosition(baseY, 0)
-    var row = 0
-    while (takenPositions.contains(position)) {
-      position.y += markerHeightPx + MARKER_VERTICAL_SPACING_PX
-      ++row
-      if (row >= numberOfRows) {
-        row = 0
-        position.y = baseY
-        ++position.page
-      }
-    }
-    pagedMarker.position = position
-    return position
+  private fun angularDistanceDeg(a: Float, b: Float): Double {
+    val diff = abs(a - b) % 360f
+    return (if (diff > 180f) 360f - diff else diff).toDouble()
   }
 
-  private fun storeMarkerPosition(marker: PagedMarker) {
-    val pagedPosition = checkNotNull(marker.position) { "Marker must have a PagedPosition." }
-    val existingMarkerSet = pagedMarkerPositions[marker.marker.x]
-    existingMarkerSet?.add(pagedPosition)
-      ?: run { pagedMarkerPositions[marker.marker.x] = mutableSetOf(pagedPosition) }
-  }
+  private fun normalizeBearing(bearing: Float): Float = (bearing + 360f) % 360f
 
   private fun Canvas.drawTitleText(marker: ARMarker, rectF: RectF) {
     drawMultilineText(
@@ -290,7 +347,11 @@ class ARMarkerRenderer(private val context: Context) {
     )
   }
 
-  private class PagedMarker(val marker: ARMarker, var position: PagedYPosition? = null) {
+  private class PagedMarker(
+    val marker: ARMarker,
+    var position: PagedYPosition? = null,
+    var bearing: Float = 0f,
+  ) {
     override fun equals(other: Any?): Boolean =
       this === other || (other is PagedMarker && other.marker == marker)
 
@@ -305,6 +366,28 @@ class ARMarkerRenderer(private val context: Context) {
 
   companion object {
     private const val MARKER_VERTICAL_SPACING_PX = 50f
+
+    // Extra width fraction added to markerWidthPx when computing the angular
+    // conflict threshold in reassignSlots. Sized relative to markerWidthPx so
+    // it scales correctly across screen sizes and compact/non-compact modes.
+    //
+    // This single value absorbs three sources of residual overlap that the pure
+    // geometric formula cannot capture:
+    //   1. cos(roll) shrinkage of on-screen X separation at device tilt
+    //      (already partially corrected by MAX_EXPECTED_ROLL_RADIANS, but not
+    //      fully for the vpY·sin(roll) cross-term)
+    //   2. Elevation differences between places producing a non-zero ΔvpY
+    //   3. Floating-point drift in the projection chain
+    //
+    // At 0.5 the effective threshold width is 1.5× markerWidthPx. Increase toward
+    // 0.75 if residual overlaps remain; decrease toward 0.25 if too many markers
+    // spill onto page 2+.
+    private const val MARKER_OVERLAP_GUARD_FRACTION = 0.5f
+
+    // Maximum device roll for which overlap-free rendering is guaranteed.
+    // cos(30°) ≈ 0.866 — covers typical portrait AR use with slight tilt.
+    private const val MAX_EXPECTED_ROLL_RADIANS = Math.PI / 6 // 30°
+
     private const val NUMBER_OF_ROWS_NON_COMPACT_HEIGHT = 5
     private const val NUMBER_OF_ROWS_COMPACT_HEIGHT = 2
     private const val MARKER_WIDTH_DIVISOR_COMPACT_WIDTH = 2
@@ -314,5 +397,6 @@ class ARMarkerRenderer(private val context: Context) {
     private const val MARKER_TITLE_TEXT_SIZE_SP = 16f
     private const val MARKER_DISTANCE_TEXT_SIZE_SP = 14f
     private const val MARKER_RECT_F_CORNER_RADIUS_DP = 16f
+    private const val LOCATION_REASSIGN_THRESHOLD_METERS = 10f
   }
 }

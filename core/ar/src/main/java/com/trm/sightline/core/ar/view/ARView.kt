@@ -78,9 +78,6 @@ class ARView : View {
   private val screenRot = Vector1()
   private val screenRotTrig = Trig1()
 
-  private val ARMarker.shouldBeDrawn: Boolean
-    get() = distance < maxRange && isDrawn
-
   constructor(context: Context) : super(context)
 
   constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)
@@ -100,7 +97,7 @@ class ARView : View {
     val povLocation = this.povLocation ?: return
     preDraw(povLocation)
     markers.forEach { marker -> calculateMarkerScreenPosition(marker) }
-    markerRenderer.draw(markers.filter { it.shouldBeDrawn }, canvas)
+    markerRenderer.draw(markers.filter { it.distance < maxRange }, canvas)
   }
 
   private fun preDraw(location: Location) {
@@ -134,7 +131,7 @@ class ARView : View {
     val drawn =
       Math3D.convert3dTo2d(relativeRotPos, screenSize, screenRatio, screenRotTrig, screenPos)
     // If drawn is false, the marker is behind us, so no need to paint
-    if (drawn) {
+    if (relativeRotPos.z > 0) {
       marker.x = screenPos.x.toFloat()
       marker.y = screenPos.y.toFloat()
     }
