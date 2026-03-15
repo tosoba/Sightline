@@ -19,7 +19,6 @@ import com.trm.sightline.core.ar.util.cameraPreviewVerticalPaddingPx
 import com.trm.sightline.core.ar.util.dpToPx
 import com.trm.sightline.core.ar.util.drawMultilineText
 import com.trm.sightline.core.ar.util.isCompactHeight
-import com.trm.sightline.core.ar.util.isCompactWidth
 import com.trm.sightline.core.ar.util.navigationBarsBottomInsetPx
 import com.trm.sightline.core.ar.util.preciseFormattedDistance
 import com.trm.sightline.core.ar.util.spToPx
@@ -40,29 +39,52 @@ class ARMarkerRenderer(private val context: Context) {
   internal val markerHeightPx: Float
   internal val markerWidthPx: Float
 
-  // The overlap guard is a fraction of markerWidthPx so it scales correctly across
-  // both screen sizes and compact/non-compact width configurations.
-  // Total effective width used for the angular threshold:
-  //   markerWidthPx * (1 + MARKER_OVERLAP_GUARD_FRACTION)
-  //
-  // At 0.5 this gives a 50% extra margin — enough to absorb roll (cos(30°)=0.866),
-  // pitch-induced Y→X cross-terms (vpY·sin(roll) in convert3dTo2d), and
-  // floating-point projection drift, without being so large that it forces
-  // excessive markers onto page 2+.
   private val overlapGuardPx: Float
+  private val cameraViewHeightPx: Float
+
+  // Minimum height for a marker to be legible: 2 title lines + 1 distance line +
+  // top and bottom padding. Derived from actual text sizes so it scales with
+  // font size and display density rather than a fixed breakpoint.
+  private val minMarkerHeightPx: Float
+    get() {
+      val titleLineHeightPx = markerTitleTextSizePx * LINE_HEIGHT_MULTIPLIER
+      val distanceLineHeightPx = markerDistanceTextSizePx * LINE_HEIGHT_MULTIPLIER
+      return titleLineHeightPx * 2 + distanceLineHeightPx + markerPaddingPx * 2
+    }
+
+  // How many rows fit given the available height and the minimum legible marker height.
+  // MIN_ROWS = 1 so that in landscape (compact height) we always produce at least one
+  // fully-sized row rather than two undersized ones. MAX_ROWS guards against
+  // unusually tall screens producing excessive rows.
+  private val numberOfRows: Int
+    get() =
+      (cameraViewHeightPx / (minMarkerHeightPx + MARKER_VERTICAL_SPACING_PX))
+        .toInt()
+        .coerceIn(MIN_ROWS, MAX_ROWS)
+
+  // How many markers fit side-by-side given the screen width and the minimum
+  // readable marker width. Scales continuously across phones, tablets and foldables
+  // rather than snapping at a single compact/non-compact breakpoint.
+  private val markerWidthDivisor: Int
+    get() {
+      val screenWidthDp = context.resources.displayMetrics.run { widthPixels / density }
+      return (screenWidthDp / TARGET_MARKER_WIDTH_DP)
+        .toInt()
+        .coerceIn(MIN_WIDTH_DIVISOR, MAX_WIDTH_DIVISOR)
+    }
 
   init {
     val displayMetrics = context.resources.displayMetrics
-    val cameraViewHeight =
+    // In compact height (landscape) the bottom sheet is not shown, so subtract only
+    // the navigation bar inset. Subtracting the full bottomSheetHeightPx (~234dp)
+    // from an already-small landscape height would leave almost no room for markers.
+    cameraViewHeightPx =
       displayMetrics.heightPixels -
         context.statusBarTopInsetPx -
         context.cameraPreviewVerticalPaddingPx -
         if (context.isCompactHeight) context.navigationBarsBottomInsetPx
         else context.bottomSheetHeightPx
-    markerHeightPx = cameraViewHeight / numberOfRows - MARKER_VERTICAL_SPACING_PX
-    val markerWidthDivisor =
-      if (context.isCompactWidth) MARKER_WIDTH_DIVISOR_COMPACT_WIDTH
-      else MARKER_WIDTH_DIVISOR_NON_COMPACT_WIDTH
+    markerHeightPx = cameraViewHeightPx / numberOfRows - MARKER_VERTICAL_SPACING_PX
     markerWidthPx = (displayMetrics.widthPixels / markerWidthDivisor).toFloat()
     overlapGuardPx = markerWidthPx * MARKER_OVERLAP_GUARD_FRACTION
   }
@@ -108,23 +130,17 @@ class ARMarkerRenderer(private val context: Context) {
   // Computed from actual canvas dimensions in reassignSlots.
   //
   // Full derivation:
-  //   In convert3dTo2d, the screen X separation for two markers at the same row Y is:
+  //   In convert3dTo2d, the screen X separation for two markers in the same row is:
   //     ΔscreenX = ΔvpX · cos(roll) - ΔvpY · sin(roll)
   //   where ΔvpX = 2·tan(Δβ/2)·screenRatioX is minimised when the camera azimuth
-  //   bisects the two bearings, and ΔvpY is the viewport Y difference (non-zero
-  //   when the two places are at different elevations or pitches).
+  //   bisects the two bearings, and ΔvpY is non-zero when places differ in elevation.
   //
-  //   Worst case: roll at MAX_EXPECTED_ROLL_RADIANS shrinks ΔvpX contribution by
-  //   cos(maxRoll) and adds a ΔvpY·sin(roll) cross-term pulling markers together.
-  //   Both effects are absorbed by using overlapGuardPx = markerWidthPx * 0.5:
+  //   Worst case: roll at MAX_EXPECTED_ROLL_RADIANS shrinks the ΔvpX contribution by
+  //   cos(maxRoll) and adds a ΔvpY·sin(roll) cross-term. Both are absorbed by
+  //   overlapGuardPx = markerWidthPx * MARKER_OVERLAP_GUARD_FRACTION:
   //
   //     Δβ ≥ 2·atan((markerWidthPx + overlapGuardPx) / (2·screenRatioX·cos(maxRoll)))
   private var markerAngularWidthDeg: Double = 0.0
-
-  private val numberOfRows: Int
-    get() =
-      if (context.isCompactHeight) NUMBER_OF_ROWS_COMPACT_HEIGHT
-      else NUMBER_OF_ROWS_NON_COMPACT_HEIGHT
 
   private val titleTextPaint: TextPaint by
     lazy(LazyThreadSafetyMode.NONE) {
@@ -183,8 +199,8 @@ class ARMarkerRenderer(private val context: Context) {
 
     // Mirrors Math3D's preDraw formula exactly: screenRatio.x = (view.width + view.height) / 2
     val screenRatioX = (canvasWidth + canvasHeight) / 2.0
-    // Divide by cos(maxRoll) so the threshold holds at all device tilts up to
-    // MAX_EXPECTED_ROLL_RADIANS, where cos(roll) shrinks the on-screen X separation.
+    // Divide by cos(maxRoll) so the threshold holds for all device tilts up to
+    // MAX_EXPECTED_ROLL_RADIANS, where cos(roll) shrinks on-screen X separation.
     val effectiveScreenRatioX = screenRatioX * cos(MAX_EXPECTED_ROLL_RADIANS)
 
     markerAngularWidthDeg =
@@ -367,31 +383,37 @@ class ARMarkerRenderer(private val context: Context) {
   companion object {
     private const val MARKER_VERTICAL_SPACING_PX = 50f
 
-    // Extra width fraction added to markerWidthPx when computing the angular
-    // conflict threshold in reassignSlots. Sized relative to markerWidthPx so
-    // it scales correctly across screen sizes and compact/non-compact modes.
-    //
-    // This single value absorbs three sources of residual overlap that the pure
-    // geometric formula cannot capture:
-    //   1. cos(roll) shrinkage of on-screen X separation at device tilt
-    //      (already partially corrected by MAX_EXPECTED_ROLL_RADIANS, but not
-    //      fully for the vpY·sin(roll) cross-term)
-    //   2. Elevation differences between places producing a non-zero ΔvpY
-    //   3. Floating-point drift in the projection chain
-    //
-    // At 0.5 the effective threshold width is 1.5× markerWidthPx. Increase toward
-    // 0.75 if residual overlaps remain; decrease toward 0.25 if too many markers
-    // spill onto page 2+.
+    // Multiplier applied to text size to get line height, matching typical
+    // Android line spacing conventions.
+    private const val LINE_HEIGHT_MULTIPLIER = 1.2f
+
+    // MIN_ROWS = 1 so that in landscape (compact height) a single fully-sized row
+    // is produced rather than forcing two undersized ones. MAX_ROWS guards against
+    // unusually tall screens.
+    private const val MIN_ROWS = 1
+    private const val MAX_ROWS = 6
+
+    // Target dp width per marker. ~160dp fits ~15 characters at 16sp comfortably.
+    // At 360dp screen width: 360/160 = 2 markers across.
+    // At 600dp (large phone/tablet): 600/160 = 3 markers across.
+    // At 840dp (foldable): 840/160 = 5 markers across.
+    private const val TARGET_MARKER_WIDTH_DP = 160f
+
+    // Clamp bounds for the width divisor (min = never wider than half screen,
+    // max = never narrower than 1/5 screen).
+    private const val MIN_WIDTH_DIVISOR = 2
+    private const val MAX_WIDTH_DIVISOR = 5
+
+    // Extra width fraction added to markerWidthPx for the angular conflict threshold.
+    // Absorbs: cos(roll) shrinkage, vpY·sin(roll) cross-term, and projection drift.
+    // Increase toward 0.75 if residual overlaps remain; decrease toward 0.25 if too
+    // many markers spill onto page 2+.
     private const val MARKER_OVERLAP_GUARD_FRACTION = 0.5f
 
     // Maximum device roll for which overlap-free rendering is guaranteed.
     // cos(30°) ≈ 0.866 — covers typical portrait AR use with slight tilt.
     private const val MAX_EXPECTED_ROLL_RADIANS = Math.PI / 6 // 30°
 
-    private const val NUMBER_OF_ROWS_NON_COMPACT_HEIGHT = 5
-    private const val NUMBER_OF_ROWS_COMPACT_HEIGHT = 2
-    private const val MARKER_WIDTH_DIVISOR_COMPACT_WIDTH = 2
-    private const val MARKER_WIDTH_DIVISOR_NON_COMPACT_WIDTH = 4
     private const val MARKER_PADDING_DP = 16f
     private const val ELLIPSIS_WIDTH_PX = 10f
     private const val MARKER_TITLE_TEXT_SIZE_SP = 16f
