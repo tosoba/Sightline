@@ -50,6 +50,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -100,6 +101,13 @@ class MainActivity : ComponentActivity() {
         val scaffoldState = rememberBottomSheetScaffoldState(sheetState)
         LaunchedEffect(isCompactHeight) { if (isCompactHeight) sheetState.hide() }
 
+        val focusManager = LocalFocusManager.current
+        LaunchedEffect(sheetState.targetValue) {
+          if (sheetState.targetValue == SheetValue.PartiallyExpanded) {
+            focusManager.clearFocus()
+          }
+        }
+
         val density = LocalDensity.current
         val sheetOffset = runCatching { sheetState.requireOffset() }.getOrDefault(0f)
         val sheetPeekHeight =
@@ -149,6 +157,11 @@ class MainActivity : ComponentActivity() {
                           with(density) { sheetPeekHeight.toPx() }
                     }
                 },
+              onSearchFocusChange = { isFocused ->
+                if (isFocused && !isCompactHeight) {
+                  scope.launch { sheetState.expand() }
+                }
+              },
               onTogglePlaceCategory = viewModel::onTogglePlaceCategory,
             )
           }

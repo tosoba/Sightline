@@ -40,6 +40,7 @@ fun PlacesContent(
   state: PlacesState,
   selectedCategories: Set<PlaceCategory>,
   modifier: Modifier = Modifier,
+  onSearchFocusChange: (Boolean) -> Unit = {},
   onTogglePlaceCategory: (PlaceCategory) -> Unit,
 ) {
   val focusManager = LocalFocusManager.current
@@ -60,7 +61,11 @@ fun PlacesContent(
           enabled = !state.userLocation,
           onExpandedChange = {},
           placeholder = { Text("Current location") },
-          modifier = Modifier.onFocusChanged { isFocused = it.isFocused },
+          modifier =
+            Modifier.onFocusChanged {
+              isFocused = it.isFocused
+              onSearchFocusChange(it.isFocused)
+            },
           leadingIcon = {
             if (isFocused) {
               IconButton(onClick = focusManager::clearFocus) {
