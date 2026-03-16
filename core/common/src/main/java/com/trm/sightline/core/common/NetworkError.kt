@@ -5,14 +5,15 @@ import java.io.IOException
 
 sealed interface NetworkError {
   data object IO : NetworkError
+
   data class Http(val code: Int, val message: String) : NetworkError
+
   data class Other(val throwable: Throwable) : NetworkError
 }
 
-fun Throwable.toNetworkError(): NetworkError {
-  return when (this) {
+fun Throwable.toNetworkError(): NetworkError =
+  when (this) {
     is IOException -> NetworkError.IO
     is HttpException -> NetworkError.Http(code(), message())
     else -> NetworkError.Other(this)
   }
-}

@@ -15,9 +15,13 @@ import com.trm.sightline.core.model.LoadingState
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.isActive
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -35,61 +39,49 @@ class MainViewModel @Inject constructor(private val repository: PlacesRepository
     )
     private set
 
-  private val pendingJobs = mutableMapOf<PlaceCategory, Job>()
-  private val executingJobs = mutableMapOf<PlaceCategory, Job>()
-
-  private data class PlaceFetchRequest(
-    val category: PlaceCategory,
-    val latitude: Double,
-    val longitude: Double,
-  )
-
-  private val fetchQueue = Channel<PlaceFetchRequest>(Channel.RENDEZVOUS)
+  private val categoryToggles = MutableSharedFlow<Pair<PlaceCategory, Boolean>>()
 
   init {
-    viewModelScope.launch {
-      for (request in fetchQueue) {
-        if (!isActive || !places.containsKey(request.category)) continue
+    PlaceCategory.entries.forEach { category ->
+      var lastSentTime = 0L
 
-        val fetchJob = launch {
+      @OptIn(ExperimentalCoroutinesApi::class)
+      categoryToggles
+        .filter { (cat, _) -> cat == category }
+        .transformLatest<Pair<PlaceCategory, Boolean>, Unit> { (_, isActive) ->
+          if (!isActive) {
+            lastSentTime = 0L
+            return@transformLatest
+          }
+
+          val remaining = DEBOUNCE_MS - (System.currentTimeMillis() - lastSentTime)
+          if (remaining > 0) delay(remaining)
+
+          lastSentTime = System.currentTimeMillis()
+
           repository
             .cancellableRunCatching {
               fetchPlaces(
-                category = request.category,
-                latitude = request.latitude,
-                longitude = request.longitude,
+                category = category,
+                latitude = currentLocation.latitude,
+                longitude = currentLocation.longitude,
                 radiusMeters = 1000f,
               )
             }
-            .onSuccess { places[request.category] = LoadingState.Loaded(it) }
+            .onSuccess { places[category] = LoadingState.Loaded(it) }
             .onFailure { networkErrors.send(it.toNetworkError()) }
         }
-        executingJobs[request.category] = fetchJob
-        fetchJob.join()
-        executingJobs.remove(request.category)
-      }
+        .launchIn(viewModelScope)
     }
   }
 
   fun onTogglePlaceCategory(category: PlaceCategory) {
-    pendingJobs.remove(category)?.cancel()
-    executingJobs.remove(category)?.cancel()
+    val isActive = !places.containsKey(category)
+    if (isActive) places[category] = LoadingState.Loading else places.remove(category)
+    viewModelScope.launch { categoryToggles.emit(category to isActive) }
+  }
 
-    if (places.containsKey(category)) {
-      places.remove(category)
-    } else {
-      places[category] = LoadingState.Loading
-      pendingJobs[category] =
-        viewModelScope.launch {
-          fetchQueue.send(
-            PlaceFetchRequest(
-              category = category,
-              latitude = currentLocation.latitude,
-              longitude = currentLocation.longitude,
-            )
-          )
-          pendingJobs.remove(category)
-        }
-    }
+  companion object {
+    private const val DEBOUNCE_MS = 1_000L
   }
 }
