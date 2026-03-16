@@ -60,6 +60,8 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import com.trm.sightline.core.ar.util.collapsedBottomSheetContentHeightDp
 import com.trm.sightline.core.ar.util.sideSheetWidthDp
+import com.trm.sightline.core.model.LoadingState
+import com.trm.sightline.core.model.Place
 import com.trm.sightline.feature.places.PlacesContent
 import com.trm.sightline.feature.places.rememberPlacesState
 import com.trm.sightline.ui.theme.SightlineTheme
@@ -81,7 +83,10 @@ class MainActivity : ComponentActivity() {
       SightlineTheme {
         val scope = rememberCoroutineScope()
         val viewModel = hiltViewModel<MainViewModel>()
-        val places = viewModel.places.values.flatten()
+        val places =
+          viewModel.places.values
+            .filterIsInstance<LoadingState.Loaded<List<Place>>>()
+            .flatMap(LoadingState.Loaded<List<Place>>::data)
 
         val pagerState = rememberPagerState(pageCount = MainPage.entries::size)
         val selectedPage = MainPage.entries[pagerState.currentPage]
@@ -138,7 +143,7 @@ class MainActivity : ComponentActivity() {
           @Composable {
             PlacesContent(
               state = placesSheetState,
-              selectedCategories = viewModel.places.keys,
+              places = viewModel.places,
               modifier =
                 if (isCompactHeight) {
                   Modifier.width(sideSheetWidthDp.dp)

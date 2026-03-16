@@ -32,13 +32,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
+import com.trm.sightline.core.model.LoadingState
+import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlacesContent(
   state: PlacesState,
-  selectedCategories: Set<PlaceCategory>,
+  places: Map<PlaceCategory, LoadingState<List<Place>>>,
   modifier: Modifier = Modifier,
   onSearchFocusChange: (Boolean) -> Unit = {},
   onTogglePlaceCategory: (PlaceCategory) -> Unit,
@@ -100,7 +102,8 @@ fun PlacesContent(
               PlaceCategory.ACCOMMODATION -> Icons.Default.Hotel
               PlaceCategory.STORES -> Icons.Default.Storefront
             },
-          isSelected = category in selectedCategories,
+          isSelected = category in places,
+          loadingState = places[category],
           onClick = { onTogglePlaceCategory(category) },
         )
       }
