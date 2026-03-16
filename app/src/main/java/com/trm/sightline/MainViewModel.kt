@@ -15,15 +15,15 @@ import com.trm.sightline.core.model.LoadingState
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @HiltViewModel
 class MainViewModel @Inject constructor(private val repository: PlacesRepository) : ViewModel() {
   val places = mutableStateMapOf<PlaceCategory, LoadingState<List<Place>>>()
-  private val fetchJobs = mutableMapOf<PlaceCategory, Job>()
   val networkErrors = Channel<NetworkError>(Channel.UNLIMITED)
 
   var currentLocation by
@@ -35,26 +35,60 @@ class MainViewModel @Inject constructor(private val repository: PlacesRepository
     )
     private set
 
+  private val pendingJobs = mutableMapOf<PlaceCategory, Job>()
+  private val executingJobs = mutableMapOf<PlaceCategory, Job>()
+
+  private data class PlaceFetchRequest(
+    val category: PlaceCategory,
+    val latitude: Double,
+    val longitude: Double,
+  )
+
+  private val fetchQueue = Channel<PlaceFetchRequest>(Channel.RENDEZVOUS)
+
+  init {
+    viewModelScope.launch {
+      for (request in fetchQueue) {
+        if (!isActive || !places.containsKey(request.category)) continue
+
+        val fetchJob = launch {
+          repository
+            .cancellableRunCatching {
+              fetchPlaces(
+                category = request.category,
+                latitude = request.latitude,
+                longitude = request.longitude,
+                radiusMeters = 1000f,
+              )
+            }
+            .onSuccess { places[request.category] = LoadingState.Loaded(it) }
+            .onFailure { networkErrors.send(it.toNetworkError()) }
+        }
+        executingJobs[request.category] = fetchJob
+        fetchJob.join()
+        executingJobs.remove(request.category)
+      }
+    }
+  }
+
   fun onTogglePlaceCategory(category: PlaceCategory) {
-    fetchJobs.remove(category)?.cancel()
+    pendingJobs.remove(category)?.cancel()
+    executingJobs.remove(category)?.cancel()
 
     if (places.containsKey(category)) {
       places.remove(category)
     } else {
       places[category] = LoadingState.Loading
-      fetchJobs[category] =
+      pendingJobs[category] =
         viewModelScope.launch {
-          repository
-            .cancellableRunCatching {
-              fetchPlaces(
-                category = category,
-                latitude = currentLocation.latitude,
-                longitude = currentLocation.longitude,
-                radiusMeters = 1000f,
-              )
-            }
-            .onSuccess { places[category] = LoadingState.Loaded(it) }
-            .onFailure { networkErrors.send(it.toNetworkError()) }
+          fetchQueue.send(
+            PlaceFetchRequest(
+              category = category,
+              latitude = currentLocation.latitude,
+              longitude = currentLocation.longitude,
+            )
+          )
+          pendingJobs.remove(category)
         }
     }
   }
