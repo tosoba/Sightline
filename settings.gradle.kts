@@ -30,6 +30,8 @@ include(":api:overpass")
 
 include(":core:ar")
 
+include(":core:common")
+
 include(":core:model")
 
 include(":core:data")
