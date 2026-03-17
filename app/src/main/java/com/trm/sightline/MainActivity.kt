@@ -63,6 +63,7 @@ import com.trm.sightline.core.ar.util.sideSheetWidthDp
 import com.trm.sightline.core.model.LoadingState
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.feature.places.PlacesContent
+import com.trm.sightline.feature.places.PlacesLayout
 import com.trm.sightline.feature.places.rememberPlacesState
 import com.trm.sightline.ui.theme.SightlineTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -144,6 +145,12 @@ class MainActivity : ComponentActivity() {
             PlacesContent(
               state = placesSheetState,
               places = viewModel.places,
+              layout =
+                if (isCompactHeight || sheetState.targetValue == SheetValue.Expanded) {
+                  PlacesLayout.Grid
+                } else {
+                  PlacesLayout.Row
+                },
               modifier =
                 if (isCompactHeight) {
                   Modifier.width(sideSheetWidthDp.dp)

@@ -4,7 +4,6 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -27,18 +26,15 @@ import com.trm.sightline.core.model.PlaceCategory
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-internal fun RowScope.PlaceCategoryToggleButton(
+internal fun PlaceCategoryToggleButton(
   category: PlaceCategory,
   icon: ImageVector,
   isSelected: Boolean,
   loadingState: LoadingState<List<Place>>?,
+  modifier: Modifier = Modifier,
   onClick: (PlaceCategory) -> Unit,
 ) {
-  ToggleButton(
-    checked = isSelected,
-    onCheckedChange = { onClick(category) },
-    modifier = Modifier.weight(1f),
-  ) {
+  ToggleButton(checked = isSelected, onCheckedChange = { onClick(category) }, modifier = modifier) {
     Column(
       horizontalAlignment = Alignment.CenterHorizontally,
       verticalArrangement = Arrangement.Center,

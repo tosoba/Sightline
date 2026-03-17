@@ -1,5 +1,6 @@
 package com.trm.sightline.feature.places
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -7,6 +8,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Hotel
@@ -30,6 +34,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
 import com.trm.sightline.core.model.LoadingState
@@ -41,6 +46,7 @@ import com.trm.sightline.core.model.PlaceCategory
 fun PlacesContent(
   state: PlacesState,
   places: Map<PlaceCategory, LoadingState<List<Place>>>,
+  layout: PlacesLayout,
   modifier: Modifier = Modifier,
   onSearchFocusChange: (Boolean) -> Unit = {},
   onTogglePlaceCategory: (PlaceCategory) -> Unit,
@@ -91,22 +97,52 @@ fun PlacesContent(
 
     Spacer(modifier = Modifier.height(16.dp))
 
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-      PlaceCategory.entries.forEach { category ->
-        PlaceCategoryToggleButton(
-          category = category,
-          icon =
-            when (category) {
-              PlaceCategory.ATTRACTIONS -> Icons.Default.Place
-              PlaceCategory.FOOD -> Icons.Default.Restaurant
-              PlaceCategory.ACCOMMODATION -> Icons.Default.Hotel
-              PlaceCategory.STORES -> Icons.Default.Storefront
-            },
-          isSelected = category in places,
-          loadingState = places[category],
-          onClick = { onTogglePlaceCategory(category) },
-        )
+    AnimatedContent(targetState = layout) {
+      when (it) {
+        PlacesLayout.Row -> {
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+          ) {
+            PlaceCategory.entries.forEach { category ->
+              PlaceCategoryToggleButton(
+                category = category,
+                icon = category.icon(),
+                isSelected = category in places,
+                loadingState = places[category],
+                modifier = Modifier.weight(1f),
+                onClick = { onTogglePlaceCategory(category) },
+              )
+            }
+          }
+        }
+        PlacesLayout.Grid -> {
+          LazyVerticalGrid(
+            columns = GridCells.Adaptive(64.dp),
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+          ) {
+            items(PlaceCategory.entries) { category ->
+              PlaceCategoryToggleButton(
+                category = category,
+                icon = category.icon(),
+                isSelected = category in places,
+                loadingState = places[category],
+                onClick = { onTogglePlaceCategory(category) },
+              )
+            }
+          }
+        }
       }
     }
   }
 }
+
+private fun PlaceCategory.icon(): ImageVector =
+  when (this) {
+    PlaceCategory.ATTRACTIONS -> Icons.Default.Place
+    PlaceCategory.FOOD -> Icons.Default.Restaurant
+    PlaceCategory.ACCOMMODATION -> Icons.Default.Hotel
+    PlaceCategory.STORES -> Icons.Default.Storefront
+  }
