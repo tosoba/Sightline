@@ -8,6 +8,7 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.Preview
 import androidx.camera.core.impl.ImageOutputConfig
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.view.PreviewView
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -28,6 +30,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.trm.sightline.core.ar.camera.OpenGLRenderer
 import com.trm.sightline.core.ar.model.ARMarker
@@ -114,13 +117,19 @@ fun CameraPreview(
       }
 
       val openGLRenderer = rememberOpenGLRenderer(preview.value, viewStub.value)
+      val streamState by
+        openGLRenderer.previewStreamStates.collectAsStateWithLifecycle(PreviewView.StreamState.IDLE)
       LaunchedEffect(lifecycleOwner) {
         lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
           arView.markerRenderer.drawnMarkerRectFs.collect { openGLRenderer.markerRectFs = it }
         }
       }
       LaunchedEffect(blurredRectFs) { openGLRenderer.otherRectFs = blurredRectFs }
-      LaunchedEffect(blurred) { openGLRenderer.setBlurEnabled(enabled = blurred, animated = true) }
+      LaunchedEffect(blurred, streamState) {
+        if (streamState == PreviewView.StreamState.STREAMING) {
+          openGLRenderer.setBlurEnabled(enabled = blurred, animated = true)
+        }
+      }
 
       overlayContent(arView.markerRenderer)
     }
