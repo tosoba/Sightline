@@ -59,6 +59,8 @@ fun PlacesContent(
       expanded = false,
       onExpandedChange = {},
       modifier = Modifier.fillMaxWidth(),
+      colors =
+        SearchBarDefaults.colors().run { copy(containerColor = containerColor.copy(alpha = .5f)) },
       windowInsets = WindowInsets(),
       inputField = {
         SearchBarDefaults.InputField(

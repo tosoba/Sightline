@@ -34,7 +34,16 @@ internal fun PlaceCategoryToggleButton(
   modifier: Modifier = Modifier,
   onClick: (PlaceCategory) -> Unit,
 ) {
-  ToggleButton(checked = isSelected, onCheckedChange = { onClick(category) }, modifier = modifier) {
+  val colors =
+    ToggleButtonDefaults.toggleButtonColors().run {
+      copy(containerColor = containerColor.copy(alpha = .5f))
+    }
+  ToggleButton(
+    checked = isSelected,
+    onCheckedChange = { onClick(category) },
+    colors = colors,
+    modifier = modifier,
+  ) {
     Column(
       horizontalAlignment = Alignment.CenterHorizontally,
       verticalArrangement = Arrangement.Center,
@@ -44,7 +53,7 @@ internal fun PlaceCategoryToggleButton(
         if (state is LoadingState.Loading) {
           CircularProgressIndicator(
             modifier = Modifier.size(32.dp),
-            trackColor = ToggleButtonDefaults.toggleButtonColors().checkedContentColor,
+            trackColor = colors.checkedContentColor,
           )
         } else {
           Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(32.dp))
