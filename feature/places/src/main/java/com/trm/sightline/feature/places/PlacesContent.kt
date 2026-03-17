@@ -107,11 +107,12 @@ fun PlacesContent(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
           ) {
             PlaceCategory.entries.forEach { category ->
-              PlaceCategoryToggleButton(
+              PlaceCategoryItem(
                 category = category,
                 icon = category.icon(),
                 isSelected = category in places,
                 loadingState = places[category],
+                layout = it,
                 modifier = Modifier.weight(1f),
                 onClick = { onTogglePlaceCategory(category) },
               )
@@ -120,17 +121,18 @@ fun PlacesContent(
         }
         PlacesLayout.Grid -> {
           LazyVerticalGrid(
-            columns = GridCells.Adaptive(64.dp),
+            columns = GridCells.Adaptive(160.dp),
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
           ) {
             items(PlaceCategory.entries) { category ->
-              PlaceCategoryToggleButton(
+              PlaceCategoryItem(
                 category = category,
                 icon = category.icon(),
                 isSelected = category in places,
                 loadingState = places[category],
+                layout = it,
                 onClick = { onTogglePlaceCategory(category) },
               )
             }
