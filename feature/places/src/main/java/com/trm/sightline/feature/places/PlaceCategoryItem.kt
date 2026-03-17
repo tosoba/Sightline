@@ -2,13 +2,22 @@ package com.trm.sightline.feature.places
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
@@ -17,6 +26,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.ToggleButton
 import androidx.compose.material3.ToggleButtonDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -73,42 +84,63 @@ internal fun PlaceCategoryItem(
       }
     }
     PlacesLayout.Grid -> {
-      Row(
+      val interactionSource = remember(::MutableInteractionSource)
+      val isPressed by interactionSource.collectIsPressedAsState()
+      val shapes = ToggleButtonDefaults.shapes()
+
+      Card(
+        shape =
+          when {
+            isPressed -> shapes.pressedShape
+            isSelected -> shapes.checkedShape
+            else -> shapes.shape
+          },
+        colors = CardDefaults.cardColors(containerColor = colors.containerColor),
         modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
       ) {
-        ToggleButton(
-          checked = isSelected,
-          onCheckedChange = { onClick(category) },
-          colors = colors,
-          modifier = Modifier.size(64.dp),
+        Row(
+          modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
+          verticalAlignment = Alignment.CenterVertically,
         ) {
-          PlaceCategoryItemIconLoadingState(
-            loadingState = loadingState,
-            trackColor = colors.checkedContentColor,
-            icon = icon,
-          )
-        }
+          ToggleButton(
+            checked = isSelected,
+            onCheckedChange = { onClick(category) },
+            colors = colors,
+            shapes = shapes,
+            interactionSource = interactionSource,
+            modifier = Modifier.fillMaxHeight().heightIn(min = 72.dp).aspectRatio(1f),
+          ) {
+            PlaceCategoryItemIconLoadingState(
+              loadingState = loadingState,
+              trackColor = colors.checkedContentColor,
+              icon = icon,
+            )
+          }
 
-        Column {
-          Text(
-            text = category.name.lowercase().replaceFirstChar(Char::uppercase),
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.basicMarquee(iterations = Int.MAX_VALUE),
-          )
+          Column(
+            modifier = Modifier.weight(1f).padding(8.dp),
+            verticalArrangement = Arrangement.Center,
+          ) {
+            Text(
+              text = category.name.lowercase().replaceFirstChar(Char::uppercase),
+              style = MaterialTheme.typography.titleMedium,
+              maxLines = 1,
+              modifier = Modifier.basicMarquee(iterations = Int.MAX_VALUE),
+            )
 
-          AnimatedContent(loadingState) {
-            when (it) {
-              is LoadingState.Loaded<List<Place>> -> {
-                Text(
-                  text = "${it.data.size} places",
-                  style = MaterialTheme.typography.titleSmall,
-                  color = MaterialTheme.colorScheme.onSurfaceVariant,
-                  modifier = Modifier.basicMarquee(iterations = Int.MAX_VALUE),
-                )
+            AnimatedContent(loadingState) { state ->
+              when (state) {
+                is LoadingState.Loaded<List<Place>> -> {
+                  Text(
+                    text = "${state.data.size} places",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    modifier = Modifier.basicMarquee(iterations = Int.MAX_VALUE),
+                  )
+                }
+                else -> {}
               }
-              else -> {}
             }
           }
         }
