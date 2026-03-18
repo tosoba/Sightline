@@ -15,6 +15,7 @@ import com.trm.sightline.core.model.LoadingState
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -23,11 +24,17 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 @HiltViewModel
 class MainViewModel @Inject constructor(private val repository: PlacesRepository) : ViewModel() {
   val places = mutableStateMapOf<PlaceCategory, LoadingState<List<Place>>>()
+
+  val allPlaces: List<Place>
+    get() =
+      places.values
+        .filterIsInstance<LoadingState.Loaded<List<Place>>>()
+        .flatMap(LoadingState.Loaded<List<Place>>::data)
+
   val networkErrors = Channel<NetworkError>(Channel.UNLIMITED)
 
   var currentLocation by

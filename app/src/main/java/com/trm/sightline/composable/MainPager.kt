@@ -1,4 +1,4 @@
-package com.trm.sightline
+package com.trm.sightline.composable
 
 import android.location.Location
 import androidx.compose.animation.AnimatedVisibility
@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.trm.sightline.MainPage
 import com.trm.sightline.core.ar.model.RoundedRectF
 import com.trm.sightline.core.ar.util.bottomSheetRectF
 import com.trm.sightline.core.ar.util.collapsedBottomSheetContentHeightDp
