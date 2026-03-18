@@ -50,6 +50,7 @@ fun PlacesContent(
   modifier: Modifier = Modifier,
   onSearchFocusChange: (Boolean) -> Unit = {},
   onTogglePlaceCategory: (PlaceCategory) -> Unit,
+  onCategoryClick: (PlaceCategory, List<Place>) -> Unit,
 ) {
   val focusManager = LocalFocusManager.current
   var isFocused by remember { mutableStateOf(false) }
@@ -115,6 +116,7 @@ fun PlacesContent(
                 layout = it,
                 modifier = Modifier.weight(1f),
                 onClick = { onTogglePlaceCategory(category) },
+                onCategoryClick = onCategoryClick,
               )
             }
           }
@@ -134,6 +136,7 @@ fun PlacesContent(
                 loadingState = places[category],
                 layout = it,
                 onClick = { onTogglePlaceCategory(category) },
+                onCategoryClick = onCategoryClick,
               )
             }
           }

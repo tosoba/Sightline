@@ -1,6 +1,7 @@
 package com.trm.sightline.feature.places
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -50,6 +51,7 @@ internal fun PlaceCategoryItem(
   modifier: Modifier = Modifier,
   layout: PlacesLayout = PlacesLayout.Row,
   onClick: (PlaceCategory) -> Unit,
+  onCategoryClick: (PlaceCategory, List<Place>) -> Unit = { _, _ -> },
 ) {
   when (layout) {
     PlacesLayout.Row -> {
@@ -101,9 +103,18 @@ internal fun PlaceCategoryItem(
             isSelected -> shapes.checkedShape
             else -> shapes.shape
           },
-        colors = CardDefaults.cardColors(containerColor = colors.containerColor.copy(alpha = .25f)),
+        colors =
+          CardDefaults.cardColors(
+            containerColor = colors.containerColor.copy(alpha = .25f),
+            disabledContainerColor = colors.containerColor.copy(alpha = .25f),
+          ),
         modifier = modifier,
-        onClick = {},
+        onClick = {
+          if (loadingState is LoadingState.Loaded<List<Place>>) {
+            onCategoryClick(category, loadingState.data)
+          }
+        },
+        enabled = loadingState is LoadingState.Loaded<List<Place>>,
       ) {
         Row(
           modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
@@ -130,6 +141,7 @@ internal fun PlaceCategoryItem(
             Text(
               text = category.name.lowercase().replaceFirstChar(Char::uppercase),
               style = MaterialTheme.typography.titleMedium,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
               maxLines = 1,
               modifier = Modifier.basicMarquee(iterations = Int.MAX_VALUE),
             )
@@ -152,13 +164,14 @@ internal fun PlaceCategoryItem(
 
           Spacer(modifier = Modifier.width(8.dp))
 
-          Icon(
-            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-          )
-
-          Spacer(modifier = Modifier.width(8.dp))
+          AnimatedVisibility(loadingState is LoadingState.Loaded<List<Place>>) {
+            Icon(
+              imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+              contentDescription = null,
+              tint = MaterialTheme.colorScheme.onSurfaceVariant,
+              modifier = Modifier.padding(end = 8.dp),
+            )
+          }
         }
       }
     }

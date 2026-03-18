@@ -62,6 +62,8 @@ import com.trm.sightline.core.ar.util.collapsedBottomSheetContentHeightDp
 import com.trm.sightline.core.ar.util.sideSheetWidthDp
 import com.trm.sightline.core.model.LoadingState
 import com.trm.sightline.core.model.Place
+import com.trm.sightline.feature.category.PlaceCategoryRoute
+import com.trm.sightline.feature.category.PlaceCategoryScreen
 import com.trm.sightline.feature.places.PlacesContent
 import com.trm.sightline.feature.places.PlacesLayout
 import com.trm.sightline.feature.places.rememberPlacesState
@@ -139,6 +141,7 @@ class MainActivity : ComponentActivity() {
         val expandedProgress =
           remember(thresholdProgress) { 1f - thresholdProgress }.coerceIn(0f, 1f)
 
+        val backStack = rememberNavBackStack(MainRoute)
         val placesSheetState = rememberPlacesState()
         val placesSheetContent =
           @Composable {
@@ -175,10 +178,12 @@ class MainActivity : ComponentActivity() {
                 }
               },
               onTogglePlaceCategory = viewModel::onTogglePlaceCategory,
+              onCategoryClick = { category, categoryPlaces ->
+                backStack.add(PlaceCategoryRoute(category, categoryPlaces))
+              },
             )
           }
 
-        val backStack = rememberNavBackStack(MainRoute)
         NavDisplay(
           backStack = backStack,
           entryProvider =
@@ -250,6 +255,7 @@ class MainActivity : ComponentActivity() {
                   }
                 }
               }
+              entry<PlaceCategoryRoute> { route -> PlaceCategoryScreen(route) }
             },
         )
       }

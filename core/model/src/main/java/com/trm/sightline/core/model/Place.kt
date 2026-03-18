@@ -1,7 +1,9 @@
 package com.trm.sightline.core.model
 
 import java.util.Objects
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class Place(
   val id: Long,
   val name: String,

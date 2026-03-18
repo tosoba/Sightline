@@ -43,3 +43,5 @@ include(":feature:camera")
 include(":feature:map")
 
 include(":feature:places")
+
+include(":feature:place-category")
