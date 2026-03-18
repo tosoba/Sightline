@@ -48,13 +48,12 @@ internal fun PlaceCategoryItem(
   layout: PlacesLayout = PlacesLayout.Row,
   onClick: (PlaceCategory) -> Unit,
 ) {
-  val colors =
-    ToggleButtonDefaults.toggleButtonColors().run {
-      copy(containerColor = containerColor.copy(alpha = .5f))
-    }
-
   when (layout) {
     PlacesLayout.Row -> {
+      val colors =
+        ToggleButtonDefaults.toggleButtonColors().run {
+          copy(containerColor = containerColor.copy(alpha = .5f))
+        }
       ToggleButton(
         checked = isSelected,
         onCheckedChange = { onClick(category) },
@@ -87,6 +86,10 @@ internal fun PlaceCategoryItem(
       val interactionSource = remember(::MutableInteractionSource)
       val isPressed by interactionSource.collectIsPressedAsState()
       val shapes = ToggleButtonDefaults.shapes()
+      val colors =
+        ToggleButtonDefaults.toggleButtonColors().run {
+          copy(containerColor = containerColor.copy(alpha = .25f))
+        }
 
       Card(
         shape =
@@ -95,7 +98,7 @@ internal fun PlaceCategoryItem(
             isSelected -> shapes.checkedShape
             else -> shapes.shape
           },
-        colors = CardDefaults.cardColors(containerColor = colors.containerColor),
+        colors = CardDefaults.cardColors(containerColor = colors.containerColor.copy(alpha = .25f)),
         modifier = modifier,
       ) {
         Row(
