@@ -8,14 +8,12 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.trm.sightline.core.common.NetworkError
-import com.trm.sightline.core.common.cancellableRunCatching
 import com.trm.sightline.core.common.toNetworkError
 import com.trm.sightline.core.domain.PlacesRepository
 import com.trm.sightline.core.model.LoadingState
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -24,6 +22,9 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
+import javax.inject.Inject
+import kotlin.coroutines.cancellation.CancellationException
 
 @HiltViewModel
 class MainViewModel @Inject constructor(private val repository: PlacesRepository) : ViewModel() {
@@ -66,17 +67,23 @@ class MainViewModel @Inject constructor(private val repository: PlacesRepository
 
           lastSentTime = System.currentTimeMillis()
 
-          repository
-            .cancellableRunCatching {
-              fetchPlaces(
-                category = category,
-                latitude = currentLocation.latitude,
-                longitude = currentLocation.longitude,
-                radiusMeters = 1000f,
-              )
-            }
-            .onSuccess { places[category] = LoadingState.Loaded(it) }
-            .onFailure { networkErrors.send(it.toNetworkError()) }
+          try {
+            places[category] =
+              withTimeout(REQUEST_TIMEOUT_MS) {
+                LoadingState.Loaded(
+                  repository.fetchPlaces(
+                    category = category,
+                    latitude = currentLocation.latitude,
+                    longitude = currentLocation.longitude,
+                    radiusMeters = 1_000f,
+                  )
+                )
+              }
+          } catch (ex: Exception) {
+            places.remove(category)
+            networkErrors.send(ex.toNetworkError())
+            if (ex is CancellationException) throw ex
+          }
         }
         .launchIn(viewModelScope)
     }
@@ -90,5 +97,6 @@ class MainViewModel @Inject constructor(private val repository: PlacesRepository
 
   companion object {
     private const val DEBOUNCE_MS = 1_000L
+    private const val REQUEST_TIMEOUT_MS = 15_000L
   }
 }

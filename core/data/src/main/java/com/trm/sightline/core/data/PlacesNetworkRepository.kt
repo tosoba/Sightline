@@ -50,7 +50,6 @@ class PlacesNetworkRepository @Inject constructor(private val overpassApi: Overp
     when (category) {
       PlaceCategory.ATTRACTIONS -> {
         ComplexQuery.Builder()
-          .timeout(DEFAULT_TIMEOUT_SECONDS)
           .union(
             listOf(
               NodeQuery.Builder()
@@ -75,7 +74,6 @@ class PlacesNetworkRepository @Inject constructor(private val overpassApi: Overp
       }
       PlaceCategory.FOOD -> {
         NodeQuery.Builder()
-          .timeout(DEFAULT_TIMEOUT_SECONDS)
           .around(latitude, longitude, radiusMeters)
           .tag(
             "amenity",
@@ -86,21 +84,15 @@ class PlacesNetworkRepository @Inject constructor(private val overpassApi: Overp
       }
       PlaceCategory.ACCOMMODATION -> {
         NodeQuery.Builder()
-          .timeout(DEFAULT_TIMEOUT_SECONDS)
           .around(latitude, longitude, radiusMeters)
           .tag("tourism", "alpine_hut|apartment|chalet|guest_house|hostel|hotel|motel", Filter.LIKE)
           .build()
       }
       PlaceCategory.STORES -> {
         NodeQuery.Builder()
-          .timeout(DEFAULT_TIMEOUT_SECONDS)
           .around(latitude, longitude, radiusMeters)
           .tag("shop", "department_store|general|kiosk|mall|supermarket|wholesale", Filter.LIKE)
           .build()
       }
     }.toQuery()
-
-  companion object {
-    private const val DEFAULT_TIMEOUT_SECONDS = 25
-  }
 }
