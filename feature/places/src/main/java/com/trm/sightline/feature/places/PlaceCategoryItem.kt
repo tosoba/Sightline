@@ -16,6 +16,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -100,6 +103,7 @@ internal fun PlaceCategoryItem(
           },
         colors = CardDefaults.cardColors(containerColor = colors.containerColor.copy(alpha = .25f)),
         modifier = modifier,
+        onClick = {},
       ) {
         Row(
           modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
@@ -120,10 +124,9 @@ internal fun PlaceCategoryItem(
             )
           }
 
-          Column(
-            modifier = Modifier.weight(1f).padding(8.dp),
-            verticalArrangement = Arrangement.Center,
-          ) {
+          Spacer(modifier = Modifier.width(8.dp))
+
+          Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
             Text(
               text = category.name.lowercase().replaceFirstChar(Char::uppercase),
               style = MaterialTheme.typography.titleMedium,
@@ -146,6 +149,16 @@ internal fun PlaceCategoryItem(
               }
             }
           }
+
+          Spacer(modifier = Modifier.width(8.dp))
+
+          Icon(
+            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
+
+          Spacer(modifier = Modifier.width(8.dp))
         }
       }
     }
