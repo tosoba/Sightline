@@ -35,6 +35,7 @@ import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
@@ -74,6 +75,12 @@ fun SharedTransitionScope.MainScreen(
 ) {
   val scope = rememberCoroutineScope()
   val pagerState = rememberPagerState(pageCount = MainPage.entries::size)
+  val containerAlpha by remember {
+    derivedStateOf {
+      val progress = (pagerState.currentPage + pagerState.currentPageOffsetFraction).coerceIn(0f, 1f)
+      0.5f + (progress * 0.4f)
+    }
+  }
   val selectedPage = MainPage.entries[pagerState.currentPage]
   var toolbarsVisible by remember { mutableStateOf(true) }
   LaunchedEffect(pagerState.currentPage) { toolbarsVisible = true }
@@ -127,6 +134,7 @@ fun SharedTransitionScope.MainScreen(
         layout =
           if (isCompactHeight || sheetState.targetValue == SheetValue.Expanded) PlacesLayout.Grid
           else PlacesLayout.Row,
+        alpha = containerAlpha,
         modifier =
           if (isCompactHeight) {
             Modifier.width(sideSheetWidthDp.dp)
@@ -171,7 +179,7 @@ fun SharedTransitionScope.MainScreen(
         BottomSheetDefaults.DragHandle()
       }
     },
-    sheetContainerColor = BottomSheetDefaults.ContainerColor.copy(alpha = .5f),
+    sheetContainerColor = BottomSheetDefaults.ContainerColor.copy(alpha = containerAlpha),
     sheetPeekHeight = sheetPeekHeight,
     sheetContent = { placesSheetContent() },
   ) { innerPadding ->
@@ -207,7 +215,7 @@ fun SharedTransitionScope.MainScreen(
       if (isCompactHeight) {
         Surface(
           modifier = Modifier.fillMaxHeight().align(Alignment.CenterEnd),
-          color = BottomSheetDefaults.ContainerColor.copy(alpha = .5f),
+          color = BottomSheetDefaults.ContainerColor.copy(alpha = containerAlpha),
           tonalElevation = 1.dp,
         ) {
           placesSheetContent()

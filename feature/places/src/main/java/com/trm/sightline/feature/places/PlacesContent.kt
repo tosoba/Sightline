@@ -1,6 +1,9 @@
 package com.trm.sightline.feature.places
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -26,9 +29,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.Text
-import androidx.compose.animation.AnimatedVisibilityScope
-import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -50,6 +50,7 @@ fun SharedTransitionScope.PlacesContent(
   state: PlacesState,
   places: Map<PlaceCategory, LoadingState<List<Place>>>,
   layout: PlacesLayout,
+  alpha: Float,
   modifier: Modifier = Modifier,
   animatedVisibilityScope: AnimatedVisibilityScope,
   onSearchFocusChange: (Boolean) -> Unit = {},
@@ -65,7 +66,9 @@ fun SharedTransitionScope.PlacesContent(
       onExpandedChange = {},
       modifier = Modifier.fillMaxWidth(),
       colors =
-        SearchBarDefaults.colors().run { copy(containerColor = containerColor.copy(alpha = .5f)) },
+        SearchBarDefaults.colors().run {
+          copy(containerColor = containerColor.copy(alpha = alpha))
+        },
       windowInsets = WindowInsets(),
       inputField = {
         SearchBarDefaults.InputField(
@@ -119,6 +122,7 @@ fun SharedTransitionScope.PlacesContent(
                 loadingState = places[category],
                 layout = it,
                 modifier = Modifier.weight(1f),
+                alpha = alpha,
                 animatedVisibilityScope = animatedVisibilityScope,
                 onClick = { onTogglePlaceCategory(category) },
                 onCategoryClick = onCategoryClick,
@@ -140,6 +144,7 @@ fun SharedTransitionScope.PlacesContent(
                 isSelected = category in places,
                 loadingState = places[category],
                 layout = it,
+                alpha = alpha,
                 animatedVisibilityScope = animatedVisibilityScope,
                 onClick = { onTogglePlaceCategory(category) },
                 onCategoryClick = onCategoryClick,

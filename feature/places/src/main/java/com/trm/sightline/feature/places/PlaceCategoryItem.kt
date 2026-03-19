@@ -50,17 +50,18 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
   icon: ImageVector,
   isSelected: Boolean,
   loadingState: LoadingState<List<Place>>?,
+  alpha: Float,
   modifier: Modifier = Modifier,
   layout: PlacesLayout = PlacesLayout.Row,
   animatedVisibilityScope: AnimatedVisibilityScope,
   onClick: (PlaceCategory) -> Unit,
-  onCategoryClick: (PlaceCategory, List<Place>) -> Unit = { _, _ -> },
+  onCategoryClick: (PlaceCategory, List<Place>) -> Unit,
 ) {
   when (layout) {
     PlacesLayout.Row -> {
       val colors =
         ToggleButtonDefaults.toggleButtonColors().run {
-          copy(containerColor = containerColor.copy(alpha = .5f))
+          copy(containerColor = containerColor.copy(alpha = alpha))
         }
       ToggleButton(
         checked = isSelected,
@@ -96,7 +97,7 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
       val shapes = ToggleButtonDefaults.shapes()
       val colors =
         ToggleButtonDefaults.toggleButtonColors().run {
-          copy(containerColor = containerColor.copy(alpha = .25f))
+          copy(containerColor = containerColor.copy(alpha = alpha / 2f))
         }
 
       Card(
@@ -108,8 +109,8 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
           },
         colors =
           CardDefaults.cardColors(
-            containerColor = colors.containerColor.copy(alpha = .25f),
-            disabledContainerColor = colors.containerColor.copy(alpha = .25f),
+            containerColor = colors.containerColor.copy(alpha = alpha / 2f),
+            disabledContainerColor = colors.containerColor.copy(alpha = alpha / 2f),
           ),
         modifier = modifier,
         onClick = {
