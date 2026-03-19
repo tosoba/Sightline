@@ -2,6 +2,8 @@ package com.trm.sightline.feature.places
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -43,13 +45,14 @@ import com.trm.sightline.core.model.PlaceCategory
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-internal fun PlaceCategoryItem(
+internal fun SharedTransitionScope.PlaceCategoryItem(
   category: PlaceCategory,
   icon: ImageVector,
   isSelected: Boolean,
   loadingState: LoadingState<List<Place>>?,
   modifier: Modifier = Modifier,
   layout: PlacesLayout = PlacesLayout.Row,
+  animatedVisibilityScope: AnimatedVisibilityScope,
   onClick: (PlaceCategory) -> Unit,
   onCategoryClick: (PlaceCategory, List<Place>) -> Unit = { _, _ -> },
 ) {
@@ -143,7 +146,12 @@ internal fun PlaceCategoryItem(
               style = MaterialTheme.typography.titleMedium,
               color = MaterialTheme.colorScheme.onSurfaceVariant,
               maxLines = 1,
-              modifier = Modifier.basicMarquee(iterations = Int.MAX_VALUE),
+              modifier =
+                Modifier.sharedElement(
+                    sharedContentState = rememberSharedContentState(key = "title-${category.name}"),
+                    animatedVisibilityScope = animatedVisibilityScope,
+                  )
+                  .basicMarquee(iterations = Int.MAX_VALUE),
             )
 
             AnimatedContent(loadingState) { state ->
@@ -154,7 +162,13 @@ internal fun PlaceCategoryItem(
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
-                    modifier = Modifier.basicMarquee(iterations = Int.MAX_VALUE),
+                    modifier =
+                      Modifier.sharedElement(
+                          sharedContentState =
+                            rememberSharedContentState(key = "count-${category.name}"),
+                          animatedVisibilityScope = animatedVisibilityScope,
+                        )
+                        .basicMarquee(iterations = Int.MAX_VALUE),
                   )
                 }
                 else -> {}

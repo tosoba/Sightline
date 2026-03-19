@@ -26,6 +26,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.Text
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -41,13 +44,14 @@ import com.trm.sightline.core.model.LoadingState
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
-fun PlacesContent(
+fun SharedTransitionScope.PlacesContent(
   state: PlacesState,
   places: Map<PlaceCategory, LoadingState<List<Place>>>,
   layout: PlacesLayout,
   modifier: Modifier = Modifier,
+  animatedVisibilityScope: AnimatedVisibilityScope,
   onSearchFocusChange: (Boolean) -> Unit = {},
   onTogglePlaceCategory: (PlaceCategory) -> Unit,
   onCategoryClick: (PlaceCategory, List<Place>) -> Unit,
@@ -115,6 +119,7 @@ fun PlacesContent(
                 loadingState = places[category],
                 layout = it,
                 modifier = Modifier.weight(1f),
+                animatedVisibilityScope = animatedVisibilityScope,
                 onClick = { onTogglePlaceCategory(category) },
                 onCategoryClick = onCategoryClick,
               )
@@ -135,6 +140,7 @@ fun PlacesContent(
                 isSelected = category in places,
                 loadingState = places[category],
                 layout = it,
+                animatedVisibilityScope = animatedVisibilityScope,
                 onClick = { onTogglePlaceCategory(category) },
                 onCategoryClick = onCategoryClick,
               )

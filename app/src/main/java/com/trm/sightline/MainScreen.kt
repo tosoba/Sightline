@@ -1,5 +1,8 @@
 package com.trm.sightline
 
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -47,8 +50,6 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.navigation3.runtime.EntryProviderScope
-import androidx.navigation3.runtime.NavKey
 import com.trm.sightline.composable.MainPager
 import com.trm.sightline.composable.MainPagerToolbar
 import com.trm.sightline.core.ar.util.collapsedBottomSheetContentHeightDp
@@ -60,10 +61,15 @@ import com.trm.sightline.feature.places.PlacesLayout
 import com.trm.sightline.feature.places.rememberPlacesState
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(
+  ExperimentalMaterial3Api::class,
+  ExperimentalMaterial3ExpressiveApi::class,
+  ExperimentalSharedTransitionApi::class,
+)
 @Composable
-fun EntryProviderScope<NavKey>.MainScreen(
+fun SharedTransitionScope.MainScreen(
   isCompactHeight: Boolean,
+  animatedVisibilityScope: AnimatedVisibilityScope,
   onCategoryClick: (PlaceCategory, List<Place>) -> Unit,
 ) {
   val scope = rememberCoroutineScope()
@@ -143,6 +149,7 @@ fun EntryProviderScope<NavKey>.MainScreen(
             scope.launch { sheetState.expand() }
           }
         },
+        animatedVisibilityScope = animatedVisibilityScope,
         onTogglePlaceCategory = viewModel::onTogglePlaceCategory,
         onCategoryClick = onCategoryClick,
       )
