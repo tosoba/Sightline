@@ -23,4 +23,8 @@ android {
   }
 }
 
-dependencies { api(project(":core:model")) }
+dependencies {
+  api(project(":core:model"))
+
+  implementation(libs.kotlinx.coroutines.core)
+}

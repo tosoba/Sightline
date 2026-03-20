@@ -10,6 +10,7 @@ import androidx.lifecycle.viewModelScope
 import com.trm.sightline.core.common.NetworkError
 import com.trm.sightline.core.common.toNetworkError
 import com.trm.sightline.core.domain.PlacesRepository
+import com.trm.sightline.core.domain.UserPreferencesRepository
 import com.trm.sightline.core.model.LoadingState
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
@@ -18,8 +19,11 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
@@ -27,7 +31,12 @@ import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
 
 @HiltViewModel
-class MainViewModel @Inject constructor(private val repository: PlacesRepository) : ViewModel() {
+class MainViewModel
+@Inject
+constructor(
+  private val repository: PlacesRepository,
+  private val userPreferencesRepository: UserPreferencesRepository,
+) : ViewModel() {
   val places = mutableStateMapOf<PlaceCategory, LoadingState<List<Place>>>()
 
   val allPlaces: List<Place>
@@ -39,7 +48,14 @@ class MainViewModel @Inject constructor(private val repository: PlacesRepository
   val networkErrors = Channel<NetworkError>(Channel.UNLIMITED)
 
   var location by mutableStateOf("")
-  var userLocation by mutableStateOf(false)
+  val userLocation: StateFlow<Boolean> =
+    userPreferencesRepository
+      .getUserLocation()
+      .stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = false,
+      )
 
   var currentLocation by
     mutableStateOf(
@@ -96,6 +112,10 @@ class MainViewModel @Inject constructor(private val repository: PlacesRepository
     val isActive = !places.containsKey(category)
     if (isActive) places[category] = LoadingState.Loading else places.remove(category)
     viewModelScope.launch { categoryToggles.emit(category to isActive) }
+  }
+
+  fun setUserLocation(userLocation: Boolean) {
+    viewModelScope.launch { userPreferencesRepository.setUserLocation(userLocation) }
   }
 
   companion object {

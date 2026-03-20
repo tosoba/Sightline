@@ -51,6 +51,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.trm.sightline.composable.MainPager
 import com.trm.sightline.composable.MainPagerToolbar
 import com.trm.sightline.core.ar.util.collapsedBottomSheetContentHeightDp
@@ -93,6 +94,7 @@ fun SharedTransitionScope.MainScreen(
   LaunchedEffect(pagerState.currentPage) { toolbarsVisible = true }
 
   val viewModel = hiltViewModel<MainViewModel>()
+  val userLocation by viewModel.userLocation.collectAsStateWithLifecycle()
 
   val sheetState =
     key(isCompactHeight) {
@@ -137,7 +139,7 @@ fun SharedTransitionScope.MainScreen(
       PlacesContent(
         places = viewModel.places,
         location = viewModel.location,
-        userLocation = viewModel.userLocation,
+        userLocation = userLocation,
         layout =
           if (isCompactHeight || sheetState.targetValue == SheetValue.Expanded) PlacesLayout.Grid
           else PlacesLayout.Row,
@@ -165,7 +167,7 @@ fun SharedTransitionScope.MainScreen(
             scope.launch { sheetState.expand() }
           }
         },
-        onUserLocationToggle = { viewModel.userLocation = it },
+        onUserLocationToggle = viewModel::setUserLocation,
         onLocationChange = { viewModel.location = it },
         onTogglePlaceCategory = viewModel::onTogglePlaceCategory,
         onCategoryClick = onCategoryClick,
