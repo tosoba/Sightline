@@ -77,8 +77,16 @@ fun SharedTransitionScope.MainScreen(
   val pagerState = rememberPagerState(pageCount = MainPage.entries::size)
   val containerAlpha by remember {
     derivedStateOf {
-      val progress = (pagerState.currentPage + pagerState.currentPageOffsetFraction).coerceIn(0f, 1f)
+      val progress =
+        (pagerState.currentPage + pagerState.currentPageOffsetFraction).coerceIn(0f, 1f)
       0.5f + (progress * 0.4f)
+    }
+  }
+  val contentAlpha by remember {
+    derivedStateOf {
+      val progress =
+        (pagerState.currentPage + pagerState.currentPageOffsetFraction).coerceIn(0f, 1f)
+      0.5f + (progress * 0.5f)
     }
   }
   val selectedPage = MainPage.entries[pagerState.currentPage]
@@ -134,7 +142,7 @@ fun SharedTransitionScope.MainScreen(
         layout =
           if (isCompactHeight || sheetState.targetValue == SheetValue.Expanded) PlacesLayout.Grid
           else PlacesLayout.Row,
-        alpha = containerAlpha,
+        alpha = contentAlpha,
         modifier =
           if (isCompactHeight) {
             Modifier.width(sideSheetWidthDp.dp)

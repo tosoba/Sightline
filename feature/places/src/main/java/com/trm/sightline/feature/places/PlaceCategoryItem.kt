@@ -60,9 +60,12 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
   when (layout) {
     PlacesLayout.Row -> {
       val colors =
-        ToggleButtonDefaults.toggleButtonColors().run {
-          copy(containerColor = containerColor.copy(alpha = alpha))
-        }
+        ToggleButtonDefaults.toggleButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)
+          .run {
+            copy(
+              containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = alpha)
+            )
+          }
       ToggleButton(
         checked = isSelected,
         onCheckedChange = { onClick(category) },
@@ -96,9 +99,12 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
       val isPressed by interactionSource.collectIsPressedAsState()
       val shapes = ToggleButtonDefaults.shapes()
       val colors =
-        ToggleButtonDefaults.toggleButtonColors().run {
-          copy(containerColor = containerColor.copy(alpha = alpha / 2f))
-        }
+        ToggleButtonDefaults.toggleButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)
+          .run {
+            copy(
+              containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = alpha)
+            )
+          }
 
       Card(
         shape =
@@ -109,8 +115,9 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
           },
         colors =
           CardDefaults.cardColors(
-            containerColor = colors.containerColor.copy(alpha = alpha / 2f),
-            disabledContainerColor = colors.containerColor.copy(alpha = alpha / 2f),
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = alpha),
+            disabledContainerColor =
+              MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = alpha),
           ),
         modifier = modifier,
         onClick = {
@@ -145,7 +152,7 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
             Text(
               text = category.label,
               style = MaterialTheme.typography.titleMedium,
-              color = MaterialTheme.colorScheme.onSurfaceVariant,
+              color = MaterialTheme.colorScheme.onSurface,
               maxLines = 1,
               modifier =
                 Modifier.sharedElement(
@@ -161,7 +168,7 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
                   Text(
                     text = "${state.data.size} places",
                     style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     modifier =
                       Modifier.sharedElement(
@@ -183,7 +190,7 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
             Icon(
               imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
               contentDescription = null,
-              tint = MaterialTheme.colorScheme.onSurfaceVariant,
+              tint = MaterialTheme.colorScheme.onSurface,
               modifier = Modifier.padding(end = 8.dp),
             )
           }
