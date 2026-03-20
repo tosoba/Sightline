@@ -59,7 +59,6 @@ import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
 import com.trm.sightline.feature.places.PlacesContent
 import com.trm.sightline.feature.places.PlacesLayout
-import com.trm.sightline.feature.places.rememberPlacesState
 import kotlinx.coroutines.launch
 
 @OptIn(
@@ -133,16 +132,17 @@ fun SharedTransitionScope.MainScreen(
     }
   val expandedProgress = remember(thresholdProgress) { 1f - thresholdProgress }.coerceIn(0f, 1f)
 
-  val placesSheetState = rememberPlacesState()
   val placesSheetContent =
     @Composable {
       PlacesContent(
-        state = placesSheetState,
         places = viewModel.places,
+        location = viewModel.location,
+        userLocation = viewModel.userLocation,
         layout =
           if (isCompactHeight || sheetState.targetValue == SheetValue.Expanded) PlacesLayout.Grid
           else PlacesLayout.Row,
         alpha = contentAlpha,
+        animatedVisibilityScope = animatedVisibilityScope,
         modifier =
           if (isCompactHeight) {
             Modifier.width(sideSheetWidthDp.dp)
@@ -165,7 +165,8 @@ fun SharedTransitionScope.MainScreen(
             scope.launch { sheetState.expand() }
           }
         },
-        animatedVisibilityScope = animatedVisibilityScope,
+        onUserLocationToggle = { viewModel.userLocation = it },
+        onLocationChange = { viewModel.location = it },
         onTogglePlaceCategory = viewModel::onTogglePlaceCategory,
         onCategoryClick = onCategoryClick,
       )

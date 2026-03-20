@@ -74,13 +74,16 @@ import com.trm.sightline.core.model.PlaceCategory
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun SharedTransitionScope.PlacesContent(
-  state: PlacesState,
   places: Map<PlaceCategory, LoadingState<List<Place>>>,
+  location: String,
+  userLocation: Boolean,
   layout: PlacesLayout,
   alpha: Float,
-  modifier: Modifier = Modifier,
   animatedVisibilityScope: AnimatedVisibilityScope,
-  onSearchFocusChange: (Boolean) -> Unit = {},
+  modifier: Modifier = Modifier,
+  onSearchFocusChange: (Boolean) -> Unit,
+  onUserLocationToggle: (Boolean) -> Unit,
+  onLocationChange: (String) -> Unit,
   onTogglePlaceCategory: (PlaceCategory) -> Unit,
   onCategoryClick: (PlaceCategory, List<Place>) -> Unit,
 ) {
@@ -99,11 +102,11 @@ fun SharedTransitionScope.PlacesContent(
       windowInsets = WindowInsets(),
       inputField = {
         SearchBarDefaults.InputField(
-          query = state.location,
-          onQueryChange = { state.location = it },
+          query = location,
+          onQueryChange = onLocationChange,
           onSearch = {},
           expanded = false,
-          enabled = !state.userLocation,
+          enabled = !userLocation,
           onExpandedChange = {},
           placeholder = { Text("Current location") },
           modifier =
@@ -122,8 +125,8 @@ fun SharedTransitionScope.PlacesContent(
           },
           trailingIcon = {
             FilledTonalIconToggleButton(
-              checked = state.userLocation,
-              onCheckedChange = { state.userLocation = it },
+              checked = userLocation,
+              onCheckedChange = onUserLocationToggle,
             ) {
               Icon(imageVector = Icons.Default.MyLocation, contentDescription = "My location")
             }

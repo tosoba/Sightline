@@ -38,6 +38,9 @@ class MainViewModel @Inject constructor(private val repository: PlacesRepository
 
   val networkErrors = Channel<NetworkError>(Channel.UNLIMITED)
 
+  var location by mutableStateOf("")
+  var userLocation by mutableStateOf(false)
+
   var currentLocation by
     mutableStateOf(
       Location(null).apply {
