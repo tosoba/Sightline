@@ -14,6 +14,9 @@ import com.trm.sightline.core.domain.UserPreferencesRepository
 import com.trm.sightline.core.model.LoadingState
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
@@ -27,13 +30,13 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
-import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
 
-@HiltViewModel
+@HiltViewModel(assistedFactory = MainViewModel.Factory::class)
 class MainViewModel
-@Inject
+@AssistedInject
 constructor(
+  @Assisted private val isLocationPermissionDenied: Boolean,
   private val repository: PlacesRepository,
   private val userPreferencesRepository: UserPreferencesRepository,
 ) : ViewModel() {
@@ -48,22 +51,14 @@ constructor(
   val networkErrors = Channel<NetworkError>(Channel.UNLIMITED)
 
   var location by mutableStateOf("")
+
   val userLocation: StateFlow<Boolean> =
     userPreferencesRepository
       .getUserLocation()
       .stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = true,
-      )
-
-  val hasRequestedPermission: StateFlow<Boolean> =
-    userPreferencesRepository
-      .getHasRequestedLocationPermission()
-      .stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = false,
+        initialValue = !isLocationPermissionDenied,
       )
 
   var currentLocation by
@@ -127,10 +122,9 @@ constructor(
     viewModelScope.launch { userPreferencesRepository.setUserLocation(userLocation) }
   }
 
-  fun setHasRequestedPermission(hasRequested: Boolean) {
-    viewModelScope.launch {
-      userPreferencesRepository.setHasRequestedLocationPermission(hasRequested)
-    }
+  @AssistedFactory
+  interface Factory {
+    fun create(isLocationPermissionDenied: Boolean): MainViewModel
   }
 
   companion object {

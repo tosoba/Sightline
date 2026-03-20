@@ -27,15 +27,7 @@ constructor(@ApplicationContext private val context: Context) : UserPreferencesR
     context.dataStore.edit { preferences -> preferences[USER_LOCATION] = userLocation }
   }
 
-  override fun getHasRequestedLocationPermission(): Flow<Boolean> =
-    context.dataStore.data.map { preferences -> preferences[HAS_REQUESTED_PERMISSION] ?: false }
-
-  override suspend fun setHasRequestedLocationPermission(hasRequested: Boolean) {
-    context.dataStore.edit { preferences -> preferences[HAS_REQUESTED_PERMISSION] = hasRequested }
-  }
-
   companion object {
     private val USER_LOCATION = booleanPreferencesKey("user_location")
-    private val HAS_REQUESTED_PERMISSION = booleanPreferencesKey("has_requested_permission")
   }
 }

@@ -7,6 +7,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -17,6 +18,7 @@ import androidx.core.content.ContextCompat
 interface LocationPermissionState {
   val isGranted: Boolean
   val shouldShowRationale: Boolean
+  val requestCount: Int
 
   fun launchRequest()
 }
@@ -40,6 +42,7 @@ fun rememberLocationPermissionState(): LocationPermissionState {
       )
     )
   }
+  var requestCount by remember { mutableIntStateOf(0) }
 
   val launcher =
     rememberLauncherForActivityResult(
@@ -51,6 +54,7 @@ fun rememberLocationPermissionState(): LocationPermissionState {
             activity,
             Manifest.permission.ACCESS_FINE_LOCATION,
           )
+        requestCount++
       },
     )
 
@@ -61,6 +65,9 @@ fun rememberLocationPermissionState(): LocationPermissionState {
 
       override val shouldShowRationale: Boolean
         get() = shouldShowRationale
+
+      override val requestCount: Int
+        get() = requestCount
 
       override fun launchRequest() {
         launcher.launch(

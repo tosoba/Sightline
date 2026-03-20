@@ -100,43 +100,46 @@ fun SharedTransitionScope.MainScreen(
   var toolbarsVisible by remember { mutableStateOf(true) }
   LaunchedEffect(pagerState.currentPage) { toolbarsVisible = true }
 
-  val viewModel = hiltViewModel<MainViewModel>()
-  val userLocation by viewModel.userLocation.collectAsStateWithLifecycle()
-  val hasRequestedPermission by viewModel.hasRequestedPermission.collectAsStateWithLifecycle()
   val permissionState = rememberLocationPermissionState()
-  var showSettingsDialog by remember { mutableStateOf(false) }
+  val viewModel =
+    hiltViewModel<MainViewModel, MainViewModel.Factory> { factory ->
+      factory.create(
+        isLocationPermissionDenied =
+          !permissionState.isGranted && !permissionState.shouldShowRationale
+      )
+    }
+  val userLocation by viewModel.userLocation.collectAsStateWithLifecycle()
+  var showLocationSettingsDialog by remember { mutableStateOf(false) }
 
-  LaunchedEffect(userLocation, permissionState.isGranted) {
-    if (userLocation && !permissionState.isGranted) {
-      if (hasRequestedPermission && !permissionState.shouldShowRationale) {
-        showSettingsDialog = true
-      } else {
-        permissionState.launchRequest()
-        viewModel.setHasRequestedPermission(true)
+  LaunchedEffect(userLocation) {
+    if (userLocation && !permissionState.isGranted && !permissionState.shouldShowRationale) {
+      permissionState.launchRequest()
+    }
+  }
+
+  LaunchedEffect(permissionState.requestCount) {
+    if (permissionState.requestCount > 0 && !permissionState.isGranted) {
+      viewModel.setUserLocation(false)
+      if (!permissionState.shouldShowRationale) {
+        showLocationSettingsDialog = true
       }
     }
   }
 
-  LaunchedEffect(permissionState.isGranted) {
-    if (!permissionState.isGranted && userLocation) {
-      viewModel.setUserLocation(false)
-    }
-  }
-
   val context = LocalContext.current
-  if (showSettingsDialog) {
+  if (showLocationSettingsDialog) {
     AlertDialog(
-      onDismissRequest = { showSettingsDialog = false },
+      onDismissRequest = { showLocationSettingsDialog = false },
       title = { Text("Location Permission") },
       text = {
         Text(
-          "Sightline needs location permission to show places near you. Please grant it in settings."
+          "Sightline needs location permission to show places near you. You can grant it in settings."
         )
       },
       confirmButton = {
         TextButton(
           onClick = {
-            showSettingsDialog = false
+            showLocationSettingsDialog = false
             context.startActivity(
               Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
                 .setData(Uri.fromParts("package", context.packageName, null))
@@ -146,7 +149,9 @@ fun SharedTransitionScope.MainScreen(
           Text("Settings")
         }
       },
-      dismissButton = { TextButton(onClick = { showSettingsDialog = false }) { Text("Cancel") } },
+      dismissButton = {
+        TextButton(onClick = { showLocationSettingsDialog = false }) { Text("Cancel") }
+      },
     )
   }
 
@@ -221,17 +226,7 @@ fun SharedTransitionScope.MainScreen(
             scope.launch { sheetState.expand() }
           }
         },
-        onUserLocationToggle = { enabled ->
-          if (enabled && !permissionState.isGranted) {
-            if (hasRequestedPermission && !permissionState.shouldShowRationale) {
-              showSettingsDialog = true
-            } else {
-              viewModel.setUserLocation(true)
-            }
-          } else {
-            viewModel.setUserLocation(enabled)
-          }
-        },
+        onUserLocationToggle = { enabled -> viewModel.setUserLocation(enabled) },
         onLocationChange = { viewModel.location = it },
         onTogglePlaceCategory = viewModel::onTogglePlaceCategory,
         onCategoryClick = onCategoryClick,
