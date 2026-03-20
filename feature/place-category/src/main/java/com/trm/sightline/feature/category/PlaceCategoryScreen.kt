@@ -34,7 +34,7 @@ fun SharedTransitionScope.PlaceCategoryScreen(
       modifier = Modifier.fillMaxSize().padding(it),
     ) {
       Text(
-        text = route.category.name.lowercase().replaceFirstChar(Char::uppercase),
+        text = route.category.label,
         style = MaterialTheme.typography.titleMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier =

@@ -83,7 +83,7 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
           Spacer(modifier = Modifier.height(4.dp))
 
           Text(
-            text = category.name.lowercase().replaceFirstChar(Char::uppercase),
+            text = category.label,
             style = MaterialTheme.typography.labelSmall,
             maxLines = 1,
             modifier = Modifier.basicMarquee(iterations = Int.MAX_VALUE),
@@ -143,7 +143,7 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
 
           Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
             Text(
-              text = category.name.lowercase().replaceFirstChar(Char::uppercase),
+              text = category.label,
               style = MaterialTheme.typography.titleMedium,
               color = MaterialTheme.colorScheme.onSurfaceVariant,
               maxLines = 1,

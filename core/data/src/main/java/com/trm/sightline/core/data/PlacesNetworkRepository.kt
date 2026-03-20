@@ -48,7 +48,7 @@ class PlacesNetworkRepository @Inject constructor(private val overpassApi: Overp
     radiusMeters: Float,
   ): String =
     when (category) {
-      PlaceCategory.ATTRACTIONS -> {
+      PlaceCategory.Attractions -> {
         ComplexQuery.Builder()
           .union(
             listOf(
@@ -72,27 +72,258 @@ class PlacesNetworkRepository @Inject constructor(private val overpassApi: Overp
           )
           .build()
       }
-      PlaceCategory.FOOD -> {
-        NodeQuery.Builder()
-          .around(latitude, longitude, radiusMeters)
-          .tag(
-            "amenity",
-            "bar|biergarten|cafe|fast_food|food_court|ice_cream|pub|restaurant",
-            Filter.LIKE,
-          )
-          .build()
+      PlaceCategory.Food -> {
+        amenityNodeQuery(
+          latitude = latitude,
+          longitude = longitude,
+          radiusMeters = radiusMeters,
+          value = "bar|biergarten|cafe|fast_food|food_court|ice_cream|pub|restaurant",
+          filter = Filter.LIKE,
+        )
       }
-      PlaceCategory.ACCOMMODATION -> {
+      PlaceCategory.Accommodation -> {
         NodeQuery.Builder()
           .around(latitude, longitude, radiusMeters)
           .tag("tourism", "alpine_hut|apartment|chalet|guest_house|hostel|hotel|motel", Filter.LIKE)
           .build()
       }
-      PlaceCategory.STORES -> {
+      PlaceCategory.Stores -> {
         NodeQuery.Builder()
           .around(latitude, longitude, radiusMeters)
           .tag("shop", "department_store|general|kiosk|mall|supermarket|wholesale", Filter.LIKE)
           .build()
       }
+      PlaceCategory.BikeRental -> {
+        amenityNodeQuery(
+          latitude = latitude,
+          longitude = longitude,
+          radiusMeters = radiusMeters,
+          value = "bicycle_rental",
+        )
+      }
+      PlaceCategory.BusStation -> {
+        amenityNodeQuery(
+          latitude = latitude,
+          longitude = longitude,
+          radiusMeters = radiusMeters,
+          value = "bus_station",
+        )
+      }
+      PlaceCategory.CarRental -> {
+        amenityNodeQuery(
+          latitude = latitude,
+          longitude = longitude,
+          radiusMeters = radiusMeters,
+          value = "car_rental|car_sharing",
+          filter = Filter.LIKE,
+        )
+      }
+      PlaceCategory.CarWash -> {
+        amenityNodeQuery(
+          latitude = latitude,
+          longitude = longitude,
+          radiusMeters = radiusMeters,
+          value = "car_wash",
+        )
+      }
+      PlaceCategory.ChargingStation -> {
+        amenityNodeQuery(
+          latitude = latitude,
+          longitude = longitude,
+          radiusMeters = radiusMeters,
+          value = "charging_station",
+        )
+      }
+      PlaceCategory.Fuel -> {
+        amenityNodeQuery(
+          latitude = latitude,
+          longitude = longitude,
+          radiusMeters = radiusMeters,
+          value = "fuel",
+        )
+      }
+      PlaceCategory.Parking -> {
+        amenityNodeQuery(
+          latitude = latitude,
+          longitude = longitude,
+          radiusMeters = radiusMeters,
+          value = "parking|motorcycle_parking",
+          filter = Filter.LIKE,
+        )
+      }
+      PlaceCategory.Taxi -> {
+        amenityNodeQuery(
+          latitude = latitude,
+          longitude = longitude,
+          radiusMeters = radiusMeters,
+          value = "taxi",
+        )
+      }
+      PlaceCategory.Atm -> {
+        amenityNodeQuery(
+          latitude = latitude,
+          longitude = longitude,
+          radiusMeters = radiusMeters,
+          value = "atm|payment_terminal",
+          filter = Filter.LIKE,
+        )
+      }
+      PlaceCategory.Bank -> {
+        amenityNodeQuery(
+          latitude = latitude,
+          longitude = longitude,
+          radiusMeters = radiusMeters,
+          value = "bank",
+        )
+      }
+      PlaceCategory.CurrencyExchange -> {
+        amenityNodeQuery(
+          latitude = latitude,
+          longitude = longitude,
+          radiusMeters = radiusMeters,
+          value = "bureau_de_change",
+        )
+      }
+      PlaceCategory.Doctors -> {
+        amenityNodeQuery(
+          latitude = latitude,
+          longitude = longitude,
+          radiusMeters = radiusMeters,
+          value = "doctors",
+        )
+      }
+      PlaceCategory.Hospital -> {
+        amenityNodeQuery(
+          latitude = latitude,
+          longitude = longitude,
+          radiusMeters = radiusMeters,
+          value = "hospital|clinic",
+          filter = Filter.LIKE,
+        )
+      }
+      PlaceCategory.Pharmacy -> {
+        amenityNodeQuery(
+          latitude = latitude,
+          longitude = longitude,
+          radiusMeters = radiusMeters,
+          value = "pharmacy",
+        )
+      }
+      PlaceCategory.Veterinary -> {
+        amenityNodeQuery(
+          latitude = latitude,
+          longitude = longitude,
+          radiusMeters = radiusMeters,
+          value = "veterinary",
+        )
+      }
+      PlaceCategory.Casino -> {
+        amenityNodeQuery(
+          latitude = latitude,
+          longitude = longitude,
+          radiusMeters = radiusMeters,
+          value = "casino",
+        )
+      }
+      PlaceCategory.Cinema -> {
+        amenityNodeQuery(
+          latitude = latitude,
+          longitude = longitude,
+          radiusMeters = radiusMeters,
+          value = "cinema",
+        )
+      }
+      PlaceCategory.CommunityCentre -> {
+        amenityNodeQuery(
+          latitude = latitude,
+          longitude = longitude,
+          radiusMeters = radiusMeters,
+          value = "community_centre",
+        )
+      }
+      PlaceCategory.Library -> {
+        amenityNodeQuery(
+          latitude = latitude,
+          longitude = longitude,
+          radiusMeters = radiusMeters,
+          value = "library",
+        )
+      }
+      PlaceCategory.Nightclub -> {
+        amenityNodeQuery(
+          latitude = latitude,
+          longitude = longitude,
+          radiusMeters = radiusMeters,
+          value = "nightclub",
+        )
+      }
+      PlaceCategory.Theatre -> {
+        amenityNodeQuery(
+          latitude = latitude,
+          longitude = longitude,
+          radiusMeters = radiusMeters,
+          value = "theatre",
+        )
+      }
+      PlaceCategory.FireStation -> {
+        amenityNodeQuery(
+          latitude = latitude,
+          longitude = longitude,
+          radiusMeters = radiusMeters,
+          value = "fire_station",
+        )
+      }
+      PlaceCategory.ParcelLocker -> {
+        amenityNodeQuery(
+          latitude = latitude,
+          longitude = longitude,
+          radiusMeters = radiusMeters,
+          value = "parcel_locker",
+        )
+      }
+      PlaceCategory.Police -> {
+        amenityNodeQuery(
+          latitude = latitude,
+          longitude = longitude,
+          radiusMeters = radiusMeters,
+          value = "police",
+        )
+      }
+      PlaceCategory.PostBox -> {
+        amenityNodeQuery(
+          latitude = latitude,
+          longitude = longitude,
+          radiusMeters = radiusMeters,
+          value = "post_box",
+        )
+      }
+      PlaceCategory.PostOffice -> {
+        amenityNodeQuery(
+          latitude = latitude,
+          longitude = longitude,
+          radiusMeters = radiusMeters,
+          value = "post_office",
+        )
+      }
+      PlaceCategory.Toilets -> {
+        amenityNodeQuery(
+          latitude = latitude,
+          longitude = longitude,
+          radiusMeters = radiusMeters,
+          value = "toilets",
+        )
+      }
     }.toQuery()
+
+  private fun amenityNodeQuery(
+    latitude: Double,
+    longitude: Double,
+    radiusMeters: Float,
+    value: String,
+    filter: Filter? = null,
+  ): NodeQuery =
+    NodeQuery.Builder()
+      .around(latitude, longitude, radiusMeters)
+      .tag("amenity", value, filter)
+      .build()
 }

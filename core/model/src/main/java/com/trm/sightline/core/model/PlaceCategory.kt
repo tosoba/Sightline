@@ -4,8 +4,49 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 enum class PlaceCategory {
-  ATTRACTIONS,
-  FOOD,
-  ACCOMMODATION,
-  STORES,
+  Attractions,
+  Food,
+  Accommodation,
+  Stores,
+
+  // Transportation
+  BikeRental,
+  BusStation,
+  CarRental,
+  CarWash,
+  ChargingStation,
+  Fuel,
+  Parking,
+  Taxi,
+
+  // Financial
+  Atm,
+  Bank,
+  CurrencyExchange,
+
+  // Healthcare
+  Doctors,
+  Hospital,
+  Pharmacy,
+  Veterinary,
+
+  // Entertainment, Arts & Culture
+  Casino,
+  Cinema,
+  CommunityCentre,
+  Library,
+  Nightclub,
+  Theatre,
+
+  // Public service/Facilities
+  FireStation,
+  ParcelLocker,
+  Police,
+  PostBox,
+  PostOffice,
+  Toilets;
+
+  val label: String
+    get() =
+      name.replace("(?<=.)(?=[A-Z])".toRegex(), " ").lowercase().replaceFirstChar { it.uppercase() }
 }
