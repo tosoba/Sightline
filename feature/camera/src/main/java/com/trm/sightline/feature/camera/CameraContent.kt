@@ -9,6 +9,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.trm.sightline.core.ar.model.RoundedRectF
 import com.trm.sightline.core.ar.view.ARMarkerRenderer
@@ -41,7 +42,7 @@ fun CameraContent(
         overlayContent = overlayContent,
       )
     } else {
-      Box(modifier = Modifier.fillMaxSize()) {
+      Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Button(onClick = cameraPermissionState::launchRequest) {
           Text(text = "Grant camera permission")
         }

@@ -1,5 +1,8 @@
 package com.trm.sightline
 
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
@@ -25,12 +28,15 @@ import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
@@ -46,6 +52,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -95,6 +102,53 @@ fun SharedTransitionScope.MainScreen(
 
   val viewModel = hiltViewModel<MainViewModel>()
   val userLocation by viewModel.userLocation.collectAsStateWithLifecycle()
+  val hasRequestedPermission by viewModel.hasRequestedPermission.collectAsStateWithLifecycle()
+  val permissionState = rememberLocationPermissionState()
+  var showSettingsDialog by remember { mutableStateOf(false) }
+
+  LaunchedEffect(userLocation, permissionState.isGranted) {
+    if (userLocation && !permissionState.isGranted) {
+      if (hasRequestedPermission && !permissionState.shouldShowRationale) {
+        showSettingsDialog = true
+      } else {
+        permissionState.launchRequest()
+        viewModel.setHasRequestedPermission(true)
+      }
+    }
+  }
+
+  LaunchedEffect(permissionState.isGranted) {
+    if (!permissionState.isGranted && userLocation) {
+      viewModel.setUserLocation(false)
+    }
+  }
+
+  val context = LocalContext.current
+  if (showSettingsDialog) {
+    AlertDialog(
+      onDismissRequest = { showSettingsDialog = false },
+      title = { Text("Location Permission") },
+      text = {
+        Text(
+          "Sightline needs location permission to show places near you. Please grant it in settings."
+        )
+      },
+      confirmButton = {
+        TextButton(
+          onClick = {
+            showSettingsDialog = false
+            context.startActivity(
+              Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                .setData(Uri.fromParts("package", context.packageName, null))
+            )
+          }
+        ) {
+          Text("Settings")
+        }
+      },
+      dismissButton = { TextButton(onClick = { showSettingsDialog = false }) { Text("Cancel") } },
+    )
+  }
 
   val sheetState =
     key(isCompactHeight) {
@@ -167,7 +221,17 @@ fun SharedTransitionScope.MainScreen(
             scope.launch { sheetState.expand() }
           }
         },
-        onUserLocationToggle = viewModel::setUserLocation,
+        onUserLocationToggle = { enabled ->
+          if (enabled && !permissionState.isGranted) {
+            if (hasRequestedPermission && !permissionState.shouldShowRationale) {
+              showSettingsDialog = true
+            } else {
+              viewModel.setUserLocation(true)
+            }
+          } else {
+            viewModel.setUserLocation(enabled)
+          }
+        },
         onLocationChange = { viewModel.location = it },
         onTogglePlaceCategory = viewModel::onTogglePlaceCategory,
         onCategoryClick = onCategoryClick,

@@ -54,6 +54,15 @@ constructor(
       .stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = true,
+      )
+
+  val hasRequestedPermission: StateFlow<Boolean> =
+    userPreferencesRepository
+      .getHasRequestedLocationPermission()
+      .stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
         initialValue = false,
       )
 
@@ -116,6 +125,12 @@ constructor(
 
   fun setUserLocation(userLocation: Boolean) {
     viewModelScope.launch { userPreferencesRepository.setUserLocation(userLocation) }
+  }
+
+  fun setHasRequestedPermission(hasRequested: Boolean) {
+    viewModelScope.launch {
+      userPreferencesRepository.setHasRequestedLocationPermission(hasRequested)
+    }
   }
 
   companion object {
