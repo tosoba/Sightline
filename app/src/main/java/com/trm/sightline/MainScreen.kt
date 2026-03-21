@@ -273,7 +273,7 @@ fun SharedTransitionScope.MainScreen(
     ) {
       MainPager(
         pagerState = pagerState,
-        location = viewModel.currentLocation,
+        location = viewModel.povLocation.location,
         places = viewModel.allPlaces,
         isCompactHeight = isCompactHeight,
         cameraPreviewBlurred = !isCompactHeight && expandedProgress != 0f,

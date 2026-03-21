@@ -62,12 +62,16 @@ constructor(
         initialValue = false,
       )
 
-  var currentLocation by
+  var povLocation by
     mutableStateOf(
-      Location(null).apply {
-        latitude = 52.237049
-        longitude = 21.017532
-      }
+      PovLocation(
+        location =
+          Location(null).apply {
+            latitude = 52.237049
+            longitude = 21.017532
+          },
+        origin = PovLocationOrigin.CUSTOM,
+      )
     )
     private set
 
@@ -102,8 +106,8 @@ constructor(
                 LoadingState.Loaded(
                   repository.fetchPlaces(
                     category = category,
-                    latitude = currentLocation.latitude,
-                    longitude = currentLocation.longitude,
+                    latitude = povLocation.location.latitude,
+                    longitude = povLocation.location.longitude,
                     radiusMeters = 1_000f,
                   )
                 )
