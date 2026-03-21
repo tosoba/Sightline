@@ -25,12 +25,15 @@ import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
@@ -46,6 +49,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -56,6 +60,8 @@ import com.trm.sightline.composable.MainPager
 import com.trm.sightline.composable.MainPagerToolbar
 import com.trm.sightline.core.ar.util.collapsedBottomSheetContentHeightDp
 import com.trm.sightline.core.ar.util.sideSheetWidthDp
+import com.trm.sightline.core.common.PermissionStatus
+import com.trm.sightline.core.common.util.startAppSettingsActivity
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
 import com.trm.sightline.feature.places.PlacesContent
@@ -94,10 +100,45 @@ fun SharedTransitionScope.MainScreen(
   LaunchedEffect(pagerState.currentPage) { toolbarsVisible = true }
 
   val locationPermissionState = rememberLocationPermissionState()
-  val viewModel =
-    hiltViewModel<MainViewModel, MainViewModel.Factory> { factory ->
-      factory.create(locationPermissionGranted = locationPermissionState.isGranted)
+  val viewModel = hiltViewModel<MainViewModel>()
+
+  var locationPermissionFlowInProgress by remember { mutableStateOf(false) }
+  LaunchedEffect(locationPermissionState.status) {
+    when (locationPermissionState.status) {
+      PermissionStatus.Granted -> {
+        if (locationPermissionFlowInProgress) viewModel.setUserLocationEnabled(true)
+        locationPermissionFlowInProgress = false
+      }
+      PermissionStatus.Denied,
+      PermissionStatus.PermanentlyDenied -> {
+        locationPermissionFlowInProgress = false
+      }
+      PermissionStatus.Unknown -> {}
     }
+  }
+
+  var showLocationPermissionSettingsDialog by remember { mutableStateOf(false) }
+  if (showLocationPermissionSettingsDialog) {
+    val context = LocalContext.current
+    AlertDialog(
+      onDismissRequest = { showLocationPermissionSettingsDialog = false },
+      title = { Text("Location permission required") },
+      text = { Text("Location access was permanently denied. Open Settings to grant it.") },
+      confirmButton = {
+        TextButton(
+          onClick = {
+            showLocationPermissionSettingsDialog = false
+            context.startAppSettingsActivity()
+          }
+        ) {
+          Text("Open Settings")
+        }
+      },
+      dismissButton = {
+        TextButton(onClick = { showLocationPermissionSettingsDialog = false }) { Text("Cancel") }
+      },
+    )
+  }
 
   val sheetState =
     key(isCompactHeight) {
@@ -142,7 +183,9 @@ fun SharedTransitionScope.MainScreen(
       PlacesContent(
         places = viewModel.places,
         customLocationAddress = viewModel.customLocationAddress.collectAsStateWithLifecycle().value,
-        userLocationEnabled = viewModel.userLocationEnabled.collectAsStateWithLifecycle().value,
+        userLocationEnabled =
+          viewModel.userLocationEnabled.collectAsStateWithLifecycle().value &&
+            locationPermissionState.isGranted,
         layout =
           if (isCompactHeight || sheetState.targetValue == SheetValue.Expanded) PlacesLayout.Grid
           else PlacesLayout.Row,
@@ -170,7 +213,25 @@ fun SharedTransitionScope.MainScreen(
             scope.launch { sheetState.expand() }
           }
         },
-        onToggleUserLocationEnabled = viewModel::setUserLocationEnabled,
+        onToggleUserLocationEnabled = { enabled ->
+          if (enabled) {
+            when (locationPermissionState.status) {
+              PermissionStatus.Granted -> {
+                viewModel.setUserLocationEnabled(true)
+              }
+              PermissionStatus.PermanentlyDenied -> {
+                showLocationPermissionSettingsDialog = true
+              }
+              else -> {
+                locationPermissionFlowInProgress = true
+                locationPermissionState.launchRequest()
+              }
+            }
+          } else {
+            locationPermissionFlowInProgress = false
+            viewModel.setUserLocationEnabled(false)
+          }
+        },
         onLocationChange = viewModel::setCustomLocationAddress,
         onTogglePlaceCategory = viewModel::onTogglePlaceCategory,
         onCategoryClick = onCategoryClick,

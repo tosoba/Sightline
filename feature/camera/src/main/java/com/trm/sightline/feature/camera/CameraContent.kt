@@ -1,9 +1,6 @@
 package com.trm.sightline.feature.camera
 
-import android.content.Intent
 import android.location.Location
-import android.net.Uri
-import android.provider.Settings
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -24,6 +21,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.trm.sightline.core.ar.model.RoundedRectF
 import com.trm.sightline.core.ar.view.ARMarkerRenderer
 import com.trm.sightline.core.common.PermissionStatus
+import com.trm.sightline.core.common.util.startAppSettingsActivity
 import com.trm.sightline.core.model.Place
 
 @Composable
@@ -55,10 +53,7 @@ fun CameraContent(
         TextButton(
           onClick = {
             showSettingsDialog = false
-            context.startActivity(
-              Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                .setData(Uri.fromParts("package", context.packageName, null))
-            )
+            context.startAppSettingsActivity()
           }
         ) {
           Text("Open Settings")

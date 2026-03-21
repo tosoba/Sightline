@@ -14,9 +14,6 @@ import com.trm.sightline.core.domain.UserPreferencesRepository
 import com.trm.sightline.core.model.LoadingState
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedFactory
-import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
@@ -29,18 +26,17 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
+import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
 
-@HiltViewModel(assistedFactory = MainViewModel.Factory::class)
+@HiltViewModel
 class MainViewModel
-@AssistedInject
+@Inject
 constructor(
-  @Assisted private val locationPermissionGranted: Boolean,
   private val repository: PlacesRepository,
   private val userPreferencesRepository: UserPreferencesRepository,
 ) : ViewModel() {
@@ -60,7 +56,6 @@ constructor(
   val userLocationEnabled: StateFlow<Boolean> =
     userPreferencesRepository
       .getUserLocationEnabled()
-      .map { it && locationPermissionGranted }
       .stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
@@ -135,11 +130,6 @@ constructor(
 
   fun setUserLocationEnabled(userLocationEnabled: Boolean) {
     viewModelScope.launch { userPreferencesRepository.setUserLocationEnabled(userLocationEnabled) }
-  }
-
-  @AssistedFactory
-  interface Factory {
-    fun create(locationPermissionGranted: Boolean): MainViewModel
   }
 
   companion object {
