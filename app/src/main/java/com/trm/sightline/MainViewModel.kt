@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.launch
@@ -36,7 +37,7 @@ import kotlin.coroutines.cancellation.CancellationException
 class MainViewModel
 @AssistedInject
 constructor(
-  @Assisted private val isLocationPermissionDenied: Boolean,
+  @Assisted private val locationPermissionGranted: Boolean,
   private val repository: PlacesRepository,
   private val userPreferencesRepository: UserPreferencesRepository,
 ) : ViewModel() {
@@ -55,10 +56,11 @@ constructor(
   val userLocation: StateFlow<Boolean> =
     userPreferencesRepository
       .getUserLocation()
+      .map { it && locationPermissionGranted }
       .stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = !isLocationPermissionDenied,
+        initialValue = false,
       )
 
   var currentLocation by
@@ -124,7 +126,7 @@ constructor(
 
   @AssistedFactory
   interface Factory {
-    fun create(isLocationPermissionDenied: Boolean): MainViewModel
+    fun create(locationPermissionGranted: Boolean): MainViewModel
   }
 
   companion object {

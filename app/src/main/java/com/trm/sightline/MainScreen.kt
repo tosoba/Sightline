@@ -1,8 +1,5 @@
 package com.trm.sightline
 
-import android.content.Intent
-import android.net.Uri
-import android.provider.Settings
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
@@ -28,15 +25,12 @@ import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
@@ -52,7 +46,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -100,60 +93,12 @@ fun SharedTransitionScope.MainScreen(
   var toolbarsVisible by remember { mutableStateOf(true) }
   LaunchedEffect(pagerState.currentPage) { toolbarsVisible = true }
 
-  val permissionState = rememberLocationPermissionState()
+  val locationPermissionState = rememberLocationPermissionState()
   val viewModel =
     hiltViewModel<MainViewModel, MainViewModel.Factory> { factory ->
-      factory.create(
-        isLocationPermissionDenied =
-          !permissionState.isGranted && !permissionState.shouldShowRationale
-      )
+      factory.create(locationPermissionGranted = locationPermissionState.isGranted)
     }
   val userLocation by viewModel.userLocation.collectAsStateWithLifecycle()
-  var showLocationSettingsDialog by remember { mutableStateOf(false) }
-
-  LaunchedEffect(userLocation) {
-    if (userLocation && !permissionState.isGranted && !permissionState.shouldShowRationale) {
-      permissionState.launchRequest()
-    }
-  }
-
-  LaunchedEffect(permissionState.requestCount) {
-    if (permissionState.requestCount > 0 && !permissionState.isGranted) {
-      viewModel.setUserLocation(false)
-      if (!permissionState.shouldShowRationale) {
-        showLocationSettingsDialog = true
-      }
-    }
-  }
-
-  val context = LocalContext.current
-  if (showLocationSettingsDialog) {
-    AlertDialog(
-      onDismissRequest = { showLocationSettingsDialog = false },
-      title = { Text("Location Permission") },
-      text = {
-        Text(
-          "Sightline needs location permission to show places near you. You can grant it in settings."
-        )
-      },
-      confirmButton = {
-        TextButton(
-          onClick = {
-            showLocationSettingsDialog = false
-            context.startActivity(
-              Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                .setData(Uri.fromParts("package", context.packageName, null))
-            )
-          }
-        ) {
-          Text("Settings")
-        }
-      },
-      dismissButton = {
-        TextButton(onClick = { showLocationSettingsDialog = false }) { Text("Cancel") }
-      },
-    )
-  }
 
   val sheetState =
     key(isCompactHeight) {
@@ -226,7 +171,7 @@ fun SharedTransitionScope.MainScreen(
             scope.launch { sheetState.expand() }
           }
         },
-        onUserLocationToggle = { enabled -> viewModel.setUserLocation(enabled) },
+        onUserLocationToggle = viewModel::setUserLocation,
         onLocationChange = { viewModel.location = it },
         onTogglePlaceCategory = viewModel::onTogglePlaceCategory,
         onCategoryClick = onCategoryClick,
