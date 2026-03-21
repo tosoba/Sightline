@@ -22,8 +22,11 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
@@ -51,11 +54,12 @@ constructor(
 
   val networkErrors = Channel<NetworkError>(Channel.UNLIMITED)
 
-  var location by mutableStateOf("")
+  private val _customLocationAddress = MutableStateFlow("")
+  val customLocationAddress: StateFlow<String> = _customLocationAddress.asStateFlow()
 
-  val userLocation: StateFlow<Boolean> =
+  val userLocationEnabled: StateFlow<Boolean> =
     userPreferencesRepository
-      .getUserLocation()
+      .getUserLocationEnabled()
       .map { it && locationPermissionGranted }
       .stateIn(
         scope = viewModelScope,
@@ -75,6 +79,11 @@ constructor(
   private val categoryToggles = MutableSharedFlow<Pair<PlaceCategory, Boolean>>()
 
   init {
+    viewModelScope.launch {
+      _customLocationAddress.value = userPreferencesRepository.getCustomLocationAddress().orEmpty()
+      customLocationAddress.collectLatest(userPreferencesRepository::setCustomLocationAddress)
+    }
+
     PlaceCategory.entries.forEach { category ->
       var lastSentTime = 0L
 
@@ -120,8 +129,12 @@ constructor(
     viewModelScope.launch { categoryToggles.emit(category to isActive) }
   }
 
-  fun setUserLocation(userLocation: Boolean) {
-    viewModelScope.launch { userPreferencesRepository.setUserLocation(userLocation) }
+  fun setCustomLocationAddress(address: String) {
+    _customLocationAddress.value = address
+  }
+
+  fun setUserLocationEnabled(userLocationEnabled: Boolean) {
+    viewModelScope.launch { userPreferencesRepository.setUserLocationEnabled(userLocationEnabled) }
   }
 
   @AssistedFactory

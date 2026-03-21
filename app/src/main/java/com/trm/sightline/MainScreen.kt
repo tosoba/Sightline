@@ -98,7 +98,6 @@ fun SharedTransitionScope.MainScreen(
     hiltViewModel<MainViewModel, MainViewModel.Factory> { factory ->
       factory.create(locationPermissionGranted = locationPermissionState.isGranted)
     }
-  val userLocation by viewModel.userLocation.collectAsStateWithLifecycle()
 
   val sheetState =
     key(isCompactHeight) {
@@ -142,8 +141,8 @@ fun SharedTransitionScope.MainScreen(
     @Composable {
       PlacesContent(
         places = viewModel.places,
-        location = viewModel.location,
-        userLocation = userLocation,
+        customLocationAddress = viewModel.customLocationAddress.collectAsStateWithLifecycle().value,
+        userLocationEnabled = viewModel.userLocationEnabled.collectAsStateWithLifecycle().value,
         layout =
           if (isCompactHeight || sheetState.targetValue == SheetValue.Expanded) PlacesLayout.Grid
           else PlacesLayout.Row,
@@ -171,8 +170,8 @@ fun SharedTransitionScope.MainScreen(
             scope.launch { sheetState.expand() }
           }
         },
-        onUserLocationToggle = viewModel::setUserLocation,
-        onLocationChange = { viewModel.location = it },
+        onToggleUserLocationEnabled = viewModel::setUserLocationEnabled,
+        onLocationChange = viewModel::setCustomLocationAddress,
         onTogglePlaceCategory = viewModel::onTogglePlaceCategory,
         onCategoryClick = onCategoryClick,
       )

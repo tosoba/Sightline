@@ -75,14 +75,14 @@ import com.trm.sightline.core.model.PlaceCategory
 @Composable
 fun SharedTransitionScope.PlacesContent(
   places: Map<PlaceCategory, LoadingState<List<Place>>>,
-  location: String,
-  userLocation: Boolean,
+  customLocationAddress: String,
+  userLocationEnabled: Boolean,
   layout: PlacesLayout,
   alpha: Float,
   animatedVisibilityScope: AnimatedVisibilityScope,
   modifier: Modifier = Modifier,
   onSearchFocusChange: (Boolean) -> Unit,
-  onUserLocationToggle: (Boolean) -> Unit,
+  onToggleUserLocationEnabled: (Boolean) -> Unit,
   onLocationChange: (String) -> Unit,
   onTogglePlaceCategory: (PlaceCategory) -> Unit,
   onCategoryClick: (PlaceCategory, List<Place>) -> Unit,
@@ -102,11 +102,11 @@ fun SharedTransitionScope.PlacesContent(
       windowInsets = WindowInsets(),
       inputField = {
         SearchBarDefaults.InputField(
-          query = location,
+          query = customLocationAddress,
           onQueryChange = onLocationChange,
           onSearch = {},
           expanded = false,
-          enabled = !userLocation,
+          enabled = !userLocationEnabled,
           onExpandedChange = {},
           placeholder = { Text("Current location") },
           modifier =
@@ -125,8 +125,8 @@ fun SharedTransitionScope.PlacesContent(
           },
           trailingIcon = {
             FilledTonalIconToggleButton(
-              checked = userLocation,
-              onCheckedChange = onUserLocationToggle,
+              checked = userLocationEnabled,
+              onCheckedChange = onToggleUserLocationEnabled,
             ) {
               Icon(imageVector = Icons.Default.MyLocation, contentDescription = "My location")
             }
