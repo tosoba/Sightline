@@ -1,5 +1,6 @@
 package com.trm.sightline
 
+import android.Manifest
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
@@ -61,6 +62,7 @@ import com.trm.sightline.composable.MainPagerToolbar
 import com.trm.sightline.core.ar.util.collapsedBottomSheetContentHeightDp
 import com.trm.sightline.core.ar.util.sideSheetWidthDp
 import com.trm.sightline.core.common.PermissionStatus
+import com.trm.sightline.core.common.rememberPermissionState
 import com.trm.sightline.core.common.util.startAppSettingsActivity
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
@@ -99,7 +101,7 @@ fun SharedTransitionScope.MainScreen(
   var toolbarsVisible by remember { mutableStateOf(true) }
   LaunchedEffect(pagerState.currentPage) { toolbarsVisible = true }
 
-  val locationPermissionState = rememberLocationPermissionState()
+  val locationPermissionState = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
   val viewModel = hiltViewModel<MainViewModel>()
 
   var locationPermissionFlowInProgress by remember { mutableStateOf(false) }

@@ -1,5 +1,6 @@
 package com.trm.sightline.feature.camera
 
+import android.Manifest
 import android.location.Location
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.Box
@@ -21,6 +22,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.trm.sightline.core.ar.model.RoundedRectF
 import com.trm.sightline.core.ar.view.ARMarkerRenderer
 import com.trm.sightline.core.common.PermissionStatus
+import com.trm.sightline.core.common.rememberPermissionState
 import com.trm.sightline.core.common.util.startAppSettingsActivity
 import com.trm.sightline.core.model.Place
 
@@ -35,7 +37,7 @@ fun CameraContent(
   overlayContent: @Composable BoxScope.(ARMarkerRenderer) -> Unit = {},
 ) {
   val context = LocalContext.current
-  val cameraPermissionState = rememberCameraPermissionState()
+  val cameraPermissionState = rememberPermissionState(Manifest.permission.CAMERA)
   var showSettingsDialog by remember { mutableStateOf(false) }
 
   LaunchedEffect(Unit) {
