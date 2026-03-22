@@ -1,4 +1,4 @@
-package com.trm.sightline.core.ar.util
+package com.trm.sightline.core.common.util
 
 import java.math.BigDecimal
 import java.math.RoundingMode

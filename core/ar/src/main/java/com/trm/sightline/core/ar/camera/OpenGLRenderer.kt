@@ -9,27 +9,29 @@ import android.view.Surface
 import android.view.ViewStub
 import androidx.annotation.MainThread
 import androidx.annotation.WorkerThread
+import androidx.camera.core.CameraInfo
 import androidx.camera.core.Preview
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.view.PreviewView.StreamState
+import androidx.camera.view.internal.compat.quirk.DeviceQuirks
+import androidx.camera.view.internal.compat.quirk.SurfaceViewStretchedQuirk
 import androidx.concurrent.futures.CallbackToFutureAdapter
 import androidx.core.content.ContextCompat
 import com.google.common.util.concurrent.ListenableFuture
 import com.trm.sightline.core.ar.camera.surface.SurfaceViewRenderSurface
 import com.trm.sightline.core.ar.camera.surface.TextureViewRenderSurface
 import com.trm.sightline.core.ar.model.RoundedRectF
-import com.trm.sightline.core.ar.util.shouldUseTextureView
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import timber.log.Timber
 import java.util.Locale
 import java.util.concurrent.Executor
 import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.math.abs
-import kotlinx.coroutines.channels.BufferOverflow
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
-import timber.log.Timber
 
 class OpenGLRenderer {
   companion object {
@@ -170,6 +172,14 @@ class OpenGLRenderer {
         camera.cameraState.removeObserver(streamStateObserver)
       }
     }
+  }
+
+  private fun SurfaceRequest.shouldUseTextureView(): Boolean {
+    @SuppressLint("RestrictedApi")
+    val isLegacyDevice =
+      camera.cameraInfoInternal.implementationType == CameraInfo.IMPLEMENTATION_TYPE_CAMERA2_LEGACY
+    val hasSurfaceViewQuirk = DeviceQuirks.get(SurfaceViewStretchedQuirk::class.java) != null
+    return isLegacyDevice || hasSurfaceViewQuirk
   }
 
   fun attachOutputSurface(surface: Surface, surfaceSize: Size, surfaceRotationDegrees: Int) {

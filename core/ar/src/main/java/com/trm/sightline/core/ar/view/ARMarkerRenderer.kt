@@ -20,9 +20,9 @@ import com.trm.sightline.core.ar.util.dpToPx
 import com.trm.sightline.core.ar.util.drawMultilineText
 import com.trm.sightline.core.ar.util.isCompactHeight
 import com.trm.sightline.core.ar.util.navigationBarsBottomInsetPx
-import com.trm.sightline.core.ar.util.preciseFormattedDistance
 import com.trm.sightline.core.ar.util.spToPx
 import com.trm.sightline.core.ar.util.statusBarTopInsetPx
+import com.trm.sightline.core.common.util.roundToDecimalPlaces
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -30,6 +30,7 @@ import java.util.Objects
 import kotlin.math.abs
 import kotlin.math.atan
 import kotlin.math.cos
+import kotlin.math.roundToInt
 
 class ARMarkerRenderer(private val context: Context) {
   private val markerPaddingPx: Float = context.dpToPx(MARKER_PADDING_DP)
@@ -348,7 +349,7 @@ class ARMarkerRenderer(private val context: Context) {
   private fun Canvas.drawDistanceText(marker: ARMarker, rectF: RectF) {
     val distance =
       TextUtils.ellipsize(
-        marker.distance.preciseFormattedDistance,
+        marker.formattedDistance(),
         distanceTextPaint,
         rectF.width() - MARKER_PADDING_DP * 2 - ELLIPSIS_WIDTH_PX,
         TextUtils.TruncateAt.END,
@@ -362,6 +363,10 @@ class ARMarkerRenderer(private val context: Context) {
       distanceTextPaint,
     )
   }
+
+  private fun ARMarker.formattedDistance(): String =
+    if (distance >= 1_000) "${(distance / 1_000).roundToDecimalPlaces(1)} km"
+    else "${distance.roundToInt()} m"
 
   private class PagedMarker(
     val marker: ARMarker,

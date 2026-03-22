@@ -14,7 +14,7 @@ import androidx.core.util.lruCache
 
 @SuppressLint("WrongConstant")
 @MainThread
-fun Canvas.drawMultilineText(
+internal fun Canvas.drawMultilineText(
   text: CharSequence,
   textPaint: TextPaint,
   width: Int,

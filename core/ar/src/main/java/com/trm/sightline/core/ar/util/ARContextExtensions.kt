@@ -23,30 +23,27 @@ const val sideSheetWidthDp = 400
 const val collapsedBottomSheetContentHeightDp = 186
 const val collapsedBottomSheetDragHandleHeightDp = 48
 
-val Context.cameraPreviewVerticalPaddingPx: Float
+internal val Context.cameraPreviewVerticalPaddingPx: Float
   get() = dpToPx(16f)
 
-val Context.bottomSheetHeightPx: Float
+internal val Context.bottomSheetHeightPx: Float
   get() {
     val heightDp = collapsedBottomSheetContentHeightDp + collapsedBottomSheetDragHandleHeightDp
     return dpToPx(heightDp.toFloat()) + navigationBarsBottomInsetPx
   }
 
-val Context.navigationBarsBottomInsetPx: Float
+internal val Context.navigationBarsBottomInsetPx: Float
   get() = rootWindowInsets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom.toFloat()
 
-val Context.statusBarTopInsetPx: Float
+internal val Context.statusBarTopInsetPx: Float
   get() = rootWindowInsets.getInsets(WindowInsetsCompat.Type.statusBars()).top.toFloat()
 
-val Context.rootWindowInsets: WindowInsetsCompat
+internal val Context.rootWindowInsets: WindowInsetsCompat
   get() =
     WindowInsetsCompat.toWindowInsetsCompat((this as Activity).window.decorView.rootWindowInsets)
 
-val Context.isCompactHeight: Boolean
+internal val Context.isCompactHeight: Boolean
   get() = resources.displayMetrics.run { heightPixels / density < 480f }
-
-val Context.isCompactWidth: Boolean
-  get() = resources.displayMetrics.run { widthPixels / density < 600f }
 
 fun Context.dpToPx(value: Float): Float =
   TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, value, resources.displayMetrics)
