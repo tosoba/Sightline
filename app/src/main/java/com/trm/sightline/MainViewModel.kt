@@ -1,14 +1,16 @@
 package com.trm.sightline
 
+import android.app.Application
 import android.location.Location
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.trm.sightline.core.common.NetworkError
 import com.trm.sightline.core.common.toNetworkError
+import com.trm.sightline.core.common.util.locationUpdatesFlow
 import com.trm.sightline.core.domain.PlacesRepository
 import com.trm.sightline.core.domain.UserPreferencesRepository
 import com.trm.sightline.core.model.LoadingState
@@ -24,8 +26,11 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.launch
@@ -33,13 +38,15 @@ import kotlinx.coroutines.withTimeout
 import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class MainViewModel
 @Inject
 constructor(
+  application: Application,
   private val repository: PlacesRepository,
   private val userPreferencesRepository: UserPreferencesRepository,
-) : ViewModel() {
+) : AndroidViewModel(application) {
   val places = mutableStateMapOf<PlaceCategory, LoadingState<List<Place>>>()
 
   val allPlaces: List<Place>
@@ -83,10 +90,16 @@ constructor(
       customLocationAddress.collectLatest(userPreferencesRepository::setCustomLocationAddress)
     }
 
+    userLocationEnabled
+      .flatMapLatest { enabled -> if (enabled) application.locationUpdatesFlow() else emptyFlow() }
+      .onEach { location ->
+        povLocation = PovLocation(location = location, origin = PovLocationOrigin.GPS)
+      }
+      .launchIn(viewModelScope)
+
     PlaceCategory.entries.forEach { category ->
       var lastSentTime = 0L
 
-      @OptIn(ExperimentalCoroutinesApi::class)
       categoryToggles
         .filter { (cat, _) -> cat == category }
         .transformLatest<Pair<PlaceCategory, Boolean>, Unit> { (_, isActive) ->

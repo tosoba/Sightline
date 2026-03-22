@@ -29,10 +29,13 @@ android {
 }
 
 dependencies {
-  implementation(libs.kotlinx.coroutines.core)
-  implementation(libs.retrofit)
-
   implementation(libs.androidx.activity.compose)
   implementation(libs.androidx.compose.ui)
   implementation(libs.androidx.lifecycle.runtime.compose)
+
+  implementation(libs.kotlinx.coroutines.core)
+  implementation(libs.kotlinx.coroutines.play.services)
+
+  implementation(libs.play.services.location)
+  implementation(libs.retrofit)
 }

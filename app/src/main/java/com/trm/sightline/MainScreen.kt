@@ -1,6 +1,11 @@
 package com.trm.sightline
 
 import android.Manifest
+import android.app.Activity
+import android.content.Intent
+import android.provider.Settings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
@@ -63,6 +68,8 @@ import com.trm.sightline.core.ar.util.collapsedBottomSheetContentHeightDp
 import com.trm.sightline.core.ar.util.sideSheetWidthDp
 import com.trm.sightline.core.common.PermissionStatus
 import com.trm.sightline.core.common.rememberPermissionState
+import com.trm.sightline.core.common.util.CheckLocationSettingsResult
+import com.trm.sightline.core.common.util.checkLocationSettings
 import com.trm.sightline.core.common.util.startAppSettingsActivity
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
@@ -81,7 +88,9 @@ fun SharedTransitionScope.MainScreen(
   animatedVisibilityScope: AnimatedVisibilityScope,
   onCategoryClick: (PlaceCategory, List<Place>) -> Unit,
 ) {
+  val context = LocalContext.current
   val scope = rememberCoroutineScope()
+
   val pagerState = rememberPagerState(pageCount = MainPage.entries::size)
   val containerAlpha by remember {
     derivedStateOf {
@@ -101,14 +110,56 @@ fun SharedTransitionScope.MainScreen(
   var toolbarsVisible by remember { mutableStateOf(true) }
   LaunchedEffect(pagerState.currentPage) { toolbarsVisible = true }
 
-  val locationPermissionState = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
   val viewModel = hiltViewModel<MainViewModel>()
 
+  val locationSettingsLauncher =
+    rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result
+      ->
+      if (result.resultCode == Activity.RESULT_OK) viewModel.setUserLocationEnabled(true)
+    }
+  var showLocationDisabledDialog by remember { mutableStateOf(false) }
+
+  suspend fun checkLocationSettings() {
+    when (val result = context.checkLocationSettings()) {
+      CheckLocationSettingsResult.Enabled -> {
+        viewModel.setUserLocationEnabled(true)
+      }
+      is CheckLocationSettingsResult.DisabledResolvable -> {
+        locationSettingsLauncher.launch(result.intentSenderRequest)
+      }
+      CheckLocationSettingsResult.DisabledNonResolvable -> {
+        showLocationDisabledDialog = true
+      }
+    }
+  }
+
+  if (showLocationDisabledDialog) {
+    AlertDialog(
+      onDismissRequest = { showLocationDisabledDialog = false },
+      title = { Text("Location is disabled") },
+      text = { Text("Device location is turned off. Enable it in Settings to use this feature.") },
+      confirmButton = {
+        TextButton(
+          onClick = {
+            showLocationDisabledDialog = false
+            context.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
+          }
+        ) {
+          Text("Open Settings")
+        }
+      },
+      dismissButton = {
+        TextButton(onClick = { showLocationDisabledDialog = false }) { Text("Cancel") }
+      },
+    )
+  }
+
+  val locationPermissionState = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
   var locationPermissionFlowInProgress by remember { mutableStateOf(false) }
   LaunchedEffect(locationPermissionState.status) {
     when (locationPermissionState.status) {
       PermissionStatus.Granted -> {
-        if (locationPermissionFlowInProgress) viewModel.setUserLocationEnabled(true)
+        if (locationPermissionFlowInProgress) checkLocationSettings()
         locationPermissionFlowInProgress = false
       }
       PermissionStatus.Denied,
@@ -121,7 +172,6 @@ fun SharedTransitionScope.MainScreen(
 
   var showLocationPermissionSettingsDialog by remember { mutableStateOf(false) }
   if (showLocationPermissionSettingsDialog) {
-    val context = LocalContext.current
     AlertDialog(
       onDismissRequest = { showLocationPermissionSettingsDialog = false },
       title = { Text("Location permission required") },
@@ -219,7 +269,7 @@ fun SharedTransitionScope.MainScreen(
           if (enabled) {
             when (locationPermissionState.status) {
               PermissionStatus.Granted -> {
-                viewModel.setUserLocationEnabled(true)
+                scope.launch { checkLocationSettings() }
               }
               PermissionStatus.PermanentlyDenied -> {
                 showLocationPermissionSettingsDialog = true
