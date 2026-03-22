@@ -1,7 +1,6 @@
 package com.trm.sightline
 
 import android.app.Application
-import android.location.Location
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -69,17 +68,7 @@ constructor(
         initialValue = false,
       )
 
-  var povLocation by
-    mutableStateOf(
-      PovLocation(
-        location =
-          Location(null).apply {
-            latitude = 52.237049
-            longitude = 21.017532
-          },
-        origin = PovLocationOrigin.CUSTOM,
-      )
-    )
+  var povLocation: PovLocation? by mutableStateOf(null)
     private set
 
   private val categoryToggles = MutableSharedFlow<Pair<PlaceCategory, Boolean>>()
@@ -110,17 +99,17 @@ constructor(
 
           val remaining = DEBOUNCE_MS - (System.currentTimeMillis() - lastSentTime)
           if (remaining > 0) delay(remaining)
-
           lastSentTime = System.currentTimeMillis()
 
+          val (location) = povLocation ?: return@transformLatest
           try {
             places[category] =
               withTimeout(REQUEST_TIMEOUT_MS) {
                 LoadingState.Loaded(
                   repository.fetchPlaces(
                     category = category,
-                    latitude = povLocation.location.latitude,
-                    longitude = povLocation.location.longitude,
+                    latitude = location.latitude,
+                    longitude = location.longitude,
                     radiusMeters = 1_000f,
                   )
                 )

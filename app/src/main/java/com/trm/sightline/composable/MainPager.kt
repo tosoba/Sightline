@@ -36,7 +36,7 @@ import com.trm.sightline.feature.map.MapPreview
 @Composable
 fun MainPager(
   pagerState: PagerState,
-  location: Location,
+  location: Location?,
   places: List<Place>,
   isCompactHeight: Boolean,
   cameraPreviewBlurred: Boolean,

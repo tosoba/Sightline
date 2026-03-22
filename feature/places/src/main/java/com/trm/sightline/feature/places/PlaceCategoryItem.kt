@@ -48,7 +48,8 @@ import com.trm.sightline.core.model.PlaceCategory
 internal fun SharedTransitionScope.PlaceCategoryItem(
   category: PlaceCategory,
   icon: ImageVector,
-  isSelected: Boolean,
+  enabled: Boolean,
+  selected: Boolean,
   loadingState: LoadingState<List<Place>>?,
   alpha: Float,
   modifier: Modifier = Modifier,
@@ -67,8 +68,9 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
             )
           }
       ToggleButton(
-        checked = isSelected,
+        checked = selected,
         onCheckedChange = { onClick(category) },
+        enabled = selected || enabled,
         colors = colors,
         modifier = modifier,
       ) {
@@ -110,7 +112,7 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
         shape =
           when {
             isPressed -> shapes.pressedShape
-            isSelected -> shapes.checkedShape
+            selected -> shapes.checkedShape
             else -> shapes.shape
           },
         colors =
@@ -132,8 +134,9 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
           verticalAlignment = Alignment.CenterVertically,
         ) {
           ToggleButton(
-            checked = isSelected,
+            checked = selected,
             onCheckedChange = { onClick(category) },
+            enabled = selected || enabled,
             colors = colors,
             shapes = shapes,
             interactionSource = interactionSource,

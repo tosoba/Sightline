@@ -30,7 +30,7 @@ import com.trm.sightline.core.model.Place
 fun CameraContent(
   previewEnabled: Boolean,
   previewBlurred: Boolean,
-  location: Location,
+  location: Location?,
   places: List<Place>,
   blurredRectFs: List<RoundedRectF>,
   onCameraPreviewTouch: () -> Unit,

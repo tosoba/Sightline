@@ -47,7 +47,7 @@ import timber.log.Timber
 fun CameraPreview(
   enabled: Boolean,
   blurred: Boolean,
-  location: Location,
+  location: Location?,
   places: List<Place>,
   blurredRectFs: List<RoundedRectF>,
   onCameraPreviewTouch: () -> Unit = {},

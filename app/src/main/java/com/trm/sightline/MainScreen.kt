@@ -238,6 +238,7 @@ fun SharedTransitionScope.MainScreen(
         userLocationEnabled =
           viewModel.userLocationEnabled.collectAsStateWithLifecycle().value &&
             locationPermissionState.isGranted,
+        placeCategoriesEnabled = viewModel.povLocation?.location != null,
         layout =
           if (isCompactHeight || sheetState.targetValue == SheetValue.Expanded) PlacesLayout.Grid
           else PlacesLayout.Row,
@@ -323,7 +324,7 @@ fun SharedTransitionScope.MainScreen(
     ) {
       MainPager(
         pagerState = pagerState,
-        location = viewModel.povLocation.location,
+        location = viewModel.povLocation?.location,
         places = viewModel.allPlaces,
         isCompactHeight = isCompactHeight,
         cameraPreviewBlurred = !isCompactHeight && expandedProgress != 0f,

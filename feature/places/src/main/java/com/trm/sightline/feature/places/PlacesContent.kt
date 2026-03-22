@@ -77,6 +77,7 @@ fun SharedTransitionScope.PlacesContent(
   places: Map<PlaceCategory, LoadingState<List<Place>>>,
   customLocationAddress: String,
   userLocationEnabled: Boolean,
+  placeCategoriesEnabled: Boolean,
   layout: PlacesLayout,
   alpha: Float,
   animatedVisibilityScope: AnimatedVisibilityScope,
@@ -148,7 +149,8 @@ fun SharedTransitionScope.PlacesContent(
               PlaceCategoryItem(
                 category = category,
                 icon = category.icon,
-                isSelected = category in places,
+                enabled = placeCategoriesEnabled,
+                selected = category in places,
                 loadingState = places[category],
                 layout = it,
                 modifier = Modifier.weight(1f),
@@ -171,7 +173,8 @@ fun SharedTransitionScope.PlacesContent(
               PlaceCategoryItem(
                 category = category,
                 icon = category.icon,
-                isSelected = category in places,
+                enabled = placeCategoriesEnabled,
+                selected = category in places,
                 loadingState = places[category],
                 layout = it,
                 alpha = alpha,
