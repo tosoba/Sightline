@@ -19,6 +19,7 @@ dependencyResolutionManagement {
   repositories {
     google()
     mavenCentral()
+    maven { url = uri("https://api.mapbox.com/downloads/v2/releases/maven") }
   }
 }
 
@@ -28,6 +29,7 @@ include(":app")
 
 include(":api:overpass")
 include(":api:nominatim")
+include(":api:photon")
 
 include(":core:ar")
 
