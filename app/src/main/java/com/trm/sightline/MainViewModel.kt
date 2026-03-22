@@ -9,6 +9,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.trm.sightline.core.common.NetworkError
 import com.trm.sightline.core.common.toNetworkError
+import com.trm.sightline.core.common.util.locationEnabledFlow
 import com.trm.sightline.core.common.util.locationUpdatesFlow
 import com.trm.sightline.core.domain.PlacesRepository
 import com.trm.sightline.core.domain.UserPreferencesRepository
@@ -78,6 +79,15 @@ constructor(
       _customLocationAddress.value = userPreferencesRepository.getCustomLocationAddress().orEmpty()
       customLocationAddress.collectLatest(userPreferencesRepository::setCustomLocationAddress)
     }
+
+    application
+      .locationEnabledFlow()
+      .onEach { isLocationEnabled ->
+        if (!isLocationEnabled && userLocationEnabled.value) {
+          userPreferencesRepository.setUserLocationEnabled(false)
+        }
+      }
+      .launchIn(viewModelScope)
 
     userLocationEnabled
       .flatMapLatest { enabled -> if (enabled) application.locationUpdatesFlow() else emptyFlow() }

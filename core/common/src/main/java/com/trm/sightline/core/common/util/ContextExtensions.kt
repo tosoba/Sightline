@@ -1,14 +1,18 @@
 package com.trm.sightline.core.common.util
 
 import android.annotation.SuppressLint
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.IntentSender
 import android.location.Location
+import android.location.LocationManager
 import android.net.Uri
 import android.os.Looper
 import android.provider.Settings
 import androidx.activity.result.IntentSenderRequest
+import androidx.core.location.LocationManagerCompat
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -40,6 +44,21 @@ fun Context.locationUpdatesFlow(): Flow<Location> = callbackFlow {
   @SuppressLint("MissingPermission")
   client.requestLocationUpdates(locationRequest(), callback, Looper.getMainLooper())
   awaitClose { client.removeLocationUpdates(callback) }
+}
+
+fun Context.locationEnabledFlow(): Flow<Boolean> = callbackFlow {
+  val locationManager = getSystemService(LocationManager::class.java)
+  trySend(LocationManagerCompat.isLocationEnabled(locationManager))
+  val receiver =
+    object : BroadcastReceiver() {
+      override fun onReceive(context: Context, intent: Intent) {
+        if (intent.action == LocationManager.PROVIDERS_CHANGED_ACTION) {
+          trySend(LocationManagerCompat.isLocationEnabled(locationManager))
+        }
+      }
+    }
+  registerReceiver(receiver, IntentFilter(LocationManager.PROVIDERS_CHANGED_ACTION))
+  awaitClose { unregisterReceiver(receiver) }
 }
 
 suspend fun Context.checkLocationSettings(): CheckLocationSettingsResult =
