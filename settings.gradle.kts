@@ -27,6 +27,7 @@ rootProject.name = "Sightline"
 include(":app")
 
 include(":api:overpass")
+include(":api:nominatim")
 
 include(":core:ar")
 
