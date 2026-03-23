@@ -63,8 +63,8 @@ constructor(
   private val _customLocationAddress = MutableStateFlow("")
   val customLocationAddress: StateFlow<String> = _customLocationAddress.asStateFlow()
 
-  private val _gpsLocationAddress = MutableStateFlow("")
-  val gpsLocationAddress: StateFlow<String> = _gpsLocationAddress.asStateFlow()
+  private val _gpsLocationAddress = MutableStateFlow<LoadingState<String>>(LoadingState.Loaded(""))
+  val gpsLocationAddress: StateFlow<LoadingState<String>> = _gpsLocationAddress.asStateFlow()
 
   val userLocationEnabled: StateFlow<Boolean> =
     userPreferencesRepository
@@ -102,14 +102,16 @@ constructor(
 
         delay(1.seconds)
 
+        _gpsLocationAddress.value = LoadingState.Loading
         try {
-          _gpsLocationAddress.value =
+          val address =
             addressRepository
               .getAddress(latitude = location.latitude, longitude = location.longitude)
               .orEmpty()
+          _gpsLocationAddress.value = LoadingState.Loaded(address)
         } catch (e: Exception) {
           if (e is CancellationException) throw e
-          _gpsLocationAddress.value = ""
+          _gpsLocationAddress.value = LoadingState.Loaded("")
         }
         emit(Unit)
       }

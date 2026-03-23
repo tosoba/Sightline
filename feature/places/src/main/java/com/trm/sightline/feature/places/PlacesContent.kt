@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -49,6 +50,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material.icons.filled.TheaterComedy
 import androidx.compose.material.icons.filled.Wc
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalIconToggleButton
 import androidx.compose.material3.Icon
@@ -75,7 +77,7 @@ import com.trm.sightline.core.model.PlaceCategory
 @Composable
 fun SharedTransitionScope.PlacesContent(
   places: Map<PlaceCategory, LoadingState<List<Place>>>,
-  locationAddress: String,
+  locationAddress: LoadingState<String>,
   userLocationEnabled: Boolean,
   placeCategoriesEnabled: Boolean,
   layout: PlacesLayout,
@@ -103,11 +105,11 @@ fun SharedTransitionScope.PlacesContent(
       windowInsets = WindowInsets(),
       inputField = {
         SearchBarDefaults.InputField(
-          query = locationAddress,
+          query = if (locationAddress is LoadingState.Loaded) locationAddress.data else "",
           onQueryChange = onLocationChange,
           onSearch = {},
           expanded = false,
-          enabled = !userLocationEnabled,
+          enabled = !userLocationEnabled && locationAddress is LoadingState.Loaded,
           onExpandedChange = {},
           placeholder = { Text("Current location") },
           modifier =
@@ -116,12 +118,21 @@ fun SharedTransitionScope.PlacesContent(
               onSearchFocusChange(it.isFocused)
             },
           leadingIcon = {
-            if (isFocused) {
-              IconButton(onClick = focusManager::clearFocus) {
-                Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+            when {
+              locationAddress is LoadingState.Loading -> {
+                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
               }
-            } else {
-              Icon(imageVector = Icons.Default.Search, contentDescription = null)
+              isFocused -> {
+                IconButton(onClick = focusManager::clearFocus) {
+                  Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back",
+                  )
+                }
+              }
+              else -> {
+                Icon(imageVector = Icons.Default.Search, contentDescription = null)
+              }
             }
           },
           trailingIcon = {

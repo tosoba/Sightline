@@ -71,6 +71,7 @@ import com.trm.sightline.core.common.rememberPermissionState
 import com.trm.sightline.core.common.util.CheckLocationSettingsResult
 import com.trm.sightline.core.common.util.checkLocationSettings
 import com.trm.sightline.core.common.util.startAppSettingsActivity
+import com.trm.sightline.core.model.LoadingState
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
 import com.trm.sightline.feature.places.PlacesContent
@@ -240,7 +241,9 @@ fun SharedTransitionScope.MainScreen(
 
       PlacesContent(
         places = viewModel.places,
-        locationAddress = if (userLocationEnabled) gpsLocationAddress else customLocationAddress,
+        locationAddress =
+          if (userLocationEnabled) gpsLocationAddress
+          else LoadingState.Loaded(customLocationAddress),
         userLocationEnabled = userLocationEnabled,
         placeCategoriesEnabled = viewModel.povLocation?.location != null,
         layout =
