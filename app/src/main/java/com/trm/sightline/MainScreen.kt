@@ -193,6 +193,10 @@ fun SharedTransitionScope.MainScreen(
     )
   }
 
+  val userLocationEnabled =
+    viewModel.userLocationEnabled.collectAsStateWithLifecycle().value &&
+      locationPermissionState.isGranted
+
   val sheetState =
     key(isCompactHeight) {
       rememberStandardBottomSheetState(
@@ -234,10 +238,7 @@ fun SharedTransitionScope.MainScreen(
   val placesSheetContent =
     @Composable {
       val customLocationAddress by viewModel.customLocationAddress.collectAsStateWithLifecycle()
-      val gpsLocationAddress by viewModel.gpsLocationAddress.collectAsStateWithLifecycle()
-      val userLocationEnabled =
-        viewModel.userLocationEnabled.collectAsStateWithLifecycle().value &&
-          locationPermissionState.isGranted
+      val gpsLocationAddress by viewModel.userLocationAddress.collectAsStateWithLifecycle()
 
       PlacesContent(
         places = viewModel.places,
@@ -245,7 +246,9 @@ fun SharedTransitionScope.MainScreen(
           if (userLocationEnabled) gpsLocationAddress
           else LoadingState.Loaded(customLocationAddress),
         userLocationEnabled = userLocationEnabled,
-        placeCategoriesEnabled = viewModel.povLocation?.location != null,
+        placeCategoriesEnabled =
+          if (userLocationEnabled) viewModel.userLocation != null
+          else viewModel.customLocation != null,
         layout =
           if (isCompactHeight || sheetState.targetValue == SheetValue.Expanded) PlacesLayout.Grid
           else PlacesLayout.Row,
@@ -331,7 +334,7 @@ fun SharedTransitionScope.MainScreen(
     ) {
       MainPager(
         pagerState = pagerState,
-        location = viewModel.povLocation?.location,
+        location = if (userLocationEnabled) viewModel.userLocation else viewModel.customLocation,
         places = viewModel.allPlaces,
         isCompactHeight = isCompactHeight,
         cameraPreviewBlurred = !isCompactHeight && expandedProgress != 0f,

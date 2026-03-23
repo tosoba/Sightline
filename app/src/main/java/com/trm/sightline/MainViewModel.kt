@@ -1,6 +1,7 @@
 package com.trm.sightline
 
 import android.app.Application
+import android.location.Location
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -60,12 +61,6 @@ constructor(
 
   val networkErrors = Channel<NetworkError>(Channel.UNLIMITED)
 
-  private val _customLocationAddress = MutableStateFlow("")
-  val customLocationAddress: StateFlow<String> = _customLocationAddress.asStateFlow()
-
-  private val _gpsLocationAddress = MutableStateFlow<LoadingState<String>>(LoadingState.Loaded(""))
-  val gpsLocationAddress: StateFlow<LoadingState<String>> = _gpsLocationAddress.asStateFlow()
-
   val userLocationEnabled: StateFlow<Boolean> =
     userPreferencesRepository
       .getUserLocationEnabled()
@@ -75,8 +70,17 @@ constructor(
         initialValue = false,
       )
 
-  var povLocation: PovLocation? by mutableStateOf(null)
+  var userLocation: Location? by mutableStateOf(null)
     private set
+
+  private val _userLocationAddress = MutableStateFlow<LoadingState<String>>(LoadingState.Loaded(""))
+  val userLocationAddress: StateFlow<LoadingState<String>> = _userLocationAddress.asStateFlow()
+
+  var customLocation: Location? by mutableStateOf(null)
+    private set
+
+  private val _customLocationAddress = MutableStateFlow("")
+  val customLocationAddress: StateFlow<String> = _customLocationAddress.asStateFlow()
 
   private val categoryToggles = MutableSharedFlow<Pair<PlaceCategory, Boolean>>()
 
@@ -98,20 +102,21 @@ constructor(
     userLocationEnabled
       .flatMapLatest { enabled -> if (enabled) application.locationUpdatesFlow() else emptyFlow() }
       .transformLatest { location ->
-        povLocation = PovLocation(location = location, origin = PovLocationOrigin.GPS)
-        _gpsLocationAddress.value = LoadingState.Loading
+        userLocation = location
+        _userLocationAddress.value = LoadingState.Loading
 
         delay(1.seconds)
 
         try {
-          val address =
-            addressRepository
-              .getAddress(latitude = location.latitude, longitude = location.longitude)
-              .orEmpty()
-          _gpsLocationAddress.value = LoadingState.Loaded(address)
-        } catch (e: Exception) {
-          if (e is CancellationException) throw e
-          _gpsLocationAddress.value = LoadingState.Loaded("")
+          _userLocationAddress.value =
+            LoadingState.Loaded(
+              addressRepository
+                .getAddress(latitude = location.latitude, longitude = location.longitude)
+                .orEmpty()
+            )
+        } catch (ex: Exception) {
+          if (ex is CancellationException) throw ex
+          _userLocationAddress.value = LoadingState.Loaded("")
         }
         emit(Unit)
       }
@@ -132,7 +137,9 @@ constructor(
           if (remaining > 0) delay(remaining)
           lastSentTime = System.currentTimeMillis()
 
-          val (location) = povLocation ?: return@transformLatest
+          val location =
+            (if (userLocationEnabled.value) userLocation else customLocation)
+              ?: return@transformLatest
           try {
             places[category] =
               withTimeout(REQUEST_TIMEOUT_MS) {
