@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.CurrencyExchange
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.EvStation
+import androidx.compose.material.icons.filled.GpsFixed
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Hotel
 import androidx.compose.material.icons.filled.Inventory
@@ -111,7 +112,16 @@ fun SharedTransitionScope.PlacesContent(
           expanded = false,
           enabled = !userLocationEnabled && locationAddress is LoadingState.Loaded,
           onExpandedChange = {},
-          placeholder = { Text("Current location") },
+          placeholder = {
+            Text(
+              when {
+                !userLocationEnabled -> "Enter your location."
+                !placeCategoriesEnabled -> "Loading location..."
+                locationAddress is LoadingState.Loading -> "Loading location address..."
+                else -> "Location address not found."
+              }
+            )
+          },
           modifier =
             Modifier.onFocusChanged {
               isFocused = it.isFocused
@@ -119,8 +129,12 @@ fun SharedTransitionScope.PlacesContent(
             },
           leadingIcon = {
             when {
-              locationAddress is LoadingState.Loading -> {
-                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+              locationAddress is LoadingState.Loading ||
+                (userLocationEnabled && !placeCategoriesEnabled) -> {
+                CircularProgressIndicator(modifier = Modifier.size(24.dp))
+              }
+              userLocationEnabled && locationAddress is LoadingState.Loaded -> {
+                Icon(imageVector = Icons.Default.GpsFixed, contentDescription = null)
               }
               isFocused -> {
                 IconButton(onClick = focusManager::clearFocus) {
