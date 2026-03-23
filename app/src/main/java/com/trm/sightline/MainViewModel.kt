@@ -19,6 +19,10 @@ import com.trm.sightline.core.model.LoadingState
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.util.concurrent.atomic.AtomicLong
+import javax.inject.Inject
+import kotlin.coroutines.cancellation.CancellationException
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -37,9 +41,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
-import javax.inject.Inject
-import kotlin.coroutines.cancellation.CancellationException
-import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -122,20 +123,20 @@ constructor(
       }
       .launchIn(viewModelScope)
 
-    PlaceCategory.entries.forEach { category ->
-      var lastSentTime = 0L
+    val lastSentTime = AtomicLong(0L)
 
+    PlaceCategory.entries.forEach { category ->
       categoryToggles
         .filter { (cat, _) -> cat == category }
         .transformLatest<Pair<PlaceCategory, Boolean>, Unit> { (_, isActive) ->
           if (!isActive) {
-            lastSentTime = 0L
+            lastSentTime.set(0L)
             return@transformLatest
           }
 
-          val remaining = DEBOUNCE_MS - (System.currentTimeMillis() - lastSentTime)
+          val remaining = DEBOUNCE_MS - (System.currentTimeMillis() - lastSentTime.get())
           if (remaining > 0) delay(remaining)
-          lastSentTime = System.currentTimeMillis()
+          lastSentTime.set(System.currentTimeMillis())
 
           val location =
             (if (userLocationEnabled.value) userLocation else customLocation)
