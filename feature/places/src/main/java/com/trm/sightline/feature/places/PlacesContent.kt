@@ -75,7 +75,7 @@ import com.trm.sightline.core.model.PlaceCategory
 @Composable
 fun SharedTransitionScope.PlacesContent(
   places: Map<PlaceCategory, LoadingState<List<Place>>>,
-  customLocationAddress: String,
+  locationAddress: String,
   userLocationEnabled: Boolean,
   placeCategoriesEnabled: Boolean,
   layout: PlacesLayout,
@@ -103,7 +103,7 @@ fun SharedTransitionScope.PlacesContent(
       windowInsets = WindowInsets(),
       inputField = {
         SearchBarDefaults.InputField(
-          query = customLocationAddress,
+          query = locationAddress,
           onQueryChange = onLocationChange,
           onSearch = {},
           expanded = false,

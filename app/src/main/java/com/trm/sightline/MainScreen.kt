@@ -232,12 +232,16 @@ fun SharedTransitionScope.MainScreen(
 
   val placesSheetContent =
     @Composable {
+      val customLocationAddress by viewModel.customLocationAddress.collectAsStateWithLifecycle()
+      val gpsLocationAddress by viewModel.gpsLocationAddress.collectAsStateWithLifecycle()
+      val userLocationEnabled =
+        viewModel.userLocationEnabled.collectAsStateWithLifecycle().value &&
+          locationPermissionState.isGranted
+
       PlacesContent(
         places = viewModel.places,
-        customLocationAddress = viewModel.customLocationAddress.collectAsStateWithLifecycle().value,
-        userLocationEnabled =
-          viewModel.userLocationEnabled.collectAsStateWithLifecycle().value &&
-            locationPermissionState.isGranted,
+        locationAddress = if (userLocationEnabled) gpsLocationAddress else customLocationAddress,
+        userLocationEnabled = userLocationEnabled,
         placeCategoriesEnabled = viewModel.povLocation?.location != null,
         layout =
           if (isCompactHeight || sheetState.targetValue == SheetValue.Expanded) PlacesLayout.Grid

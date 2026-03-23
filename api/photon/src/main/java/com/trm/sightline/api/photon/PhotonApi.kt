@@ -30,7 +30,7 @@ interface PhotonApi {
   companion object {
     private const val BASE_URL = "https://photon.komoot.io/"
 
-    fun create(): PhotonApi =
+    internal fun create(): PhotonApi =
       Retrofit.Builder()
         .baseUrl(BASE_URL)
         .client(OkHttpClient.Builder().build())

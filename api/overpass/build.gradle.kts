@@ -31,7 +31,7 @@ dependencies {
   implementation(libs.okhttp)
   implementation(libs.moshi)
   implementation(libs.moshi.adapters)
-  api(libs.retrofit)
+  implementation(libs.retrofit)
   implementation(libs.retrofit.converter.moshi)
   implementation(libs.kotlinx.coroutines.core)
 

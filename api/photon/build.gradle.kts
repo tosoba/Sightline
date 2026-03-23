@@ -30,9 +30,9 @@ dependencies {
   implementation(libs.kotlinx.coroutines.core)
 
   implementation(libs.gson)
-  implementation(libs.mapbox.geojson)
+  api(libs.mapbox.geojson)
   implementation(libs.okhttp)
-  api(libs.retrofit)
+  implementation(libs.retrofit)
   implementation(libs.retrofit.converter.gson)
 
   implementation(libs.hilt.android)

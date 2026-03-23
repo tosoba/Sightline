@@ -11,12 +11,16 @@ import com.trm.sightline.core.common.NetworkError
 import com.trm.sightline.core.common.toNetworkError
 import com.trm.sightline.core.common.util.locationEnabledFlow
 import com.trm.sightline.core.common.util.locationUpdatesFlow
+import com.trm.sightline.core.domain.AddressRepository
 import com.trm.sightline.core.domain.PlacesRepository
 import com.trm.sightline.core.domain.UserPreferencesRepository
 import com.trm.sightline.core.model.LoadingState
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
+import kotlin.coroutines.cancellation.CancellationException
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -35,8 +39,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
-import javax.inject.Inject
-import kotlin.coroutines.cancellation.CancellationException
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -44,7 +46,8 @@ class MainViewModel
 @Inject
 constructor(
   application: Application,
-  private val repository: PlacesRepository,
+  private val placesRepository: PlacesRepository,
+  private val addressRepository: AddressRepository,
   private val userPreferencesRepository: UserPreferencesRepository,
 ) : AndroidViewModel(application) {
   val places = mutableStateMapOf<PlaceCategory, LoadingState<List<Place>>>()
@@ -59,6 +62,9 @@ constructor(
 
   private val _customLocationAddress = MutableStateFlow("")
   val customLocationAddress: StateFlow<String> = _customLocationAddress.asStateFlow()
+
+  private val _gpsLocationAddress = MutableStateFlow("")
+  val gpsLocationAddress: StateFlow<String> = _gpsLocationAddress.asStateFlow()
 
   val userLocationEnabled: StateFlow<Boolean> =
     userPreferencesRepository
@@ -91,8 +97,21 @@ constructor(
 
     userLocationEnabled
       .flatMapLatest { enabled -> if (enabled) application.locationUpdatesFlow() else emptyFlow() }
-      .onEach { location ->
+      .transformLatest { location ->
         povLocation = PovLocation(location = location, origin = PovLocationOrigin.GPS)
+
+        delay(1.seconds)
+
+        try {
+          _gpsLocationAddress.value =
+            addressRepository
+              .getAddress(latitude = location.latitude, longitude = location.longitude)
+              .orEmpty()
+        } catch (e: Exception) {
+          if (e is CancellationException) throw e
+          _gpsLocationAddress.value = ""
+        }
+        emit(Unit)
       }
       .launchIn(viewModelScope)
 
@@ -116,7 +135,7 @@ constructor(
             places[category] =
               withTimeout(REQUEST_TIMEOUT_MS) {
                 LoadingState.Loaded(
-                  repository.fetchPlaces(
+                  placesRepository.fetchPlaces(
                     category = category,
                     latitude = location.latitude,
                     longitude = location.longitude,

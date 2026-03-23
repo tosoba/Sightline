@@ -29,8 +29,9 @@ android {
 }
 
 dependencies {
-  implementation(project(":core:domain"))
   implementation(project(":api:overpass"))
+  implementation(project(":api:photon"))
+  implementation(project(":core:domain"))
 
   implementation(libs.androidx.datastore.preferences)
 
