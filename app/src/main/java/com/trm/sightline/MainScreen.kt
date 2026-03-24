@@ -239,6 +239,7 @@ fun SharedTransitionScope.MainScreen(
     @Composable {
       val customLocationAddress by viewModel.customLocationAddress.collectAsStateWithLifecycle()
       val gpsLocationAddress by viewModel.userLocationAddress.collectAsStateWithLifecycle()
+      val autocompleteResults by viewModel.autocompleteResults.collectAsStateWithLifecycle()
 
       PlacesContent(
         places = viewModel.places,
@@ -254,6 +255,7 @@ fun SharedTransitionScope.MainScreen(
           else PlacesLayout.Row,
         alpha = contentAlpha,
         animatedVisibilityScope = animatedVisibilityScope,
+        autocompleteResults = autocompleteResults,
         modifier =
           if (isCompactHeight) {
             Modifier.width(sideSheetWidthDp.dp)
@@ -296,6 +298,7 @@ fun SharedTransitionScope.MainScreen(
           }
         },
         onLocationChange = viewModel::setCustomLocationAddress,
+        onSearchResultClick = viewModel::onSearchResultClick,
         onTogglePlaceCategory = viewModel::onTogglePlaceCategory,
         onCategoryClick = onCategoryClick,
       )

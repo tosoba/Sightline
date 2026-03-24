@@ -1,13 +1,14 @@
 package com.trm.sightline.core.domain
 
+import com.trm.sightline.core.model.SearchResult
 import kotlinx.coroutines.flow.Flow
 
 interface UserPreferencesRepository {
-  suspend fun getCustomLocationAddress(): String?
+  suspend fun getCustomLocation(): SearchResult?
 
   fun getUserLocationEnabled(): Flow<Boolean>
 
-  suspend fun setCustomLocationAddress(address: String?)
+  suspend fun setCustomLocation(searchResult: SearchResult?)
 
   suspend fun setUserLocationEnabled(userLocationEnabled: Boolean)
 }

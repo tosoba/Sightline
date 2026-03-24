@@ -59,6 +59,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.ListItem
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -73,6 +77,7 @@ import androidx.compose.ui.unit.dp
 import com.trm.sightline.core.model.LoadingState
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
+import com.trm.sightline.core.model.SearchResult
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
@@ -84,10 +89,12 @@ fun SharedTransitionScope.PlacesContent(
   layout: PlacesLayout,
   alpha: Float,
   animatedVisibilityScope: AnimatedVisibilityScope,
+  autocompleteResults: List<SearchResult>,
   modifier: Modifier = Modifier,
   onSearchFocusChange: (Boolean) -> Unit,
   onToggleUserLocationEnabled: (Boolean) -> Unit,
   onLocationChange: (String) -> Unit,
+  onSearchResultClick: (SearchResult) -> Unit,
   onTogglePlaceCategory: (PlaceCategory) -> Unit,
   onCategoryClick: (PlaceCategory, List<Place>) -> Unit,
 ) {
@@ -95,8 +102,9 @@ fun SharedTransitionScope.PlacesContent(
   var isFocused by remember { mutableStateOf(false) }
 
   Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+    val expanded = isFocused && autocompleteResults.isNotEmpty() && !userLocationEnabled
     SearchBar(
-      expanded = false,
+      expanded = expanded,
       onExpandedChange = {},
       modifier = Modifier.fillMaxWidth(),
       colors =
@@ -109,8 +117,8 @@ fun SharedTransitionScope.PlacesContent(
           query = if (locationAddress is LoadingState.Loaded) locationAddress.data else "",
           onQueryChange = onLocationChange,
           onSearch = {},
-          expanded = false,
-          enabled = !userLocationEnabled && locationAddress is LoadingState.Loaded,
+          expanded = expanded,
+          enabled = !userLocationEnabled,
           onExpandedChange = {},
           placeholder = {
             Text(
@@ -159,7 +167,17 @@ fun SharedTransitionScope.PlacesContent(
           },
         )
       },
-    ) {}
+    ) {
+      LazyColumn {
+        items(autocompleteResults) { result ->
+          ListItem(
+            headlineContent = { Text(result.address) },
+            leadingContent = { Icon(Icons.Default.Place, contentDescription = null) },
+            modifier = Modifier.clickable { onSearchResultClick(result) }
+          )
+        }
+      }
+    }
 
     Spacer(modifier = Modifier.height(16.dp))
 

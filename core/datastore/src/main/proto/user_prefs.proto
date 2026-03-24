@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+option java_package = "com.trm.sightline.core.datastore";
+option java_multiple_files = true;
+
+message UserPreferences {
+  bool user_location_enabled = 1;
+  double custom_location_lat = 2;
+  double custom_location_lng = 3;
+  string custom_location_address = 4;
+}

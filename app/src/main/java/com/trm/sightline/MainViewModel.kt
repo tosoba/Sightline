@@ -18,11 +18,8 @@ import com.trm.sightline.core.domain.UserPreferencesRepository
 import com.trm.sightline.core.model.LoadingState
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
+import com.trm.sightline.core.model.SearchResult
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.util.concurrent.atomic.AtomicLong
-import javax.inject.Inject
-import kotlin.coroutines.cancellation.CancellationException
-import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -31,7 +28,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flatMapLatest
@@ -41,6 +37,10 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
+import java.util.concurrent.atomic.AtomicLong
+import javax.inject.Inject
+import kotlin.coroutines.cancellation.CancellationException
+import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -83,13 +83,40 @@ constructor(
   private val _customLocationAddress = MutableStateFlow("")
   val customLocationAddress: StateFlow<String> = _customLocationAddress.asStateFlow()
 
+  private val _autocompleteResults = MutableStateFlow<List<SearchResult>>(emptyList())
+  val autocompleteResults: StateFlow<List<SearchResult>> = _autocompleteResults.asStateFlow()
+
   private val categoryToggles = MutableSharedFlow<Pair<PlaceCategory, Boolean>>()
 
   init {
     viewModelScope.launch {
-      _customLocationAddress.value = userPreferencesRepository.getCustomLocationAddress().orEmpty()
-      customLocationAddress.collectLatest(userPreferencesRepository::setCustomLocationAddress)
+      val initialLocation = userPreferencesRepository.getCustomLocation()
+      _customLocationAddress.value = initialLocation?.address.orEmpty()
+      customLocation =
+        initialLocation?.let {
+          Location("").apply {
+            latitude = it.latitude
+            longitude = it.longitude
+          }
+        }
     }
+
+    customLocationAddress
+      .onEach { if (it.length < 3) _autocompleteResults.value = emptyList() }
+      .filter { it.length >= 3 }
+      .transformLatest { query ->
+        delay(1.seconds)
+
+        try {
+          _autocompleteResults.value = addressRepository.search(query = query, limit = 10)
+        } catch (ex: Exception) {
+          if (ex is CancellationException) throw ex
+          _autocompleteResults.value = emptyList()
+        }
+
+        emit(Unit)
+      }
+      .launchIn(viewModelScope)
 
     application
       .locationEnabledFlow()
@@ -119,6 +146,7 @@ constructor(
           if (ex is CancellationException) throw ex
           _userLocationAddress.value = LoadingState.Loaded("")
         }
+
         emit(Unit)
       }
       .launchIn(viewModelScope)
@@ -175,6 +203,17 @@ constructor(
 
   fun setUserLocationEnabled(userLocationEnabled: Boolean) {
     viewModelScope.launch { userPreferencesRepository.setUserLocationEnabled(userLocationEnabled) }
+  }
+
+  fun onSearchResultClick(searchResult: SearchResult) {
+    _customLocationAddress.value = searchResult.address
+    _autocompleteResults.value = emptyList()
+    customLocation =
+      Location("").apply {
+        latitude = searchResult.latitude
+        longitude = searchResult.longitude
+      }
+    viewModelScope.launch { userPreferencesRepository.setCustomLocation(searchResult) }
   }
 
   companion object {
