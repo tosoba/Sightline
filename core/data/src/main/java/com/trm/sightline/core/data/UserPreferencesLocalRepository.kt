@@ -1,6 +1,7 @@
-package com.trm.sightline.core.datastore
+package com.trm.sightline.core.data
 
 import androidx.datastore.core.DataStore
+import com.trm.sightline.core.datastore.UserPreferences
 import com.trm.sightline.core.domain.UserPreferencesRepository
 import com.trm.sightline.core.model.CustomLocation
 import kotlinx.coroutines.flow.Flow
