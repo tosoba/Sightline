@@ -27,16 +27,19 @@ android {
 }
 
 dependencies {
-  implementation(libs.kotlinx.coroutines.core)
+  implementation(project(":core:common"))
 
-  implementation(libs.gson)
-  api(libs.mapbox.geojson)
-  implementation(libs.okhttp)
-  implementation(libs.retrofit)
-  implementation(libs.retrofit.converter.gson)
+  implementation(libs.kotlinx.coroutines.core)
 
   implementation(libs.hilt.android)
   ksp(libs.hilt.compiler)
+
+  implementation(libs.gson)
+  api(libs.mapbox.geojson)
+
+  implementation(libs.okhttp)
+  implementation(libs.retrofit)
+  implementation(libs.retrofit.converter.gson)
 
   testImplementation(libs.junit)
   testImplementation(libs.kotlinx.coroutines.test)

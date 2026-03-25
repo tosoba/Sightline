@@ -1,13 +1,13 @@
 package com.trm.sightline.api.photon
 
 import com.mapbox.geojson.FeatureCollection
+import java.lang.reflect.Type
 import okhttp3.OkHttpClient
 import okhttp3.ResponseBody
 import retrofit2.Converter
 import retrofit2.Retrofit
 import retrofit2.http.GET
 import retrofit2.http.Query
-import java.lang.reflect.Type
 
 interface PhotonApi {
   @GET("api")
@@ -30,10 +30,10 @@ interface PhotonApi {
   companion object {
     private const val BASE_URL = "https://photon.komoot.io/"
 
-    internal fun create(): PhotonApi =
+    internal fun create(client: OkHttpClient = OkHttpClient()): PhotonApi =
       Retrofit.Builder()
         .baseUrl(BASE_URL)
-        .client(OkHttpClient.Builder().build())
+        .client(client)
         .addConverterFactory(
           object : Converter.Factory() {
             override fun responseBodyConverter(

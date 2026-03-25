@@ -4,6 +4,7 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import okhttp3.OkHttpClient
 import javax.inject.Singleton
 
 @Module
@@ -11,5 +12,5 @@ import javax.inject.Singleton
 object OverpassApiModule {
   @Provides
   @Singleton
-  fun provideOverpassApi(): OverpassApi = OverpassApi.create()
+  fun provideOverpassApi(client: OkHttpClient): OverpassApi = OverpassApi.create(client)
 }

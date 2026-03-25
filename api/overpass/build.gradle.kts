@@ -28,15 +28,18 @@ android {
 }
 
 dependencies {
-  implementation(libs.okhttp)
-  implementation(libs.moshi)
-  implementation(libs.moshi.adapters)
-  implementation(libs.retrofit)
-  implementation(libs.retrofit.converter.moshi)
-  implementation(libs.kotlinx.coroutines.core)
+  implementation(project(":core:common"))
 
   implementation(libs.hilt.android)
   ksp(libs.hilt.compiler)
+
+  implementation(libs.kotlinx.coroutines.core)
+
+  implementation(libs.moshi)
+  implementation(libs.moshi.adapters)
+  implementation(libs.okhttp)
+  implementation(libs.retrofit)
+  implementation(libs.retrofit.converter.moshi)
 
   testImplementation(libs.junit)
   testImplementation(libs.kotlinx.coroutines.test)

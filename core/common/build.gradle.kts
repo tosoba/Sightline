@@ -1,6 +1,8 @@
 plugins {
   alias(libs.plugins.android.library)
   alias(libs.plugins.kotlin.compose)
+  alias(libs.plugins.hilt)
+  alias(libs.plugins.ksp)
 }
 
 android {
@@ -35,6 +37,9 @@ dependencies {
 
   implementation(libs.kotlinx.coroutines.core)
   implementation(libs.kotlinx.coroutines.play.services)
+
+  implementation(libs.hilt.android)
+  ksp(libs.hilt.compiler)
 
   implementation(libs.play.services.location)
   implementation(libs.retrofit)
