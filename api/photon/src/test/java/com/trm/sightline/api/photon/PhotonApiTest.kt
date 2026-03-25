@@ -7,9 +7,7 @@ class PhotonApiTest {
   private val photonApi = PhotonApi.create()
 
   @Test
-  fun search() = runTest {
-    println(photonApi.search(query = "Aleje Jerozolimskie", lat = 52.237049, lon = 21.017532))
-  }
+  fun search() = runTest { println(photonApi.search(query = "Aleje Jerozolimskie", limit = 100)) }
 
   @Test
   fun reverseGeocoding() = runTest { println(photonApi.reverse(lat = 52.237049, lon = 21.017532)) }
