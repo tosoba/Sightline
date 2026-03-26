@@ -8,8 +8,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.trm.sightline.core.common.NetworkError
-import com.trm.sightline.core.common.toNetworkError
+import com.trm.sightline.core.common.RequestError
+import com.trm.sightline.core.common.toRequestError
 import com.trm.sightline.core.common.util.locationEnabledFlow
 import com.trm.sightline.core.common.util.locationUpdatesFlow
 import com.trm.sightline.core.common.util.withLatestFrom
@@ -21,6 +21,10 @@ import com.trm.sightline.core.model.LoadingState
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.util.concurrent.atomic.AtomicLong
+import javax.inject.Inject
+import kotlin.coroutines.cancellation.CancellationException
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.Channel
@@ -42,10 +46,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
-import java.util.concurrent.atomic.AtomicLong
-import javax.inject.Inject
-import kotlin.coroutines.cancellation.CancellationException
-import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @HiltViewModel
@@ -65,7 +65,7 @@ constructor(
         .filterIsInstance<LoadingState.Loaded<List<Place>>>()
         .flatMap(LoadingState.Loaded<List<Place>>::data)
 
-  val networkErrors = Channel<NetworkError>(Channel.UNLIMITED)
+  val requestErrors = Channel<RequestError>(Channel.UNLIMITED)
 
   val userLocationEnabled: StateFlow<Boolean> =
     userPreferencesRepository
@@ -106,6 +106,7 @@ constructor(
             emit(addressRepository.search(query = query, limit = 100))
           } catch (ex: Exception) {
             if (ex is CancellationException) throw ex
+            requestErrors.send(ex.toRequestError())
             emit(emptyList())
           }
         }
@@ -162,6 +163,7 @@ constructor(
             )
         } catch (ex: Exception) {
           if (ex is CancellationException) throw ex
+          requestErrors.send(ex.toRequestError())
           _userLocationAddress.value = LoadingState.Loaded("")
         }
 
@@ -202,7 +204,7 @@ constructor(
               }
           } catch (ex: Exception) {
             places.remove(category)
-            networkErrors.send(ex.toNetworkError())
+            requestErrors.send(ex.toRequestError())
             if (ex is CancellationException) throw ex
           }
         }
