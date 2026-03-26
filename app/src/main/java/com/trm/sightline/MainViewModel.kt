@@ -88,7 +88,7 @@ constructor(
   private val _customLocationAddress = MutableStateFlow("")
   val customLocationAddress: StateFlow<String> = _customLocationAddress.asStateFlow()
 
-  val customLocationSearchResults: StateFlow<List<CustomLocation>> =
+  val customLocationSearchResults: StateFlow<LoadingState<List<CustomLocation>>> =
     customLocationAddress
       .withLatestFrom(userPreferencesRepository.getCustomLocation().map { it?.address }) {
         query,
@@ -100,18 +100,24 @@ constructor(
       .debounce(1.seconds)
       .transformLatest { query ->
         if (query.trim().length < 3) {
-          emit(emptyList())
+          emit(LoadingState.Loaded(emptyList()))
         } else {
+          emit(LoadingState.Loading)
+
           try {
-            emit(addressRepository.search(query = query, limit = 100))
+            emit(LoadingState.Loaded(addressRepository.search(query = query, limit = 100)))
           } catch (ex: Exception) {
             if (ex is CancellationException) throw ex
             requestErrors.send(ex.toRequestError())
-            emit(emptyList())
+            emit(LoadingState.Loaded(emptyList()))
           }
         }
       }
-      .stateIn(scope = viewModelScope, started = SharingStarted.Lazily, initialValue = emptyList())
+      .stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.Lazily,
+        initialValue = LoadingState.Loaded(emptyList()),
+      )
 
   private val placeCategoryToggles = MutableSharedFlow<Pair<PlaceCategory, Boolean>>()
 

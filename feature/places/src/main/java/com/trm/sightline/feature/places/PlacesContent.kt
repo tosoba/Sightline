@@ -61,6 +61,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalIconToggleButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
@@ -77,6 +78,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.trm.sightline.core.model.CustomLocation
 import com.trm.sightline.core.model.LoadingState
@@ -90,7 +92,7 @@ fun SharedTransitionScope.PlacesContent(
   locationAddress: LoadingState<String>,
   userLocationEnabled: Boolean,
   placeCategoriesEnabled: Boolean,
-  customLocationSearchResults: List<CustomLocation>,
+  customLocationSearchResults: LoadingState<List<CustomLocation>>,
   layout: PlacesLayout,
   alpha: Float,
   animatedVisibilityScope: AnimatedVisibilityScope,
@@ -106,7 +108,7 @@ fun SharedTransitionScope.PlacesContent(
   var isFocused by remember { mutableStateOf(false) }
 
   Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-    val expanded = isFocused && !userLocationEnabled && customLocationSearchResults.isNotEmpty()
+    val expanded = isFocused && !userLocationEnabled
     SearchBar(
       expanded = expanded,
       onExpandedChange = {},
@@ -186,26 +188,31 @@ fun SharedTransitionScope.PlacesContent(
                   } else {
                     "Your query must be at least 3 characters long."
                   },
-                style = MaterialTheme.typography.titleLarge,
+                style = MaterialTheme.typography.titleMedium,
+                textAlign = TextAlign.Center,
               )
             }
           }
-        }
-
-        items(customLocationSearchResults) { result ->
-          ListItem(
-            headlineContent = { Text(result.address) },
-            leadingContent = { Icon(imageVector = Icons.Default.Place, contentDescription = null) },
-            colors =
-              ListItemDefaults.colors(
-                containerColor = ListItemDefaults.colors().containerColor.copy(alpha = 0f)
-              ),
-            modifier =
-              Modifier.animateItem().clickable {
-                focusManager.clearFocus()
-                onCustomLocationSearchResultClick(result)
+        } else if (customLocationSearchResults is LoadingState.Loaded) {
+          items(customLocationSearchResults.data) { result ->
+            ListItem(
+              headlineContent = { Text(text = result.address) },
+              leadingContent = {
+                Icon(imageVector = Icons.Default.Place, contentDescription = null)
               },
-          )
+              colors =
+                ListItemDefaults.colors(
+                  containerColor = ListItemDefaults.colors().containerColor.copy(alpha = 0f)
+                ),
+              modifier =
+                Modifier.animateItem().clickable {
+                  focusManager.clearFocus()
+                  onCustomLocationSearchResultClick(result)
+                },
+            )
+          }
+        } else if (customLocationSearchResults is LoadingState.Loading) {
+          item { LinearProgressIndicator(modifier = Modifier.fillMaxWidth().animateItem()) }
         }
       }
     }
