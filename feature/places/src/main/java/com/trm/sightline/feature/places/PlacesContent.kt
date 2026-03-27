@@ -189,6 +189,7 @@ fun SharedTransitionScope.PlacesContent(
                     "Your query must be at least 3 characters long."
                   },
                 style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center,
               )
             }
