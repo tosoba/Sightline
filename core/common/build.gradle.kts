@@ -42,5 +42,7 @@ dependencies {
   ksp(libs.hilt.compiler)
 
   implementation(libs.play.services.location)
+  implementation(libs.okhttp)
+  implementation(libs.okhttp.logging.interceptor)
   implementation(libs.retrofit)
 }

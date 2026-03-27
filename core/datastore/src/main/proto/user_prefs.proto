@@ -8,4 +8,5 @@ message UserPreferences {
   optional double custom_location_lat = 2;
   optional double custom_location_lng = 3;
   optional string custom_location_address = 4;
+  optional int64 custom_location_timestamp = 5;
 }

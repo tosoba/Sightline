@@ -13,6 +13,8 @@ android {
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
 
+  buildFeatures { buildConfig = true }
+
   buildTypes {
     release {
       isMinifyEnabled = false
@@ -38,6 +40,7 @@ dependencies {
   api(libs.mapbox.geojson)
 
   implementation(libs.okhttp)
+  implementation(libs.okhttp.logging.interceptor)
   implementation(libs.retrofit)
   implementation(libs.retrofit.converter.gson)
 

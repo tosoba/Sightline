@@ -12,11 +12,17 @@ class UserPreferencesLocalRepository(private val userPreferencesStore: DataStore
   override fun getCustomLocation(): Flow<CustomLocation?> =
     userPreferencesStore.data.map { preferences ->
       with(preferences) {
-        if (hasCustomLocationLat() && hasCustomLocationLng() && hasCustomLocationAddress()) {
+        if (
+          hasCustomLocationLat() &&
+            hasCustomLocationLng() &&
+            hasCustomLocationAddress() &&
+            hasCustomLocationTimestamp()
+        ) {
           CustomLocation(
             latitude = customLocationLat,
             longitude = customLocationLng,
             address = customLocationAddress,
+            timestamp = customLocationTimestamp,
           )
         } else {
           null
@@ -34,6 +40,7 @@ class UserPreferencesLocalRepository(private val userPreferencesStore: DataStore
         .setCustomLocationLat(customLocation.latitude)
         .setCustomLocationLng(customLocation.longitude)
         .setCustomLocationAddress(customLocation.address)
+        .setCustomLocationTimestamp(System.currentTimeMillis())
         .build()
     }
   }

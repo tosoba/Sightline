@@ -24,6 +24,7 @@ internal object FeatureMapper {
       latitude = point.latitude(),
       longitude = point.longitude(),
       address = address,
+      timestamp = System.currentTimeMillis(),
     )
   }
 }

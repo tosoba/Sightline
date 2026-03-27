@@ -219,6 +219,7 @@ constructor(
 
   fun setCustomLocationAddress(address: String) {
     _customLocationAddress.value = address
+    customLocation = null
   }
 
   fun setUserLocationEnabled(userLocationEnabled: Boolean) {

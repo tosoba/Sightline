@@ -4,4 +4,5 @@ data class CustomLocation(
   val latitude: Double,
   val longitude: Double,
   val address: String,
+  val timestamp: Long,
 )
