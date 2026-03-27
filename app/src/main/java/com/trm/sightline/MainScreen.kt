@@ -6,9 +6,14 @@ import android.content.Intent
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -31,11 +36,13 @@ import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -59,6 +66,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -67,6 +75,7 @@ import com.trm.sightline.composable.MainPagerToolbar
 import com.trm.sightline.core.ar.util.collapsedBottomSheetContentHeightDp
 import com.trm.sightline.core.ar.util.sideSheetWidthDp
 import com.trm.sightline.core.common.PermissionStatus
+import com.trm.sightline.core.common.RequestError
 import com.trm.sightline.core.common.rememberPermissionState
 import com.trm.sightline.core.common.util.CheckLocationSettingsResult
 import com.trm.sightline.core.common.util.checkLocationSettings
@@ -76,6 +85,8 @@ import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
 import com.trm.sightline.feature.places.PlacesContent
 import com.trm.sightline.feature.places.PlacesLayout
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 @OptIn(
@@ -112,6 +123,20 @@ fun SharedTransitionScope.MainScreen(
   LaunchedEffect(pagerState.currentPage) { toolbarsVisible = true }
 
   val viewModel = hiltViewModel<MainViewModel>()
+
+  var currentError by remember { mutableStateOf<Int?>(null) }
+  LaunchedEffect(Unit) {
+    viewModel.requestErrors.receiveAsFlow().collect { error ->
+      currentError =
+        when (error) {
+          RequestError.IO -> R.string.error_connection
+          is RequestError.Http -> R.string.error_server
+          is RequestError.Other -> R.string.error_unknown
+        }
+      delay(4000)
+      currentError = null
+    }
+  }
 
   val locationSettingsLauncher =
     rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result
@@ -363,6 +388,36 @@ fun SharedTransitionScope.MainScreen(
           placesSheetContent()
         }
       }
+
+      ErrorMessage(
+        message = currentError?.let { stringResource(it) }.orEmpty(),
+        visible = currentError != null,
+        modifier = Modifier.align(Alignment.TopCenter),
+      )
+    }
+  }
+}
+
+@Composable
+private fun ErrorMessage(message: String, visible: Boolean, modifier: Modifier = Modifier) {
+  AnimatedVisibility(
+    visible = visible,
+    enter = slideInVertically { -it } + fadeIn(),
+    exit = slideOutVertically { -it } + fadeOut(),
+    modifier = modifier,
+  ) {
+    Surface(
+      modifier = Modifier.padding(16.dp).systemBarsPadding(),
+      color = MaterialTheme.colorScheme.errorContainer,
+      shape = CircleShape,
+      tonalElevation = 6.dp,
+    ) {
+      Text(
+        text = message,
+        color = MaterialTheme.colorScheme.onErrorContainer,
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        style = MaterialTheme.typography.labelLarge,
+      )
     }
   }
 }
