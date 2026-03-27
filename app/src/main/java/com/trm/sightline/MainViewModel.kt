@@ -12,7 +12,6 @@ import com.trm.sightline.core.common.RequestError
 import com.trm.sightline.core.common.toRequestError
 import com.trm.sightline.core.common.util.locationEnabledFlow
 import com.trm.sightline.core.common.util.locationUpdatesFlow
-import com.trm.sightline.core.common.util.withLatestFrom
 import com.trm.sightline.core.domain.AddressRepository
 import com.trm.sightline.core.domain.PlacesRepository
 import com.trm.sightline.core.domain.UserPreferencesRepository
@@ -21,10 +20,6 @@ import com.trm.sightline.core.model.LoadingState
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.util.concurrent.atomic.AtomicLong
-import javax.inject.Inject
-import kotlin.coroutines.cancellation.CancellationException
-import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.Channel
@@ -35,17 +30,21 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
+import java.util.concurrent.atomic.AtomicLong
+import javax.inject.Inject
+import kotlin.coroutines.cancellation.CancellationException
+import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @HiltViewModel
@@ -90,14 +89,8 @@ constructor(
 
   val customLocationSearchResults: StateFlow<LoadingState<List<CustomLocation>>> =
     customLocationAddress
-      .withLatestFrom(userPreferencesRepository.getCustomLocation().map { it?.address }) {
-        query,
-        savedAddress ->
-        query to savedAddress
-      }
-      .filter { (query, savedAddress) -> query != savedAddress }
-      .map { (query, _) -> query }
       .debounce(1.seconds)
+      .distinctUntilChanged()
       .transformLatest { query ->
         if (query.trim().length < 3) {
           emit(LoadingState.Loaded(emptyList()))
