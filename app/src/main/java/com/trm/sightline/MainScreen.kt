@@ -85,8 +85,6 @@ import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
 import com.trm.sightline.feature.places.PlacesContent
 import com.trm.sightline.feature.places.PlacesLayout
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 @OptIn(
@@ -123,20 +121,6 @@ fun SharedTransitionScope.MainScreen(
   LaunchedEffect(pagerState.currentPage) { toolbarsVisible = true }
 
   val viewModel = hiltViewModel<MainViewModel>()
-
-  var currentError by remember { mutableStateOf<Int?>(null) }
-  LaunchedEffect(Unit) {
-    viewModel.requestErrors.receiveAsFlow().collect { error ->
-      currentError =
-        when (error) {
-          RequestError.IO -> R.string.error_connection
-          is RequestError.Http -> R.string.error_server
-          is RequestError.Other -> R.string.error_unknown
-        }
-      delay(4000)
-      currentError = null
-    }
-  }
 
   val locationSettingsLauncher =
     rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result
@@ -392,8 +376,20 @@ fun SharedTransitionScope.MainScreen(
       }
     }
 
+    val currentError by viewModel.requestError.collectAsStateWithLifecycle()
     ErrorMessage(
-      message = currentError?.let { stringResource(it) }.orEmpty(),
+      message =
+        currentError
+          ?.let {
+            stringResource(
+              when (it) {
+                RequestError.IO -> R.string.error_connection
+                is RequestError.Http -> R.string.error_server
+                is RequestError.Other -> R.string.error_unknown
+              }
+            )
+          }
+          .orEmpty(),
       visible = currentError != null,
       modifier = Modifier.align(Alignment.TopCenter),
     )

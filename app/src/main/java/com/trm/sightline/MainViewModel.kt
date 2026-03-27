@@ -22,7 +22,7 @@ import com.trm.sightline.core.model.PlaceCategory
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -64,7 +64,10 @@ constructor(
         .filterIsInstance<LoadingState.Loaded<List<Place>>>()
         .flatMap(LoadingState.Loaded<List<Place>>::data)
 
-  val requestErrors = Channel<RequestError>(Channel.UNLIMITED)
+  private val _requestError = MutableStateFlow<RequestError?>(null)
+  val requestError = _requestError.asStateFlow()
+
+  private var clearErrorJob: Job? = null
 
   val userLocationEnabled: StateFlow<Boolean> =
     userPreferencesRepository
@@ -79,14 +82,14 @@ constructor(
     private set
 
   private val _userLocationAddress = MutableStateFlow<LoadingState<String>>(LoadingState.Loaded(""))
-  val userLocationAddress: StateFlow<LoadingState<String>> = _userLocationAddress.asStateFlow()
 
+  val userLocationAddress: StateFlow<LoadingState<String>> = _userLocationAddress.asStateFlow()
   var customLocation: Location? by mutableStateOf(null)
     private set
 
   private val _customLocationAddress = MutableStateFlow("")
-  val customLocationAddress: StateFlow<String> = _customLocationAddress.asStateFlow()
 
+  val customLocationAddress: StateFlow<String> = _customLocationAddress.asStateFlow()
   val customLocationSearchResults: StateFlow<LoadingState<List<CustomLocation>>> =
     customLocationAddress
       .debounce(1.seconds)
@@ -101,7 +104,7 @@ constructor(
             emit(LoadingState.Loaded(addressRepository.search(query = query, limit = 100)))
           } catch (ex: Exception) {
             if (ex is CancellationException) throw ex
-            requestErrors.send(ex.toRequestError())
+            emitRequestError(ex.toRequestError())
             emit(LoadingState.Loaded(emptyList()))
           }
         }
@@ -162,7 +165,7 @@ constructor(
             )
         } catch (ex: Exception) {
           if (ex is CancellationException) throw ex
-          requestErrors.send(ex.toRequestError())
+          emitRequestError(ex.toRequestError())
           _userLocationAddress.value = LoadingState.Loaded("")
         }
 
@@ -203,11 +206,20 @@ constructor(
               }
           } catch (ex: Exception) {
             places.remove(category)
-            requestErrors.send(ex.toRequestError())
+            emitRequestError(ex.toRequestError())
             if (ex is CancellationException) throw ex
           }
         }
         .launchIn(viewModelScope)
+    }
+  }
+
+  private fun emitRequestError(error: RequestError) {
+    clearErrorJob?.cancel()
+    _requestError.value = error
+    clearErrorJob = viewModelScope.launch {
+      delay(4000)
+      _requestError.value = null
     }
   }
 
