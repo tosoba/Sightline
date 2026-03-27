@@ -330,71 +330,73 @@ fun SharedTransitionScope.MainScreen(
       )
     }
 
-  BottomSheetScaffold(
-    scaffoldState = scaffoldState,
-    sheetDragHandle = {
-      Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-      ) {
-        Spacer(
-          modifier =
-            Modifier.height(
-              WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding() * expandedProgress
-            )
-        )
-        BottomSheetDefaults.DragHandle()
-      }
-    },
-    sheetContainerColor = BottomSheetDefaults.ContainerColor.copy(alpha = containerAlpha),
-    sheetPeekHeight = sheetPeekHeight,
-    sheetContent = { placesSheetContent() },
-  ) { innerPadding ->
-    Box(
-      modifier =
-        Modifier.fillMaxSize()
-          .padding(
-            top = innerPadding.calculateTopPadding(),
-            bottom = if (isCompactHeight) innerPadding.calculateBottomPadding() else 0.dp,
-            start = innerPadding.calculateStartPadding(LocalLayoutDirection.current),
-            end = innerPadding.calculateEndPadding(LocalLayoutDirection.current),
-          ),
-      contentAlignment = Alignment.Center,
-    ) {
-      MainPager(
-        pagerState = pagerState,
-        location = if (userLocationEnabled) viewModel.userLocation else viewModel.customLocation,
-        places = viewModel.allPlaces,
-        isCompactHeight = isCompactHeight,
-        cameraPreviewBlurred = !isCompactHeight && expandedProgress != 0f,
-        cameraPreviewOverlayVisible = toolbarsVisible,
-        onCameraPreviewTouch = { toolbarsVisible = !toolbarsVisible },
-      )
-
-      MainPagerToolbar(
-        visible =
-          toolbarsVisible && (isCompactHeight || sheetState.targetValue != SheetValue.Expanded),
-        isCompactHeight = isCompactHeight,
-        selectedPage = selectedPage,
-        onPageSelected = { page -> scope.launch { pagerState.animateScrollToPage(page.ordinal) } },
-      )
-
-      if (isCompactHeight) {
-        Surface(
-          modifier = Modifier.fillMaxHeight().align(Alignment.CenterEnd),
-          color = BottomSheetDefaults.ContainerColor.copy(alpha = containerAlpha),
-          tonalElevation = 1.dp,
+  Box(modifier = Modifier.fillMaxSize()) {
+    BottomSheetScaffold(
+      scaffoldState = scaffoldState,
+      sheetDragHandle = {
+        Column(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-          placesSheetContent()
+          Spacer(
+            modifier =
+              Modifier.height(
+                WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding() * expandedProgress
+              )
+          )
+          BottomSheetDefaults.DragHandle()
+        }
+      },
+      sheetContainerColor = BottomSheetDefaults.ContainerColor.copy(alpha = containerAlpha),
+      sheetPeekHeight = sheetPeekHeight,
+      sheetContent = { placesSheetContent() },
+    ) { innerPadding ->
+      Box(
+        modifier =
+          Modifier.fillMaxSize()
+            .padding(
+              top = innerPadding.calculateTopPadding(),
+              bottom = if (isCompactHeight) innerPadding.calculateBottomPadding() else 0.dp,
+              start = innerPadding.calculateStartPadding(LocalLayoutDirection.current),
+              end = innerPadding.calculateEndPadding(LocalLayoutDirection.current),
+            ),
+        contentAlignment = Alignment.Center,
+      ) {
+        MainPager(
+          pagerState = pagerState,
+          location = if (userLocationEnabled) viewModel.userLocation else viewModel.customLocation,
+          places = viewModel.allPlaces,
+          isCompactHeight = isCompactHeight,
+          cameraPreviewBlurred = !isCompactHeight && expandedProgress != 0f,
+          cameraPreviewOverlayVisible = toolbarsVisible,
+          onCameraPreviewTouch = { toolbarsVisible = !toolbarsVisible },
+        )
+
+        MainPagerToolbar(
+          visible =
+            toolbarsVisible && (isCompactHeight || sheetState.targetValue != SheetValue.Expanded),
+          isCompactHeight = isCompactHeight,
+          selectedPage = selectedPage,
+          onPageSelected = { page -> scope.launch { pagerState.animateScrollToPage(page.ordinal) } },
+        )
+
+        if (isCompactHeight) {
+          Surface(
+            modifier = Modifier.fillMaxHeight().align(Alignment.CenterEnd),
+            color = BottomSheetDefaults.ContainerColor.copy(alpha = containerAlpha),
+            tonalElevation = 1.dp,
+          ) {
+            placesSheetContent()
+          }
         }
       }
-
-      ErrorMessage(
-        message = currentError?.let { stringResource(it) }.orEmpty(),
-        visible = currentError != null,
-        modifier = Modifier.align(Alignment.TopCenter),
-      )
     }
+
+    ErrorMessage(
+      message = currentError?.let { stringResource(it) }.orEmpty(),
+      visible = currentError != null,
+      modifier = Modifier.align(Alignment.TopCenter),
+    )
   }
 }
 
