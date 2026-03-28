@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">Sightline</string>
+    <string name="location_disabled_title">Location is disabled</string>
+    <string name="location_disabled_message">Device location is turned off. Enable it in Settings to use this feature.</string>
+    <string name="location_permission_required_title">Location permission required</string>
+    <string name="location_permission_permanently_denied_message">Location access was permanently denied. Open Settings to grant it.</string>
+    <string name="camera_label">Camera</string>
+    <string name="map_label">Map</string>
 </resources>

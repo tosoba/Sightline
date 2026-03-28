@@ -38,10 +38,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.trm.sightline.core.model.LoadingState
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
+import com.trm.sightline.core.common.R as commonR
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -169,7 +171,7 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
               when (state) {
                 is LoadingState.Loaded<List<Place>> -> {
                   Text(
-                    text = "${state.data.size} places",
+                    text = stringResource(commonR.string.places_count, state.data.size),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,

@@ -26,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.trm.sightline.MainPage
 import com.trm.sightline.core.ar.util.collapsedBottomSheetContentHeightDp
@@ -43,7 +44,7 @@ fun BoxScope.MainPagerToolbar(
     @Composable { showLabel: Boolean ->
       MainPage.entries.forEach { page ->
         MainPagerToolbarItem(
-          label = page.label,
+          label = stringResource(page.labelRes),
           icon = page.icon,
           isSelected = selectedPage == page,
           showLabel = showLabel,

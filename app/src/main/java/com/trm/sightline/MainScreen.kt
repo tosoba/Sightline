@@ -79,6 +79,7 @@ import com.trm.sightline.core.model.PlaceCategory
 import com.trm.sightline.feature.places.PlacesContent
 import com.trm.sightline.feature.places.PlacesLayout
 import kotlinx.coroutines.launch
+import com.trm.sightline.core.common.R as commonR
 
 @OptIn(
   ExperimentalMaterial3Api::class,
@@ -139,8 +140,8 @@ fun SharedTransitionScope.MainScreen(
   if (showLocationDisabledDialog) {
     AlertDialog(
       onDismissRequest = { showLocationDisabledDialog = false },
-      title = { Text("Location is disabled") },
-      text = { Text("Device location is turned off. Enable it in Settings to use this feature.") },
+      title = { Text(stringResource(R.string.location_disabled_title)) },
+      text = { Text(stringResource(R.string.location_disabled_message)) },
       confirmButton = {
         TextButton(
           onClick = {
@@ -148,11 +149,13 @@ fun SharedTransitionScope.MainScreen(
             context.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
           }
         ) {
-          Text("Open Settings")
+          Text(stringResource(commonR.string.open_settings))
         }
       },
       dismissButton = {
-        TextButton(onClick = { showLocationDisabledDialog = false }) { Text("Cancel") }
+        TextButton(onClick = { showLocationDisabledDialog = false }) {
+          Text(stringResource(commonR.string.cancel))
+        }
       },
     )
   }
@@ -177,8 +180,8 @@ fun SharedTransitionScope.MainScreen(
   if (showLocationPermissionSettingsDialog) {
     AlertDialog(
       onDismissRequest = { showLocationPermissionSettingsDialog = false },
-      title = { Text("Location permission required") },
-      text = { Text("Location access was permanently denied. Open Settings to grant it.") },
+      title = { Text(stringResource(R.string.location_permission_required_title)) },
+      text = { Text(stringResource(R.string.location_permission_permanently_denied_message)) },
       confirmButton = {
         TextButton(
           onClick = {
@@ -186,11 +189,13 @@ fun SharedTransitionScope.MainScreen(
             context.startAppSettingsActivity()
           }
         ) {
-          Text("Open Settings")
+          Text(stringResource(commonR.string.open_settings))
         }
       },
       dismissButton = {
-        TextButton(onClick = { showLocationPermissionSettingsDialog = false }) { Text("Cancel") }
+        TextButton(onClick = { showLocationPermissionSettingsDialog = false }) {
+          Text(stringResource(commonR.string.cancel))
+        }
       },
     )
   }

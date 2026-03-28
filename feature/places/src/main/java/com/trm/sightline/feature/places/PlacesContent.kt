@@ -78,6 +78,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.trm.sightline.core.model.CustomLocation
@@ -129,10 +130,11 @@ fun SharedTransitionScope.PlacesContent(
           placeholder = {
             Text(
               when {
-                !userLocationEnabled -> "Enter your location."
-                !placeCategoriesEnabled -> "Loading location..."
-                locationAddress is LoadingState.Loading -> "Loading location address..."
-                else -> "Location address not found."
+                !userLocationEnabled -> stringResource(R.string.enter_location_placeholder)
+                !placeCategoriesEnabled -> stringResource(R.string.loading_location)
+                locationAddress is LoadingState.Loading ->
+                  stringResource(R.string.loading_location_address)
+                else -> stringResource(R.string.location_address_not_found)
               }
             )
           },
@@ -154,7 +156,7 @@ fun SharedTransitionScope.PlacesContent(
                 IconButton(onClick = focusManager::clearFocus) {
                   Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
+                    contentDescription = stringResource(R.string.back_content_description),
                   )
                 }
               }
@@ -168,7 +170,10 @@ fun SharedTransitionScope.PlacesContent(
               checked = userLocationEnabled,
               onCheckedChange = onToggleUserLocationEnabled,
             ) {
-              Icon(imageVector = Icons.Default.MyLocation, contentDescription = "My location")
+              Icon(
+                imageVector = Icons.Default.MyLocation,
+                contentDescription = stringResource(R.string.my_location_content_description),
+              )
             }
           },
         )
@@ -184,9 +189,9 @@ fun SharedTransitionScope.PlacesContent(
               Text(
                 text =
                   if (locationAddress.data.trim().isEmpty()) {
-                    "Start typing to search for a location."
+                    stringResource(R.string.start_typing_to_search)
                   } else {
-                    "Your query must be at least 3 characters long."
+                    stringResource(R.string.query_too_short)
                   },
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,

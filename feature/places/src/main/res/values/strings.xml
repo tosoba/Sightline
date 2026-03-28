@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="enter_location_placeholder">Enter your location.</string>
+    <string name="loading_location">Loading location...</string>
+    <string name="loading_location_address">Loading location address...</string>
+    <string name="location_address_not_found">Location address not found.</string>
+    <string name="back_content_description">Back</string>
+    <string name="my_location_content_description">My location</string>
+    <string name="start_typing_to_search">Start typing to search for a location.</string>
+    <string name="query_too_short">Your query must be at least 3 characters long.</string>
+</resources>

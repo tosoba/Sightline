@@ -19,12 +19,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import com.trm.sightline.core.ar.model.RoundedRectF
 import com.trm.sightline.core.ar.view.ARMarkerRenderer
 import com.trm.sightline.core.common.PermissionStatus
 import com.trm.sightline.core.common.rememberPermissionState
 import com.trm.sightline.core.common.util.startAppSettingsActivity
 import com.trm.sightline.core.model.Place
+import com.trm.sightline.core.common.R as commonR
 
 @Composable
 fun CameraContent(
@@ -49,8 +51,8 @@ fun CameraContent(
   if (showSettingsDialog) {
     AlertDialog(
       onDismissRequest = { showSettingsDialog = false },
-      title = { Text("Camera permission required") },
-      text = { Text("Camera access was permanently denied. Open Settings to grant it.") },
+      title = { Text(stringResource(R.string.camera_permission_required_title)) },
+      text = { Text(stringResource(R.string.camera_permission_permanently_denied_message)) },
       confirmButton = {
         TextButton(
           onClick = {
@@ -58,10 +60,14 @@ fun CameraContent(
             context.startAppSettingsActivity()
           }
         ) {
-          Text("Open Settings")
+          Text(stringResource(commonR.string.open_settings))
         }
       },
-      dismissButton = { TextButton(onClick = { showSettingsDialog = false }) { Text("Cancel") } },
+      dismissButton = {
+        TextButton(onClick = { showSettingsDialog = false }) {
+          Text(stringResource(commonR.string.cancel))
+        }
+      },
     )
   }
 
@@ -87,7 +93,7 @@ fun CameraContent(
             }
           }
         ) {
-          Text("Grant camera permission")
+          Text(stringResource(R.string.grant_camera_permission))
         }
       }
     }

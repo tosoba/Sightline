@@ -13,10 +13,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.navigation3.runtime.NavKey
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
 import kotlinx.serialization.Serializable
+import com.trm.sightline.core.common.R as commonR
 
 @Serializable
 data class PlaceCategoryRoute(val category: PlaceCategory, val places: List<Place>) : NavKey
@@ -44,7 +46,7 @@ fun SharedTransitionScope.PlaceCategoryScreen(
           ),
       )
       Text(
-        text = "${route.places.size} places",
+        text = stringResource(commonR.string.places_count, route.places.size),
         style = MaterialTheme.typography.titleSmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier =
