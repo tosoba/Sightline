@@ -11,6 +11,7 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -351,6 +352,11 @@ fun SharedTransitionScope.MainScreen(
           isCompactHeight = isCompactHeight,
           cameraPreviewBlurred = !isCompactHeight && expandedProgress != 0f,
           cameraPreviewOverlayVisible = toolbarsVisible,
+          mapPadding =
+            PaddingValues(
+              bottom = if (isCompactHeight) 0.dp else sheetPeekHeight,
+              end = if (isCompactHeight) sideSheetWidthDp.dp else 0.dp,
+            ),
           onCameraPreviewTouch = { toolbarsVisible = !toolbarsVisible },
         )
 

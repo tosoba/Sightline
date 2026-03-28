@@ -3,9 +3,6 @@ package com.trm.sightline.feature.map
 import android.location.Location
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Man
 import androidx.compose.material3.MaterialTheme
@@ -17,9 +14,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import com.trm.sightline.core.ar.util.collapsedBottomSheetContentHeightDp
-import com.trm.sightline.core.ar.util.collapsedBottomSheetDragHandleHeightDp
-import com.trm.sightline.core.ar.util.sideSheetWidthDp
 import com.trm.sightline.core.model.Place
 import kotlinx.serialization.json.JsonPrimitive
 import org.maplibre.compose.camera.CameraPosition
@@ -42,7 +36,6 @@ import org.maplibre.compose.sources.GeoJsonData
 import org.maplibre.compose.sources.GeoJsonOptions
 import org.maplibre.compose.sources.rememberGeoJsonSource
 import org.maplibre.compose.style.BaseStyle
-import org.maplibre.compose.util.ClickResult
 import org.maplibre.spatialk.geojson.BoundingBox
 import org.maplibre.spatialk.geojson.Feature
 import org.maplibre.spatialk.geojson.FeatureCollection
@@ -53,25 +46,13 @@ import org.maplibre.spatialk.geojson.Position
 fun MapPreview(
   places: List<Place>,
   location: Location?,
-  isCompactHeight: Boolean,
+  padding: PaddingValues,
   modifier: Modifier = Modifier,
 ) {
   val boundingBox = rememberPlacesBoundingBox(places = places, percentageIncrease = 0.1)
-  val navigationBarsPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
   val cameraState = rememberCameraState()
 
-  LaunchedEffect(boundingBox, isCompactHeight) {
-    val padding =
-      if (isCompactHeight) {
-        PaddingValues(end = sideSheetWidthDp.dp)
-      } else {
-        PaddingValues(
-          bottom =
-            collapsedBottomSheetContentHeightDp.dp +
-              collapsedBottomSheetDragHandleHeightDp.dp +
-              navigationBarsPadding
-        )
-      }
+  LaunchedEffect(boundingBox, padding) {
     if (boundingBox != null) {
       cameraState.animateTo(boundingBox = boundingBox, padding = padding)
     } else if (location != null) {
@@ -144,7 +125,6 @@ fun MapPreview(
           1000 to const(50.dp),
           5000 to const(60.dp),
         ),
-      onClick = { _ -> ClickResult.Consume },
     )
 
     SymbolLayer(

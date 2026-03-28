@@ -4,6 +4,7 @@ import android.location.Location
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
@@ -41,6 +42,7 @@ fun MainPager(
   isCompactHeight: Boolean,
   cameraPreviewBlurred: Boolean,
   cameraPreviewOverlayVisible: Boolean,
+  mapPadding: PaddingValues,
   onCameraPreviewTouch: () -> Unit,
 ) {
   HorizontalPager(
@@ -104,7 +106,7 @@ fun MainPager(
         MapPreview(
           places = places,
           location = location,
-          isCompactHeight = isCompactHeight,
+          padding = mapPadding,
           modifier = Modifier.fillMaxSize(),
         )
       }
