@@ -101,7 +101,12 @@ fun MainPager(
         }
       }
       MainPage.Map -> {
-        MapPreview(places = places, modifier = Modifier.fillMaxSize())
+        MapPreview(
+          places = places,
+          location = location,
+          isCompactHeight = isCompactHeight,
+          modifier = Modifier.fillMaxSize(),
+        )
       }
     }
   }

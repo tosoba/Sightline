@@ -1,18 +1,29 @@
 package com.trm.sightline.feature.map
 
+import android.location.Location
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Man
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import com.trm.sightline.core.ar.util.collapsedBottomSheetContentHeightDp
+import com.trm.sightline.core.ar.util.collapsedBottomSheetDragHandleHeightDp
+import com.trm.sightline.core.ar.util.sideSheetWidthDp
 import com.trm.sightline.core.model.Place
 import kotlinx.serialization.json.JsonPrimitive
+import org.maplibre.compose.camera.CameraPosition
+import org.maplibre.compose.camera.rememberCameraState
 import org.maplibre.compose.expressions.dsl.asNumber
 import org.maplibre.compose.expressions.dsl.asString
 import org.maplibre.compose.expressions.dsl.const
@@ -32,13 +43,48 @@ import org.maplibre.compose.sources.GeoJsonOptions
 import org.maplibre.compose.sources.rememberGeoJsonSource
 import org.maplibre.compose.style.BaseStyle
 import org.maplibre.compose.util.ClickResult
+import org.maplibre.spatialk.geojson.BoundingBox
 import org.maplibre.spatialk.geojson.Feature
 import org.maplibre.spatialk.geojson.FeatureCollection
 import org.maplibre.spatialk.geojson.Point
 import org.maplibre.spatialk.geojson.Position
 
 @Composable
-fun MapPreview(places: List<Place>, modifier: Modifier = Modifier) {
+fun MapPreview(
+  places: List<Place>,
+  location: Location?,
+  isCompactHeight: Boolean,
+  modifier: Modifier = Modifier,
+) {
+  val boundingBox = rememberPlacesBoundingBox(places = places, percentageIncrease = 0.1)
+  val navigationBarsPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+  val cameraState = rememberCameraState()
+
+  LaunchedEffect(boundingBox, isCompactHeight) {
+    val padding =
+      if (isCompactHeight) {
+        PaddingValues(end = sideSheetWidthDp.dp)
+      } else {
+        PaddingValues(
+          bottom =
+            collapsedBottomSheetContentHeightDp.dp +
+              collapsedBottomSheetDragHandleHeightDp.dp +
+              navigationBarsPadding
+        )
+      }
+    if (boundingBox != null) {
+      cameraState.animateTo(boundingBox = boundingBox, padding = padding)
+    } else if (location != null) {
+      cameraState.animateTo(
+        CameraPosition(
+          target = Position(location.longitude, location.latitude),
+          zoom = 10.0,
+          padding = padding,
+        )
+      )
+    }
+  }
+
   MaplibreMap(
     modifier = modifier,
     baseStyle =
@@ -46,6 +92,8 @@ fun MapPreview(places: List<Place>, modifier: Modifier = Modifier) {
         "https://tiles.openfreemap.org/styles/${if (isSystemInDarkTheme()) OpenFreeMapStyle.Dark.name.lowercase() else OpenFreeMapStyle.Liberty.name.lowercase()}"
       ),
     options = MapOptions(ornamentOptions = OrnamentOptions.AllDisabled),
+    cameraState = cameraState,
+    boundingBox = boundingBox,
   ) {
     if (places.isEmpty()) return@MaplibreMap
 
@@ -100,7 +148,7 @@ fun MapPreview(places: List<Place>, modifier: Modifier = Modifier) {
     )
 
     SymbolLayer(
-      id = "clustered-bikes-count",
+      id = "clustered-markers-count",
       source = source,
       filter = feature.has("point_count"),
       textField = feature["point_count_abbreviated"].asString(),
@@ -118,6 +166,29 @@ fun MapPreview(places: List<Place>, modifier: Modifier = Modifier) {
     )
   }
 }
+
+@Composable
+fun rememberPlacesBoundingBox(places: List<Place>, percentageIncrease: Double = 0.0): BoundingBox? =
+  remember(places, percentageIncrease) {
+    if (places.isEmpty()) return@remember null
+
+    val minLat = places.minOf(Place::latitude)
+    val maxLat = places.maxOf(Place::latitude)
+    val minLon = places.minOf(Place::longitude)
+    val maxLon = places.maxOf(Place::longitude)
+
+    val latDelta = maxLat - minLat
+    val lonDelta = maxLon - minLon
+
+    val paddingFactor = percentageIncrease / 2.0
+
+    BoundingBox(
+      west = minLon - lonDelta * paddingFactor,
+      south = minLat - latDelta * paddingFactor,
+      east = maxLon + lonDelta * paddingFactor,
+      north = maxLat + latDelta * paddingFactor,
+    )
+  }
 
 private enum class OpenFreeMapStyle {
   Bright,

@@ -30,6 +30,7 @@ android {
 }
 
 dependencies {
+  implementation(project(":core:ar"))
   implementation(project(":core:model"))
 
   implementation(libs.androidx.core.ktx)
