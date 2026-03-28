@@ -10,13 +10,22 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -33,17 +42,24 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavKey
 import com.trm.sightline.core.ar.util.sideSheetWidthDp
+import com.trm.sightline.core.common.R as commonR
 import com.trm.sightline.core.common.util.rememberBottomSheetScaffoldStateForCompactHeight
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
 import kotlinx.serialization.Serializable
-import com.trm.sightline.core.common.R as commonR
 
 @Serializable
 data class PlaceCategoryRoute(val category: PlaceCategory, val places: List<Place>) : NavKey
@@ -57,11 +73,42 @@ fun SharedTransitionScope.PlaceCategoryScreen(
   onBack: () -> Unit,
 ) {
   val scaffoldState = rememberBottomSheetScaffoldStateForCompactHeight(isCompactHeight)
+  val sheetState = scaffoldState.bottomSheetState
+
+  val density = LocalDensity.current
+  val sheetOffset = runCatching { sheetState.requireOffset() }.getOrDefault(0f)
+  var sheetHeightPx by remember { mutableFloatStateOf(0f) }
+  val transitionProgress =
+    remember(sheetOffset, sheetHeightPx) {
+      if (sheetHeightPx > 0f) (sheetOffset / sheetHeightPx).coerceIn(0f, 1f) else 0f
+    }
+  val transitionThreshold = .5f
+  val thresholdProgress =
+    remember(transitionProgress) {
+      ((transitionProgress - transitionThreshold) / (1f - transitionThreshold)).coerceIn(0f, 1f)
+    }
+  val expandedProgress = remember(thresholdProgress) { 1f - thresholdProgress }.coerceIn(0f, 1f)
 
   val sheetContent =
-    @Composable {
+    @Composable { peekHeight: Dp ->
       LazyColumn(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+        modifier =
+          if (isCompactHeight) {
+            Modifier.width(sideSheetWidthDp.dp)
+              .fillMaxHeight()
+              .systemBarsPadding()
+              .navigationBarsPadding()
+              .windowInsetsPadding(WindowInsets.displayCutout.only(WindowInsetsSides.End))
+              .padding(horizontal = 16.dp)
+          } else {
+            Modifier.fillMaxWidth()
+              .navigationBarsPadding()
+              .padding(horizontal = 16.dp)
+              .onGloballyPositioned { layoutCoordinates ->
+                sheetHeightPx =
+                  layoutCoordinates.size.height.toFloat() - with(density) { peekHeight.toPx() }
+              }
+          },
         contentPadding = PaddingValues(bottom = 16.dp),
       ) {
         item {
@@ -72,7 +119,7 @@ fun SharedTransitionScope.PlaceCategoryScreen(
           )
         }
 
-        items(route.places, key = { it.id }) { place -> PlaceListItem(place = place) }
+        items(route.places, key = Place::id) { place -> PlaceListItem(place = place) }
       }
     }
 
@@ -82,9 +129,22 @@ fun SharedTransitionScope.PlaceCategoryScreen(
     BottomSheetScaffold(
       scaffoldState = scaffoldState,
       sheetPeekHeight = peekHeight,
-      sheetDragHandle = { BottomSheetDefaults.DragHandle() },
+      sheetDragHandle = {
+        Column(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+          Spacer(
+            modifier =
+              Modifier.height(
+                WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding() * expandedProgress
+              )
+          )
+          BottomSheetDefaults.DragHandle()
+        }
+      },
       sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-      sheetContent = { sheetContent() },
+      sheetContent = { sheetContent(peekHeight) },
     ) { innerPadding ->
       Box(
         modifier =
@@ -95,12 +155,11 @@ fun SharedTransitionScope.PlaceCategoryScreen(
 
         if (isCompactHeight) {
           Surface(
-            modifier =
-              Modifier.width(sideSheetWidthDp.dp).fillMaxHeight().align(Alignment.CenterEnd),
+            modifier = Modifier.fillMaxHeight().align(Alignment.CenterEnd),
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
             tonalElevation = 1.dp,
           ) {
-            sheetContent()
+            sheetContent(0.dp)
           }
         }
       }
