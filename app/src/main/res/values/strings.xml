@@ -1,6 +1,3 @@
 <resources>
     <string name="app_name">Sightline</string>
-    <string name="error_connection">A connection error occurred.</string>
-    <string name="error_server">A server error has occurred - try again later.</string>
-    <string name="error_unknown">An unknown error has occurred - try again later.</string>
 </resources>

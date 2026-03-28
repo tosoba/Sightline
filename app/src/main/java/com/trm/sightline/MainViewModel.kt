@@ -9,6 +9,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.trm.sightline.core.common.RequestError
+import com.trm.sightline.core.common.messageResource
 import com.trm.sightline.core.common.toRequestError
 import com.trm.sightline.core.common.util.locationEnabledFlow
 import com.trm.sightline.core.common.util.locationUpdatesFlow
@@ -64,10 +65,10 @@ constructor(
         .filterIsInstance<LoadingState.Loaded<List<Place>>>()
         .flatMap(LoadingState.Loaded<List<Place>>::data)
 
-  private val _requestError = MutableStateFlow<RequestError?>(null)
-  val requestError = _requestError.asStateFlow()
+  private val _errorMessage = MutableStateFlow<Int?>(null)
+  val errorMessage = _errorMessage.asStateFlow()
 
-  private var clearErrorJob: Job? = null
+  private var clearErrorMessageJob: Job? = null
 
   val userLocationEnabled: StateFlow<Boolean> =
     userPreferencesRepository
@@ -104,7 +105,7 @@ constructor(
             emit(LoadingState.Loaded(addressRepository.search(query = query, limit = 100)))
           } catch (ex: Exception) {
             if (ex is CancellationException) throw ex
-            emitRequestError(ex.toRequestError())
+            handleRequestError(ex.toRequestError())
             emit(LoadingState.Loaded(emptyList()))
           }
         }
@@ -165,7 +166,7 @@ constructor(
             )
         } catch (ex: Exception) {
           if (ex is CancellationException) throw ex
-          emitRequestError(ex.toRequestError())
+          handleRequestError(ex.toRequestError())
           _userLocationAddress.value = LoadingState.Loaded("")
         }
 
@@ -206,7 +207,7 @@ constructor(
               }
           } catch (ex: Exception) {
             places.remove(category)
-            emitRequestError(ex.toRequestError())
+            handleRequestError(ex.toRequestError())
             if (ex is CancellationException) throw ex
           }
         }
@@ -214,12 +215,12 @@ constructor(
     }
   }
 
-  private fun emitRequestError(error: RequestError) {
-    clearErrorJob?.cancel()
-    _requestError.value = error
-    clearErrorJob = viewModelScope.launch {
+  private fun handleRequestError(error: RequestError) {
+    clearErrorMessageJob?.cancel()
+    _errorMessage.value = error.messageResource()
+    clearErrorMessageJob = viewModelScope.launch {
       delay(4000)
-      _requestError.value = null
+      _errorMessage.value = null
     }
   }
 

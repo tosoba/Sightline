@@ -17,3 +17,10 @@ fun Throwable.toRequestError(): RequestError =
     is HttpException -> RequestError.Http(code(), message())
     else -> RequestError.Other(this)
   }
+
+fun RequestError.messageResource(): Int =
+  when (this) {
+    RequestError.IO -> R.string.error_connection
+    is RequestError.Http -> R.string.error_server
+    is RequestError.Other -> R.string.error_unknown
+  }
