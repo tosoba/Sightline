@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -29,17 +30,16 @@ import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberBottomSheetScaffoldState
-import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavKey
+import com.trm.sightline.core.ar.util.sideSheetWidthDp
+import com.trm.sightline.core.common.util.rememberBottomSheetScaffoldStateForCompactHeight
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
 import kotlinx.serialization.Serializable
@@ -52,40 +52,58 @@ data class PlaceCategoryRoute(val category: PlaceCategory, val places: List<Plac
 @Composable
 fun SharedTransitionScope.PlaceCategoryScreen(
   route: PlaceCategoryRoute,
+  isCompactHeight: Boolean,
   animatedVisibilityScope: AnimatedVisibilityScope,
-  modifier: Modifier = Modifier,
   onBack: () -> Unit,
 ) {
-  val sheetState = rememberStandardBottomSheetState(initialValue = SheetValue.PartiallyExpanded)
-  val scaffoldState = rememberBottomSheetScaffoldState(sheetState)
+  val scaffoldState = rememberBottomSheetScaffoldStateForCompactHeight(isCompactHeight)
 
-  BoxWithConstraints(modifier = modifier.fillMaxSize()) {
-    val fullHeight = maxHeight
-    val peekHeight = fullHeight / 2
+  val sheetContent =
+    @Composable {
+      LazyColumn(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+        contentPadding = PaddingValues(bottom = 16.dp),
+      ) {
+        item {
+          PlaceCategoryHeader(
+            category = route.category,
+            placesCount = route.places.size,
+            animatedVisibilityScope = animatedVisibilityScope,
+          )
+        }
+
+        items(route.places, key = { it.id }) { place -> PlaceListItem(place = place) }
+      }
+    }
+
+  BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+    val peekHeight = if (isCompactHeight) 0.dp else maxHeight / 2
 
     BottomSheetScaffold(
       scaffoldState = scaffoldState,
       sheetPeekHeight = peekHeight,
       sheetDragHandle = { BottomSheetDefaults.DragHandle() },
       sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-      sheetContent = {
-        LazyColumn(
-          modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-          contentPadding = PaddingValues(bottom = 16.dp),
-        ) {
-          item {
-            PlaceCategoryHeader(
-              category = route.category,
-              placesCount = route.places.size,
-              animatedVisibilityScope = animatedVisibilityScope,
-            )
-          }
+      sheetContent = { sheetContent() },
+    ) { innerPadding ->
+      Box(
+        modifier =
+          Modifier.fillMaxSize()
+            .padding(bottom = if (isCompactHeight) 0.dp else innerPadding.calculateBottomPadding())
+      ) {
+        MapSection(onBack = onBack)
 
-          items(route.places, key = { it.id }) { place -> PlaceListItem(place = place) }
+        if (isCompactHeight) {
+          Surface(
+            modifier =
+              Modifier.width(sideSheetWidthDp.dp).fillMaxHeight().align(Alignment.CenterEnd),
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            tonalElevation = 1.dp,
+          ) {
+            sheetContent()
+          }
         }
-      },
-    ) {
-      MapSection(onBack = onBack)
+      }
     }
   }
 }

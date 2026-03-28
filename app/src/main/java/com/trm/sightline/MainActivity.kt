@@ -48,6 +48,7 @@ class MainActivity : ComponentActivity() {
                 entry<PlaceCategoryRoute> { route ->
                   PlaceCategoryScreen(
                     route = route,
+                    isCompactHeight = isCompactHeight,
                     animatedVisibilityScope = LocalNavAnimatedContentScope.current,
                     onBack = dropUnlessResumed { backStack.removeLastOrNull() },
                   )

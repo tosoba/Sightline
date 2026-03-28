@@ -41,13 +41,10 @@ import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberBottomSheetScaffoldState
-import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -73,6 +70,7 @@ import com.trm.sightline.core.common.PermissionStatus
 import com.trm.sightline.core.common.rememberPermissionState
 import com.trm.sightline.core.common.util.CheckLocationSettingsResult
 import com.trm.sightline.core.common.util.checkLocationSettings
+import com.trm.sightline.core.common.util.rememberBottomSheetScaffoldStateForCompactHeight
 import com.trm.sightline.core.common.util.startAppSettingsActivity
 import com.trm.sightline.core.model.LoadingState
 import com.trm.sightline.core.model.Place
@@ -205,15 +203,8 @@ fun SharedTransitionScope.MainScreen(
     viewModel.userLocationEnabled.collectAsStateWithLifecycle().value &&
       locationPermissionState.isGranted
 
-  val sheetState =
-    key(isCompactHeight) {
-      rememberStandardBottomSheetState(
-        initialValue = if (isCompactHeight) SheetValue.Hidden else SheetValue.PartiallyExpanded,
-        skipHiddenState = !isCompactHeight,
-      )
-    }
-  val scaffoldState = rememberBottomSheetScaffoldState(sheetState)
-  LaunchedEffect(isCompactHeight) { if (isCompactHeight) sheetState.hide() }
+  val scaffoldState = rememberBottomSheetScaffoldStateForCompactHeight(isCompactHeight)
+  val sheetState = scaffoldState.bottomSheetState
 
   val focusManager = LocalFocusManager.current
   LaunchedEffect(sheetState.targetValue) {
