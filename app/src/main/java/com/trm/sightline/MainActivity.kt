@@ -9,6 +9,7 @@ import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.WindowHeightSizeClass
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
+import androidx.lifecycle.compose.dropUnlessResumed
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
@@ -48,6 +49,7 @@ class MainActivity : ComponentActivity() {
                   PlaceCategoryScreen(
                     route = route,
                     animatedVisibilityScope = LocalNavAnimatedContentScope.current,
+                    onBack = dropUnlessResumed { backStack.removeLastOrNull() },
                   )
                 }
               },
