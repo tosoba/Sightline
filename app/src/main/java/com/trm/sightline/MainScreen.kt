@@ -348,7 +348,15 @@ fun SharedTransitionScope.MainScreen(
           cameraPreviewOverlayVisible = toolbarsVisible,
           mapPadding =
             PaddingValues(
-              bottom = if (isCompactHeight) 0.dp else sheetPeekHeight,
+              bottom =
+                if (isCompactHeight) {
+                  WindowInsets.safeDrawing
+                    .only(WindowInsetsSides.Bottom)
+                    .asPaddingValues()
+                    .calculateBottomPadding()
+                } else {
+                  sheetPeekHeight
+                },
               end = if (isCompactHeight) sideSheetWidthDp.dp else 0.dp,
             ),
           onCameraPreviewTouch = { toolbarsVisible = !toolbarsVisible },
