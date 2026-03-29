@@ -8,10 +8,15 @@ import androidx.compose.material.icons.filled.Man
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.trm.sightline.core.model.Place
@@ -50,12 +55,13 @@ fun MapPreview(
   modifier: Modifier = Modifier,
 ) {
   val boundingBox = rememberPlacesBoundingBox(places = places, percentageIncrease = 0.1)
-  val cameraState = rememberCameraState()
+  val cameraState = rememberCameraState(firstPosition = CameraPosition(padding = padding))
+  var anyInteractionOccurred by rememberSaveable { mutableStateOf(false) }
 
-  LaunchedEffect(boundingBox, padding) {
+  LaunchedEffect(boundingBox, location, padding) {
     if (boundingBox != null) {
       cameraState.animateTo(boundingBox = boundingBox, padding = padding)
-    } else if (location != null) {
+    } else if (location != null && !anyInteractionOccurred) {
       cameraState.animateTo(
         CameraPosition(
           target = Position(location.longitude, location.latitude),
@@ -67,7 +73,7 @@ fun MapPreview(
   }
 
   MaplibreMap(
-    modifier = modifier,
+    modifier = modifier.pointerInput(Unit) { anyInteractionOccurred = true },
     baseStyle =
       BaseStyle.Uri(
         "https://tiles.openfreemap.org/styles/${if (isSystemInDarkTheme()) OpenFreeMapStyle.Dark.name.lowercase() else OpenFreeMapStyle.Liberty.name.lowercase()}"
