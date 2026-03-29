@@ -29,6 +29,7 @@ import com.trm.sightline.core.ar.util.collapsedBottomSheetDragHandleHeightDp
 import com.trm.sightline.core.ar.util.dpToPx
 import com.trm.sightline.core.ar.util.sideSheetRectF
 import com.trm.sightline.core.ar.util.sideSheetWidthDp
+import com.trm.sightline.core.model.MapCameraPosition
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.feature.camera.CameraContent
 import com.trm.sightline.feature.camera.CameraPreviewPagePicker
@@ -39,11 +40,13 @@ fun MainPager(
   pagerState: PagerState,
   location: Location?,
   places: List<Place>,
+  lastMapPosition: MapCameraPosition?,
   isCompactHeight: Boolean,
   cameraPreviewBlurred: Boolean,
   cameraPreviewOverlayVisible: Boolean,
   mapPadding: PaddingValues,
   onCameraPreviewTouch: () -> Unit,
+  onMapPositionChanged: (MapCameraPosition) -> Unit,
 ) {
   HorizontalPager(
     state = pagerState,
@@ -106,6 +109,8 @@ fun MainPager(
         MapPreview(
           places = places,
           location = location,
+          lastMapPosition = lastMapPosition,
+          onMapPositionChanged = onMapPositionChanged,
           padding = mapPadding,
           modifier = Modifier.fillMaxSize(),
         )

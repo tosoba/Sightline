@@ -9,4 +9,9 @@ message UserPreferences {
   optional double custom_location_lng = 3;
   optional string custom_location_address = 4;
   optional int64 custom_location_timestamp = 5;
+  optional double last_map_lat = 6;
+  optional double last_map_lng = 7;
+  optional double last_map_zoom = 8;
+  optional double last_map_bearing = 9;
+  optional double last_map_tilt = 10;
 }

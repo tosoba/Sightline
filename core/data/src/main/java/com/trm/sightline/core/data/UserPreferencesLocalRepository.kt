@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import com.trm.sightline.core.datastore.UserPreferences
 import com.trm.sightline.core.domain.UserPreferencesRepository
 import com.trm.sightline.core.model.CustomLocation
+import com.trm.sightline.core.model.MapCameraPosition
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -33,6 +34,29 @@ class UserPreferencesLocalRepository(private val userPreferencesStore: DataStore
   override fun getUserLocationEnabled(): Flow<Boolean> =
     userPreferencesStore.data.map { preferences -> preferences.userLocationEnabled }
 
+  override fun getLastMapPosition(): Flow<MapCameraPosition?> =
+    userPreferencesStore.data.map { preferences ->
+      with(preferences) {
+        if (
+          hasLastMapLat() &&
+            hasLastMapLng() &&
+            hasLastMapZoom() &&
+            hasLastMapBearing() &&
+            hasLastMapTilt()
+        ) {
+          MapCameraPosition(
+            latitude = lastMapLat,
+            longitude = lastMapLng,
+            zoom = lastMapZoom,
+            bearing = lastMapBearing,
+            tilt = lastMapTilt,
+          )
+        } else {
+          null
+        }
+      }
+    }
+
   override suspend fun setCustomLocation(customLocation: CustomLocation) {
     userPreferencesStore.updateData { preferences ->
       preferences
@@ -48,6 +72,19 @@ class UserPreferencesLocalRepository(private val userPreferencesStore: DataStore
   override suspend fun setUserLocationEnabled(userLocationEnabled: Boolean) {
     userPreferencesStore.updateData { preferences ->
       preferences.toBuilder().setUserLocationEnabled(userLocationEnabled).build()
+    }
+  }
+
+  override suspend fun setLastMapPosition(position: MapCameraPosition) {
+    userPreferencesStore.updateData { preferences ->
+      preferences
+        .toBuilder()
+        .setLastMapLat(position.latitude)
+        .setLastMapLng(position.longitude)
+        .setLastMapZoom(position.zoom)
+        .setLastMapBearing(position.bearing)
+        .setLastMapTilt(position.tilt)
+        .build()
     }
   }
 }

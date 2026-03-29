@@ -18,12 +18,14 @@ import com.trm.sightline.core.domain.PlacesRepository
 import com.trm.sightline.core.domain.UserPreferencesRepository
 import com.trm.sightline.core.model.CustomLocation
 import com.trm.sightline.core.model.LoadingState
+import com.trm.sightline.core.model.MapCameraPosition
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -78,6 +80,14 @@ constructor(
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = false,
       )
+  val lastMapPosition: StateFlow<MapCameraPosition?> =
+    userPreferencesRepository
+      .getLastMapPosition()
+      .stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = null,
+      )
 
   var userLocation: Location? by mutableStateOf(null)
     private set
@@ -118,10 +128,14 @@ constructor(
 
   private val placeCategoryToggles = MutableSharedFlow<Pair<PlaceCategory, Boolean>>()
 
+  private val mapPositionUpdates =
+    MutableSharedFlow<MapCameraPosition>(replay = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+
   init {
     handleCustomLocation()
     handleUserLocation()
     handlePlaces()
+    handleMapPositionUpdates()
   }
 
   private fun handleCustomLocation() {
@@ -215,6 +229,14 @@ constructor(
     }
   }
 
+  private fun handleMapPositionUpdates() {
+    mapPositionUpdates
+      .debounce(1.seconds)
+      .distinctUntilChanged()
+      .onEach(userPreferencesRepository::setLastMapPosition)
+      .launchIn(viewModelScope)
+  }
+
   private fun handleRequestError(error: RequestError) {
     clearErrorMessageJob?.cancel()
     _errorMessage.value = error.messageResource()
@@ -241,6 +263,10 @@ constructor(
 
   fun onCustomLocationSearchResultClick(customLocation: CustomLocation) {
     viewModelScope.launch { userPreferencesRepository.setCustomLocation(customLocation) }
+  }
+
+  fun saveMapPosition(position: MapCameraPosition) {
+    viewModelScope.launch { mapPositionUpdates.emit(position) }
   }
 
   companion object {

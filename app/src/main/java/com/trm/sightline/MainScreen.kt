@@ -336,10 +336,12 @@ fun SharedTransitionScope.MainScreen(
             ),
         contentAlignment = Alignment.Center,
       ) {
+        val lastMapPosition by viewModel.lastMapPosition.collectAsStateWithLifecycle()
         MainPager(
           pagerState = pagerState,
           location = if (userLocationEnabled) viewModel.userLocation else viewModel.customLocation,
           places = viewModel.allPlaces,
+          lastMapPosition = lastMapPosition,
           isCompactHeight = isCompactHeight,
           cameraPreviewBlurred = !isCompactHeight && expandedProgress != 0f,
           cameraPreviewOverlayVisible = toolbarsVisible,
@@ -349,6 +351,7 @@ fun SharedTransitionScope.MainScreen(
               end = if (isCompactHeight) sideSheetWidthDp.dp else 0.dp,
             ),
           onCameraPreviewTouch = { toolbarsVisible = !toolbarsVisible },
+          onMapPositionChanged = viewModel::saveMapPosition,
         )
 
         MainPagerToolbar(

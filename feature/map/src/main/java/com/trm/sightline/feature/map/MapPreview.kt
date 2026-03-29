@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import com.trm.sightline.core.model.MapCameraPosition
 import com.trm.sightline.core.model.Place
 import kotlinx.serialization.json.JsonPrimitive
 import org.maplibre.compose.camera.CameraPosition
@@ -51,22 +52,54 @@ import org.maplibre.spatialk.geojson.Position
 fun MapPreview(
   places: List<Place>,
   location: Location?,
+  lastMapPosition: MapCameraPosition?,
+  onMapPositionChanged: (MapCameraPosition) -> Unit,
   padding: PaddingValues,
   modifier: Modifier = Modifier,
 ) {
   val boundingBox = rememberPlacesBoundingBox(places = places, percentageIncrease = 0.1)
   val cameraState = rememberCameraState(firstPosition = CameraPosition(padding = padding))
   var anyInteractionOccurred by rememberSaveable { mutableStateOf(false) }
+  var initialPositionRestored by rememberSaveable { mutableStateOf(false) }
 
-  LaunchedEffect(boundingBox, location, padding) {
-    if (boundingBox != null) {
-      cameraState.animateTo(boundingBox = boundingBox, padding = padding)
-    } else if (location != null && !anyInteractionOccurred) {
-      cameraState.animateTo(
-        CameraPosition(
-          target = Position(location.longitude, location.latitude),
-          zoom = 10.0,
-          padding = padding,
+  LaunchedEffect(boundingBox, location, lastMapPosition, padding) {
+    when {
+      boundingBox != null -> {
+        cameraState.animateTo(boundingBox = boundingBox, padding = padding)
+      }
+      !initialPositionRestored && lastMapPosition != null -> {
+        cameraState.animateTo(
+          CameraPosition(
+            target = Position(lastMapPosition.longitude, lastMapPosition.latitude),
+            zoom = lastMapPosition.zoom,
+            bearing = lastMapPosition.bearing,
+            tilt = lastMapPosition.tilt,
+            padding = padding,
+          )
+        )
+        initialPositionRestored = true
+      }
+      !anyInteractionOccurred && location != null -> {
+        cameraState.animateTo(
+          CameraPosition(
+            target = Position(location.longitude, location.latitude),
+            zoom = 10.0,
+            padding = padding,
+          )
+        )
+      }
+    }
+  }
+
+  LaunchedEffect(cameraState.position) {
+    with(cameraState.position) {
+      onMapPositionChanged(
+        MapCameraPosition(
+          latitude = target.latitude,
+          longitude = target.longitude,
+          zoom = zoom,
+          bearing = bearing,
+          tilt = tilt,
         )
       )
     }

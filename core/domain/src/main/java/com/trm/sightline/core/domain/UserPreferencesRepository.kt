@@ -1,6 +1,7 @@
 package com.trm.sightline.core.domain
 
 import com.trm.sightline.core.model.CustomLocation
+import com.trm.sightline.core.model.MapCameraPosition
 import kotlinx.coroutines.flow.Flow
 
 interface UserPreferencesRepository {
@@ -8,7 +9,11 @@ interface UserPreferencesRepository {
 
   fun getUserLocationEnabled(): Flow<Boolean>
 
+  fun getLastMapPosition(): Flow<MapCameraPosition?>
+
   suspend fun setCustomLocation(customLocation: CustomLocation)
 
   suspend fun setUserLocationEnabled(userLocationEnabled: Boolean)
+
+  suspend fun setLastMapPosition(position: MapCameraPosition)
 }
