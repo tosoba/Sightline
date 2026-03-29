@@ -1,6 +1,5 @@
 package com.trm.sightline.feature.map
 
-import android.location.Location
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material.icons.Icons
@@ -16,9 +15,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.trm.sightline.core.model.MapCameraPosition
 import com.trm.sightline.core.model.Place
 import kotlinx.serialization.json.JsonPrimitive
@@ -51,23 +50,24 @@ import org.maplibre.spatialk.geojson.Position
 @Composable
 fun MapPreview(
   places: List<Place>,
-  location: Location?,
   lastMapPosition: MapCameraPosition?,
-  onMapPositionChanged: (MapCameraPosition) -> Unit,
   padding: PaddingValues,
   modifier: Modifier = Modifier,
+  onMapPositionChanged: (MapCameraPosition) -> Unit,
 ) {
   val boundingBox = rememberPlacesBoundingBox(places = places, percentageIncrease = 0.1)
   val cameraState = rememberCameraState(firstPosition = CameraPosition(padding = padding))
-  var anyInteractionOccurred by rememberSaveable { mutableStateOf(false) }
   var initialPositionRestored by rememberSaveable { mutableStateOf(false) }
 
-  LaunchedEffect(boundingBox, location, lastMapPosition, padding) {
-    when {
-      boundingBox != null -> {
-        cameraState.animateTo(boundingBox = boundingBox, padding = padding)
-      }
-      !initialPositionRestored && lastMapPosition != null -> {
+  LaunchedEffect(boundingBox, padding) {
+    if (boundingBox != null) {
+      cameraState.animateTo(boundingBox = boundingBox, padding = padding)
+    }
+  }
+
+  if (boundingBox == null && !initialPositionRestored) {
+    LaunchedEffect(lastMapPosition, padding) {
+      if (lastMapPosition != null) {
         cameraState.animateTo(
           CameraPosition(
             target = Position(lastMapPosition.longitude, lastMapPosition.latitude),
@@ -79,34 +79,27 @@ fun MapPreview(
         )
         initialPositionRestored = true
       }
-      !anyInteractionOccurred && location != null -> {
-        cameraState.animateTo(
-          CameraPosition(
-            target = Position(location.longitude, location.latitude),
-            zoom = 10.0,
-            padding = padding,
+    }
+  }
+
+  LifecycleResumeEffect(Unit) {
+    onPauseOrDispose {
+      with(cameraState.position) {
+        onMapPositionChanged(
+          MapCameraPosition(
+            latitude = target.latitude,
+            longitude = target.longitude,
+            zoom = zoom,
+            bearing = bearing,
+            tilt = tilt,
           )
         )
       }
     }
   }
 
-  LaunchedEffect(cameraState.position) {
-    with(cameraState.position) {
-      onMapPositionChanged(
-        MapCameraPosition(
-          latitude = target.latitude,
-          longitude = target.longitude,
-          zoom = zoom,
-          bearing = bearing,
-          tilt = tilt,
-        )
-      )
-    }
-  }
-
   MaplibreMap(
-    modifier = modifier.pointerInput(Unit) { anyInteractionOccurred = true },
+    modifier = modifier,
     baseStyle =
       BaseStyle.Uri(
         "https://tiles.openfreemap.org/styles/${if (isSystemInDarkTheme()) OpenFreeMapStyle.Dark.name.lowercase() else OpenFreeMapStyle.Liberty.name.lowercase()}"
