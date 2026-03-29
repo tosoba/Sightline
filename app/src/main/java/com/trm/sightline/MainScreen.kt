@@ -206,8 +206,6 @@ fun SharedTransitionScope.MainScreen(
     }
   }
 
-  val density = LocalDensity.current
-  val sheetOffset = runCatching { sheetState.requireOffset() }.getOrDefault(0f)
   val sheetPeekHeight =
     if (isCompactHeight) {
       0.dp
@@ -216,19 +214,25 @@ fun SharedTransitionScope.MainScreen(
         WindowInsets.navigationBars.getBottom(LocalDensity.current).dp
     }
   var sheetHeightPx by remember { mutableFloatStateOf(0f) }
-  val transitionProgress =
-    remember(sheetOffset, sheetHeightPx) {
+  val transitionThreshold = .5f
+  val sheetOffset by remember {
+    derivedStateOf { runCatching { sheetState.requireOffset() }.getOrDefault(0f) }
+  }
+  val transitionProgress by remember {
+    derivedStateOf {
       if (sheetHeightPx > 0f) (sheetOffset / sheetHeightPx).coerceIn(0f, 1f) else 0f
     }
-  val transitionThreshold = .5f
-  val thresholdProgress =
-    remember(transitionProgress) {
+  }
+  val thresholdProgress by remember {
+    derivedStateOf {
       ((transitionProgress - transitionThreshold) / (1f - transitionThreshold)).coerceIn(0f, 1f)
     }
-  val expandedProgress = remember(thresholdProgress) { 1f - thresholdProgress }.coerceIn(0f, 1f)
+  }
+  val expandedProgress by remember { derivedStateOf { (1f - thresholdProgress).coerceIn(0f, 1f) } }
 
   val placesSheetContent =
     @Composable {
+      val density = LocalDensity.current
       val customLocationAddress by viewModel.customLocationAddress.collectAsStateWithLifecycle()
       val gpsLocationAddress by viewModel.userLocationAddress.collectAsStateWithLifecycle()
       val customLocationSearchResults by
@@ -330,13 +334,17 @@ fun SharedTransitionScope.MainScreen(
         contentAlignment = Alignment.Center,
       ) {
         val lastMapPosition by viewModel.lastMapPosition.collectAsStateWithLifecycle()
+        val cameraPreviewBlurred by remember {
+          derivedStateOf { !isCompactHeight && expandedProgress != 0f }
+        }
+
         MainPager(
           pagerState = pagerState,
           location = if (userLocationEnabled) viewModel.userLocation else viewModel.customLocation,
           places = viewModel.allPlaces,
           lastMapPosition = lastMapPosition,
           isCompactHeight = isCompactHeight,
-          cameraPreviewBlurred = !isCompactHeight && expandedProgress != 0f,
+          cameraPreviewBlurred = cameraPreviewBlurred,
           cameraPreviewOverlayVisible = toolbarsVisible,
           mapPadding =
             PaddingValues(
