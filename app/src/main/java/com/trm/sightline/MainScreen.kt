@@ -67,6 +67,7 @@ import com.trm.sightline.composable.MainScreenErrorMessage
 import com.trm.sightline.core.ar.util.collapsedBottomSheetContentHeightDp
 import com.trm.sightline.core.ar.util.sideSheetWidthDp
 import com.trm.sightline.core.common.PermissionStatus
+import com.trm.sightline.core.common.R as commonR
 import com.trm.sightline.core.common.rememberPermissionState
 import com.trm.sightline.core.common.util.CheckLocationSettingsResult
 import com.trm.sightline.core.common.util.checkLocationSettings
@@ -78,7 +79,6 @@ import com.trm.sightline.core.model.PlaceCategory
 import com.trm.sightline.feature.places.PlacesContent
 import com.trm.sightline.feature.places.PlacesLayout
 import kotlinx.coroutines.launch
-import com.trm.sightline.core.common.R as commonR
 
 @OptIn(
   ExperimentalMaterial3Api::class,
@@ -95,20 +95,13 @@ fun SharedTransitionScope.MainScreen(
   val scope = rememberCoroutineScope()
 
   val pagerState = rememberPagerState(pageCount = MainPage.entries::size)
-  val containerAlpha by remember {
+  val pageChangeProgress by remember {
     derivedStateOf {
-      val progress =
-        (pagerState.currentPage + pagerState.currentPageOffsetFraction).coerceIn(0f, 1f)
-      0.5f + (progress * 0.4f)
+      (pagerState.currentPage + pagerState.currentPageOffsetFraction).coerceIn(0f, 1f)
     }
   }
-  val contentAlpha by remember {
-    derivedStateOf {
-      val progress =
-        (pagerState.currentPage + pagerState.currentPageOffsetFraction).coerceIn(0f, 1f)
-      0.5f + (progress * 0.5f)
-    }
-  }
+  val containerAlpha = 0.5f + (pageChangeProgress * 0.4f)
+  val contentAlpha = 0.5f + (pageChangeProgress * 0.5f)
   val selectedPage = MainPage.entries[pagerState.currentPage]
   var toolbarsVisible by remember { mutableStateOf(true) }
   LaunchedEffect(pagerState.currentPage) { toolbarsVisible = true }
