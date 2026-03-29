@@ -67,11 +67,10 @@ import com.trm.sightline.composable.MainScreenErrorMessage
 import com.trm.sightline.core.ar.util.collapsedBottomSheetContentHeightDp
 import com.trm.sightline.core.ar.util.sideSheetWidthDp
 import com.trm.sightline.core.common.PermissionStatus
-import com.trm.sightline.core.common.R as commonR
 import com.trm.sightline.core.common.rememberPermissionState
 import com.trm.sightline.core.common.util.CheckLocationSettingsResult
 import com.trm.sightline.core.common.util.checkLocationSettings
-import com.trm.sightline.core.common.util.rememberBottomSheetScaffoldStateForCompactHeight
+import com.trm.sightline.core.common.util.rememberBottomSheetScaffoldStateForScreenHeight
 import com.trm.sightline.core.common.util.startAppSettingsActivity
 import com.trm.sightline.core.model.LoadingState
 import com.trm.sightline.core.model.Place
@@ -79,6 +78,7 @@ import com.trm.sightline.core.model.PlaceCategory
 import com.trm.sightline.feature.places.PlacesContent
 import com.trm.sightline.feature.places.PlacesLayout
 import kotlinx.coroutines.launch
+import com.trm.sightline.core.common.R as commonR
 
 @OptIn(
   ExperimentalMaterial3Api::class,
@@ -196,7 +196,7 @@ fun SharedTransitionScope.MainScreen(
     viewModel.userLocationEnabled.collectAsStateWithLifecycle().value &&
       locationPermissionState.isGranted
 
-  val scaffoldState = rememberBottomSheetScaffoldStateForCompactHeight(isCompactHeight)
+  val scaffoldState = rememberBottomSheetScaffoldStateForScreenHeight(isCompactHeight)
   val sheetState = scaffoldState.bottomSheetState
 
   val focusManager = LocalFocusManager.current

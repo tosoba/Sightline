@@ -11,7 +11,7 @@ import androidx.compose.runtime.key
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun rememberBottomSheetScaffoldStateForCompactHeight(
+fun rememberBottomSheetScaffoldStateForScreenHeight(
   isCompactHeight: Boolean
 ): BottomSheetScaffoldState {
   val sheetState =

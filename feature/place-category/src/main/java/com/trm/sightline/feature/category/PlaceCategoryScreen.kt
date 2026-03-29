@@ -54,7 +54,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.trm.sightline.core.ar.util.sideSheetWidthDp
-import com.trm.sightline.core.common.util.rememberBottomSheetScaffoldStateForCompactHeight
+import com.trm.sightline.core.common.util.rememberBottomSheetScaffoldStateForScreenHeight
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
 import com.trm.sightline.core.common.R as commonR
@@ -67,7 +67,7 @@ fun SharedTransitionScope.PlaceCategoryScreen(
   animatedVisibilityScope: AnimatedVisibilityScope,
   onBack: () -> Unit,
 ) {
-  val scaffoldState = rememberBottomSheetScaffoldStateForCompactHeight(isCompactHeight)
+  val scaffoldState = rememberBottomSheetScaffoldStateForScreenHeight(isCompactHeight)
   val sheetState = scaffoldState.bottomSheetState
 
   val density = LocalDensity.current
