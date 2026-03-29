@@ -53,16 +53,11 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.navigation3.runtime.NavKey
 import com.trm.sightline.core.ar.util.sideSheetWidthDp
-import com.trm.sightline.core.common.R as commonR
 import com.trm.sightline.core.common.util.rememberBottomSheetScaffoldStateForCompactHeight
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
-import kotlinx.serialization.Serializable
-
-@Serializable
-data class PlaceCategoryRoute(val category: PlaceCategory, val places: List<Place>) : NavKey
+import com.trm.sightline.core.common.R as commonR
 
 @OptIn(ExperimentalSharedTransitionApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -254,7 +249,7 @@ private fun PlaceListItem(place: Place) {
 }
 
 @Composable
-private fun MapSection(onBack: () -> Unit, modifier: Modifier = Modifier) {
+private fun MapSection(modifier: Modifier = Modifier, onBack: () -> Unit) {
   Box(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceDim)) {
     FilledTonalIconButton(
       onClick = onBack,
