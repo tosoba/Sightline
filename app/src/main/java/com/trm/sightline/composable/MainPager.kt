@@ -44,7 +44,7 @@ fun MainPager(
   isCompactHeight: Boolean,
   cameraPreviewBlurred: Boolean,
   cameraPreviewOverlayVisible: Boolean,
-  mapPadding: PaddingValues,
+  contentPadding: PaddingValues,
   onCameraPreviewTouch: () -> Unit,
   onMapPositionChanged: (MapCameraPosition) -> Unit,
 ) {
@@ -70,6 +70,7 @@ fun MainPager(
                 cornerRadius = if (isCompactHeight) 0f else context.dpToPx(64f),
               )
             ),
+          padding = contentPadding,
           onCameraPreviewTouch = onCameraPreviewTouch,
         ) { renderer ->
           val markersPagingState by renderer.markersPagingState.collectAsStateWithLifecycle()
@@ -109,7 +110,7 @@ fun MainPager(
         MapPreview(
           places = places,
           lastMapPosition = lastMapPosition,
-          padding = mapPadding,
+          padding = contentPadding,
           modifier = Modifier.fillMaxSize(),
           onMapPositionChanged = onMapPositionChanged,
         )

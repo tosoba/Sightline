@@ -3,11 +3,11 @@ package com.trm.sightline.feature.camera
 import android.Manifest
 import android.location.Location
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -16,17 +16,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import com.trm.sightline.core.ar.model.RoundedRectF
 import com.trm.sightline.core.ar.view.ARMarkerRenderer
 import com.trm.sightline.core.common.PermissionStatus
+import com.trm.sightline.core.common.R as commonR
 import com.trm.sightline.core.common.rememberPermissionState
 import com.trm.sightline.core.common.util.startAppSettingsActivity
 import com.trm.sightline.core.model.Place
-import com.trm.sightline.core.common.R as commonR
 
 @Composable
 fun CameraContent(
@@ -35,6 +35,7 @@ fun CameraContent(
   location: Location?,
   places: List<Place>,
   blurredRectFs: List<RoundedRectF>,
+  padding: PaddingValues,
   onCameraPreviewTouch: () -> Unit,
   overlayContent: @Composable BoxScope.(ARMarkerRenderer) -> Unit = {},
 ) {
@@ -83,19 +84,16 @@ fun CameraContent(
         overlayContent = overlayContent,
       )
     } else {
-      Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Button(
-          onClick = {
-            if (cameraPermissionState.status == PermissionStatus.PermanentlyDenied) {
-              showSettingsDialog = true
-            } else {
-              cameraPermissionState.launchRequest()
-            }
+      CameraPermissionDeniedContent(
+        modifier = Modifier.fillMaxSize().padding(16.dp).padding(padding),
+        onGrantPermissionClick = {
+          if (cameraPermissionState.status == PermissionStatus.PermanentlyDenied) {
+            showSettingsDialog = true
+          } else {
+            cameraPermissionState.launchRequest()
           }
-        ) {
-          Text(stringResource(R.string.grant_camera_permission))
-        }
-      }
+        },
+      )
     }
   }
 }

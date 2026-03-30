@@ -346,7 +346,7 @@ fun SharedTransitionScope.MainScreen(
           isCompactHeight = isCompactHeight,
           cameraPreviewBlurred = cameraPreviewBlurred,
           cameraPreviewOverlayVisible = toolbarsVisible,
-          mapPadding =
+          contentPadding =
             PaddingValues(
               bottom =
                 if (isCompactHeight) {
