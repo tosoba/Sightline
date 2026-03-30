@@ -67,6 +67,7 @@ import com.trm.sightline.composable.MainScreenErrorMessage
 import com.trm.sightline.core.ar.util.collapsedBottomSheetContentHeightDp
 import com.trm.sightline.core.ar.util.sideSheetWidthDp
 import com.trm.sightline.core.common.PermissionStatus
+import com.trm.sightline.core.common.R as commonR
 import com.trm.sightline.core.common.rememberPermissionState
 import com.trm.sightline.core.common.util.CheckLocationSettingsResult
 import com.trm.sightline.core.common.util.checkLocationSettings
@@ -78,7 +79,6 @@ import com.trm.sightline.core.model.PlaceCategory
 import com.trm.sightline.feature.places.PlacesContent
 import com.trm.sightline.feature.places.PlacesLayout
 import kotlinx.coroutines.launch
-import com.trm.sightline.core.common.R as commonR
 
 @OptIn(
   ExperimentalMaterial3Api::class,
@@ -152,7 +152,52 @@ fun SharedTransitionScope.MainScreen(
     )
   }
 
+  val cameraPermissionState = rememberPermissionState(Manifest.permission.CAMERA)
+
+  val placesContentAlpha by remember {
+    derivedStateOf {
+      if (selectedPage == MainPage.Camera && !cameraPermissionState.isGranted) 1f else contentAlpha
+    }
+  }
+  val placesContainerAlpha by remember {
+    derivedStateOf {
+      if (selectedPage == MainPage.Camera && !cameraPermissionState.isGranted) 1f
+      else containerAlpha
+    }
+  }
+
+  LaunchedEffect(Unit) {
+    if (cameraPermissionState.status == PermissionStatus.Unknown) {
+      cameraPermissionState.launchRequest()
+    }
+  }
+
+  var showCameraPermissionSettingsDialog by remember { mutableStateOf(false) }
+  if (showCameraPermissionSettingsDialog) {
+    AlertDialog(
+      onDismissRequest = { showCameraPermissionSettingsDialog = false },
+      title = { Text(stringResource(R.string.camera_permission_required_title)) },
+      text = { Text(stringResource(R.string.camera_permission_permanently_denied_message)) },
+      confirmButton = {
+        TextButton(
+          onClick = {
+            showCameraPermissionSettingsDialog = false
+            context.startAppSettingsActivity()
+          }
+        ) {
+          Text(stringResource(commonR.string.open_settings))
+        }
+      },
+      dismissButton = {
+        TextButton(onClick = { showCameraPermissionSettingsDialog = false }) {
+          Text(stringResource(commonR.string.cancel))
+        }
+      },
+    )
+  }
+
   val locationPermissionState = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
+
   var locationPermissionFlowInProgress by remember { mutableStateOf(false) }
   LaunchedEffect(locationPermissionState.status) {
     when (locationPermissionState.status) {
@@ -251,7 +296,7 @@ fun SharedTransitionScope.MainScreen(
         layout =
           if (isCompactHeight || sheetState.targetValue == SheetValue.Expanded) PlacesLayout.Grid
           else PlacesLayout.Row,
-        alpha = contentAlpha,
+        alpha = placesContentAlpha,
         animatedVisibilityScope = animatedVisibilityScope,
         modifier =
           if (isCompactHeight) {
@@ -318,7 +363,7 @@ fun SharedTransitionScope.MainScreen(
           BottomSheetDefaults.DragHandle()
         }
       },
-      sheetContainerColor = BottomSheetDefaults.ContainerColor.copy(alpha = containerAlpha),
+      sheetContainerColor = BottomSheetDefaults.ContainerColor.copy(alpha = placesContainerAlpha),
       sheetPeekHeight = sheetPeekHeight,
       sheetContent = { placesSheetContent() },
     ) { innerPadding ->
@@ -346,6 +391,14 @@ fun SharedTransitionScope.MainScreen(
           isCompactHeight = isCompactHeight,
           cameraPreviewBlurred = cameraPreviewBlurred,
           cameraPreviewOverlayVisible = toolbarsVisible,
+          cameraPermissionGranted = cameraPermissionState.isGranted,
+          onCameraPermissionGrantClick = {
+            if (cameraPermissionState.status == PermissionStatus.PermanentlyDenied) {
+              showCameraPermissionSettingsDialog = true
+            } else {
+              cameraPermissionState.launchRequest()
+            }
+          },
           contentPadding =
             PaddingValues(
               bottom =
@@ -374,7 +427,7 @@ fun SharedTransitionScope.MainScreen(
         if (isCompactHeight) {
           Surface(
             modifier = Modifier.fillMaxHeight().align(Alignment.CenterEnd),
-            color = BottomSheetDefaults.ContainerColor.copy(alpha = containerAlpha),
+            color = BottomSheetDefaults.ContainerColor.copy(alpha = placesContainerAlpha),
             tonalElevation = 1.dp,
           ) {
             placesSheetContent()
