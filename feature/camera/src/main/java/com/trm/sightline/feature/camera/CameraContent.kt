@@ -34,6 +34,7 @@ fun CameraContent(
         location = location,
         places = places,
         blurredRectFs = blurredRectFs,
+        padding = padding,
         onCameraPreviewTouch = onCameraPreviewTouch,
         overlayContent = overlayContent,
       )

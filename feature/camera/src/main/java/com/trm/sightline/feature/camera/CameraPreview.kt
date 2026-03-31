@@ -9,12 +9,15 @@ import androidx.camera.core.Preview
 import androidx.camera.core.impl.ImageOutputConfig
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -22,8 +25,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.concurrent.futures.await
 import androidx.lifecycle.Lifecycle
@@ -50,6 +55,7 @@ fun CameraPreview(
   location: Location?,
   places: List<Place>,
   blurredRectFs: List<RoundedRectF>,
+  padding: PaddingValues,
   onCameraPreviewTouch: () -> Unit = {},
   overlayContent: @Composable BoxScope.(ARMarkerRenderer) -> Unit = {},
 ) {
@@ -62,76 +68,87 @@ fun CameraPreview(
       value = context.initCameraPreview(lifecycleOwner, context.phoneRotation)
     }
 
-  AnimatedVisibility(visible = preview.value != null, enter = fadeIn(), exit = fadeOut()) {
-    Box {
-      AndroidView(
-        modifier = Modifier.fillMaxSize(),
-        factory = { context ->
-          FrameLayout(context).also { container ->
-            container.addView(
-              ViewStub(context).apply {
-                layoutParams =
-                  FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.MATCH_PARENT,
-                    FrameLayout.LayoutParams.MATCH_PARENT,
-                  )
-              }
-            )
-          }
-        },
-        update = { container ->
-          if (viewStub.value == null) {
-            viewStub.value = container.getChildAt(0) as ViewStub
-          }
-        },
-      )
-
-      val arView = remember { ARView(context) }
-      AndroidView(
-        modifier = Modifier.fillMaxSize(),
-        factory = { arView },
-        update = { view ->
-          view.povLocation = location
-          view.markers = places.map(::ARMarker)
-          view.markerRenderer.disabled = !enabled
-          view.onTouch = onCameraPreviewTouch
-        },
-      )
-
-      val orientationManager = remember {
-        OrientationManager().apply {
-          axisMode = OrientationManager.Mode.AR
-          onOrientationChangedListener =
-            object : OrientationManager.OnOrientationChangedListener {
-              override fun onOrientationChanged(orientation: Orientation) {
-                if (!orientation.pitchWithinLimit) return
-                arView.orientation = orientation
-                arView.phoneRotation = context.phoneRotation
-              }
+  AnimatedContent(targetState = preview.value) { targetPreview ->
+    if (targetPreview != null) {
+      Box(contentAlignment = Alignment.Center) {
+        AndroidView(
+          modifier = Modifier.fillMaxSize(),
+          factory = { context ->
+            FrameLayout(context).also { container ->
+              container.addView(
+                ViewStub(context).apply {
+                  layoutParams =
+                    FrameLayout.LayoutParams(
+                      FrameLayout.LayoutParams.MATCH_PARENT,
+                      FrameLayout.LayoutParams.MATCH_PARENT,
+                    )
+                }
+              )
             }
-        }
-      }
-      LifecycleStartEffect(Unit) {
-        orientationManager.startSensor(context)
-        onStopOrDispose { orientationManager.stopSensor() }
-      }
+          },
+          update = { container ->
+            if (viewStub.value == null) {
+              viewStub.value = container.getChildAt(0) as ViewStub
+            }
+          },
+        )
 
-      val openGLRenderer = rememberOpenGLRenderer(preview.value, viewStub.value)
-      val streamState by
-        openGLRenderer.previewStreamStates.collectAsStateWithLifecycle(PreviewView.StreamState.IDLE)
-      LaunchedEffect(lifecycleOwner) {
-        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-          arView.markerRenderer.drawnMarkerRectFs.collect { openGLRenderer.markerRectFs = it }
-        }
-      }
-      LaunchedEffect(blurredRectFs) { openGLRenderer.otherRectFs = blurredRectFs }
-      LaunchedEffect(blurred, streamState) {
-        if (streamState == PreviewView.StreamState.STREAMING) {
-          openGLRenderer.setBlurEnabled(enabled = blurred, animated = true)
-        }
-      }
+        val arView = remember { ARView(context) }
+        AndroidView(
+          modifier = Modifier.fillMaxSize(),
+          factory = { arView },
+          update = { view ->
+            view.povLocation = location
+            view.markers = places.map(::ARMarker)
+            view.markerRenderer.disabled = !enabled
+            view.onTouch = onCameraPreviewTouch
+          },
+        )
 
-      overlayContent(arView.markerRenderer)
+        val orientationManager = remember {
+          OrientationManager().apply {
+            axisMode = OrientationManager.Mode.AR
+            onOrientationChangedListener =
+              object : OrientationManager.OnOrientationChangedListener {
+                override fun onOrientationChanged(orientation: Orientation) {
+                  if (!orientation.pitchWithinLimit) return
+                  arView.orientation = orientation
+                  arView.phoneRotation = context.phoneRotation
+                }
+              }
+          }
+        }
+        LifecycleStartEffect(Unit) {
+          orientationManager.startSensor(context)
+          onStopOrDispose { orientationManager.stopSensor() }
+        }
+
+        val openGLRenderer = rememberOpenGLRenderer(targetPreview, viewStub.value)
+        val streamState by
+          openGLRenderer.previewStreamStates.collectAsStateWithLifecycle(
+            PreviewView.StreamState.IDLE
+          )
+        LaunchedEffect(lifecycleOwner) {
+          lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            arView.markerRenderer.drawnMarkerRectFs.collect { openGLRenderer.markerRectFs = it }
+          }
+        }
+        LaunchedEffect(blurredRectFs) { openGLRenderer.otherRectFs = blurredRectFs }
+        LaunchedEffect(blurred, streamState) {
+          if (streamState == PreviewView.StreamState.STREAMING) {
+            openGLRenderer.setBlurEnabled(enabled = blurred, animated = true)
+          }
+        }
+
+        overlayContent(arView.markerRenderer)
+      }
+    } else {
+      Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+        CircularProgressIndicator(
+          modifier = Modifier.size(64.dp),
+          strokeWidth = ProgressIndicatorDefaults.CircularStrokeWidth * 2,
+        )
+      }
     }
   }
 }
