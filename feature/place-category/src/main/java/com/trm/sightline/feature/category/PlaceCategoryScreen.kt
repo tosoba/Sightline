@@ -28,19 +28,20 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.ToggleButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -54,10 +55,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.trm.sightline.core.ar.util.sideSheetWidthDp
+import com.trm.sightline.core.common.R as commonR
 import com.trm.sightline.core.common.util.rememberBottomSheetScaffoldStateForScreenHeight
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
-import com.trm.sightline.core.common.R as commonR
 
 @OptIn(ExperimentalSharedTransitionApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -162,7 +163,7 @@ fun SharedTransitionScope.PlaceCategoryScreen(
   }
 }
 
-@OptIn(ExperimentalSharedTransitionApi::class)
+@OptIn(ExperimentalSharedTransitionApi::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun SharedTransitionScope.PlaceCategoryHeader(
   category: PlaceCategory,
@@ -176,22 +177,26 @@ private fun SharedTransitionScope.PlaceCategoryHeader(
   ) {
     Row(verticalAlignment = Alignment.CenterVertically) {
       Surface(
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+        shape = ToggleButtonDefaults.shapes().checkedShape,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
         modifier =
-          Modifier.padding(end = 16.dp)
+          Modifier.size(72.dp)
             .sharedBounds(
               sharedContentState = rememberSharedContentState(key = "icon-${category.name}"),
               animatedVisibilityScope = animatedVisibilityScope,
             ),
       ) {
-        Icon(
-          imageVector = Icons.Default.Place,
-          contentDescription = null,
-          modifier = Modifier.padding(12.dp).size(24.dp),
-          tint = MaterialTheme.colorScheme.primary,
-        )
+        Box(contentAlignment = Alignment.Center) {
+          Icon(
+            imageVector = Icons.Default.Place,
+            contentDescription = null,
+            modifier = Modifier.size(32.dp),
+            tint = MaterialTheme.colorScheme.onSurface,
+          )
+        }
       }
+
+      Spacer(modifier = Modifier.width(16.dp))
 
       Column {
         Text(

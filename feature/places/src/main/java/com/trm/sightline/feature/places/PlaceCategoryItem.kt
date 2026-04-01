@@ -144,7 +144,14 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
             colors = colors,
             shapes = shapes,
             interactionSource = interactionSource,
-            modifier = Modifier.fillMaxHeight().heightIn(min = 72.dp).aspectRatio(1f),
+            modifier =
+              Modifier.sharedBounds(
+                  sharedContentState = rememberSharedContentState(key = "icon-${category.name}"),
+                  animatedVisibilityScope = animatedVisibilityScope,
+                )
+                .fillMaxHeight()
+                .heightIn(min = 72.dp)
+                .aspectRatio(1f),
           ) {
             PlaceCategoryItemIconLoadingState(
               loadingState = loadingState,
