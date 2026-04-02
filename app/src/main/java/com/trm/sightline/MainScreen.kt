@@ -45,7 +45,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -76,6 +75,7 @@ import com.trm.sightline.core.common.util.startAppSettingsActivity
 import com.trm.sightline.core.model.LoadingState
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
+import com.trm.sightline.core.ui.rememberBottomSheetExpandedProgress
 import com.trm.sightline.feature.places.PlacesContent
 import com.trm.sightline.feature.places.PlacesLayout
 import kotlinx.coroutines.launch
@@ -258,22 +258,10 @@ fun SharedTransitionScope.MainScreen(
       collapsedBottomSheetContentHeightDp.dp +
         WindowInsets.navigationBars.getBottom(LocalDensity.current).dp
     }
-  var sheetNonPeekHeight by remember { mutableFloatStateOf(0f) }
-  val transitionThreshold = .5f
-  val sheetOffset by remember {
-    derivedStateOf { runCatching { sheetState.requireOffset() }.getOrDefault(0f) }
-  }
-  val transitionProgress by remember {
-    derivedStateOf {
-      if (sheetNonPeekHeight > 0f) (sheetOffset / sheetNonPeekHeight).coerceIn(0f, 1f) else 0f
-    }
-  }
-  val thresholdProgress by remember {
-    derivedStateOf {
-      ((transitionProgress - transitionThreshold) / (1f - transitionThreshold)).coerceIn(0f, 1f)
-    }
-  }
-  val expandedProgress by remember { derivedStateOf { (1f - thresholdProgress).coerceIn(0f, 1f) } }
+
+  val (sheetNonPeekHeightState, expandedProgressState) = rememberBottomSheetExpandedProgress(sheetState)
+  var sheetNonPeekHeight by sheetNonPeekHeightState
+  val expandedProgress by expandedProgressState
 
   val placesSheetContent =
     @Composable {

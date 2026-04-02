@@ -42,6 +42,7 @@ dependencies {
   implementation(project(":core:data"))
   implementation(project(":core:domain"))
   implementation(project(":core:model"))
+  implementation(project(":core:ui"))
   implementation(project(":feature:camera"))
   implementation(project(":feature:map"))
   implementation(project(":feature:places"))

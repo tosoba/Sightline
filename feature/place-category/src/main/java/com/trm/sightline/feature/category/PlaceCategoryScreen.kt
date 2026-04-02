@@ -43,8 +43,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.ToggleButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -58,6 +56,7 @@ import com.trm.sightline.core.common.R as commonR
 import com.trm.sightline.core.common.util.rememberBottomSheetScaffoldStateForScreenHeight
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
+import com.trm.sightline.core.ui.rememberBottomSheetExpandedProgress
 
 @OptIn(ExperimentalSharedTransitionApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -72,18 +71,9 @@ fun SharedTransitionScope.PlaceCategoryScreen(
   val sheetState = scaffoldState.bottomSheetState
 
   val density = LocalDensity.current
-  val sheetOffset = runCatching { sheetState.requireOffset() }.getOrDefault(0f)
-  var sheetNonPeekHeight by remember { mutableFloatStateOf(0f) }
-  val transitionProgress =
-    remember(sheetOffset, sheetNonPeekHeight) {
-      if (sheetNonPeekHeight > 0f) (sheetOffset / sheetNonPeekHeight).coerceIn(0f, 1f) else 0f
-    }
-  val transitionThreshold = .5f
-  val thresholdProgress =
-    remember(transitionProgress) {
-      ((transitionProgress - transitionThreshold) / (1f - transitionThreshold)).coerceIn(0f, 1f)
-    }
-  val expandedProgress = remember(thresholdProgress) { 1f - thresholdProgress }.coerceIn(0f, 1f)
+  val (sheetNonPeekHeightState, expandedProgressState) = rememberBottomSheetExpandedProgress(sheetState)
+  var sheetNonPeekHeight by sheetNonPeekHeightState
+  val expandedProgress by expandedProgressState
 
   val sheetContent =
     @Composable { peekHeight: Dp ->
