@@ -258,14 +258,14 @@ fun SharedTransitionScope.MainScreen(
       collapsedBottomSheetContentHeightDp.dp +
         WindowInsets.navigationBars.getBottom(LocalDensity.current).dp
     }
-  var sheetHeightPx by remember { mutableFloatStateOf(0f) }
+  var sheetNonPeekHeight by remember { mutableFloatStateOf(0f) }
   val transitionThreshold = .5f
   val sheetOffset by remember {
     derivedStateOf { runCatching { sheetState.requireOffset() }.getOrDefault(0f) }
   }
   val transitionProgress by remember {
     derivedStateOf {
-      if (sheetHeightPx > 0f) (sheetOffset / sheetHeightPx).coerceIn(0f, 1f) else 0f
+      if (sheetNonPeekHeight > 0f) (sheetOffset / sheetNonPeekHeight).coerceIn(0f, 1f) else 0f
     }
   }
   val thresholdProgress by remember {
@@ -311,7 +311,7 @@ fun SharedTransitionScope.MainScreen(
               .navigationBarsPadding()
               .padding(horizontal = 16.dp)
               .onGloballyPositioned { layoutCoordinates ->
-                sheetHeightPx =
+                sheetNonPeekHeight =
                   layoutCoordinates.size.height.toFloat() - with(density) { sheetPeekHeight.toPx() }
               }
           },

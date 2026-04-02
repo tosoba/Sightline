@@ -113,10 +113,10 @@ fun MainPager(
       MainPage.Map -> {
         MapPreview(
           places = places,
-          lastMapPosition = lastMapPosition,
           padding = contentPadding,
           modifier = Modifier.fillMaxSize(),
-          onMapPositionChanged = onMapPositionChanged,
+          lastMapPosition = lastMapPosition,
+          onPause = onMapPositionChanged,
         )
       }
     }

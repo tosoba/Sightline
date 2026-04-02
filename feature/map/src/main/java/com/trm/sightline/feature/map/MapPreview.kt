@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.trm.sightline.core.model.MapCameraPosition
 import com.trm.sightline.core.model.Place
+import kotlin.math.abs
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonPrimitive
 import org.maplibre.compose.camera.CameraPosition
@@ -58,15 +59,14 @@ import org.maplibre.spatialk.geojson.Feature
 import org.maplibre.spatialk.geojson.FeatureCollection
 import org.maplibre.spatialk.geojson.Point
 import org.maplibre.spatialk.geojson.Position
-import kotlin.math.abs
 
 @Composable
 fun MapPreview(
   places: List<Place>,
-  lastMapPosition: MapCameraPosition?,
   padding: PaddingValues,
   modifier: Modifier = Modifier,
-  onMapPositionChanged: (MapCameraPosition) -> Unit,
+  lastMapPosition: MapCameraPosition? = null,
+  onPause: ((MapCameraPosition) -> Unit)? = null,
 ) {
   val scope = rememberCoroutineScope()
 
@@ -110,18 +110,20 @@ fun MapPreview(
     }
   }
 
-  LifecycleResumeEffect(Unit) {
-    onPauseOrDispose {
-      with(cameraState.position) {
-        onMapPositionChanged(
-          MapCameraPosition(
-            latitude = target.latitude,
-            longitude = target.longitude,
-            zoom = zoom,
-            bearing = bearing,
-            tilt = tilt,
+  onPause?.let { action ->
+    LifecycleResumeEffect(Unit) {
+      onPauseOrDispose {
+        with(cameraState.position) {
+          action(
+            MapCameraPosition(
+              latitude = target.latitude,
+              longitude = target.longitude,
+              zoom = zoom,
+              bearing = bearing,
+              tilt = tilt,
+            )
           )
-        )
+        }
       }
     }
   }

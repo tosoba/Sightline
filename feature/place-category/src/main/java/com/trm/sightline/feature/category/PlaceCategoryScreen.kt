@@ -3,7 +3,6 @@ package com.trm.sightline.feature.category
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -67,16 +66,17 @@ fun SharedTransitionScope.PlaceCategoryScreen(
   isCompactHeight: Boolean,
   animatedVisibilityScope: AnimatedVisibilityScope,
   onBack: () -> Unit,
+  content: @Composable (PaddingValues) -> Unit,
 ) {
   val scaffoldState = rememberBottomSheetScaffoldStateForScreenHeight(isCompactHeight)
   val sheetState = scaffoldState.bottomSheetState
 
   val density = LocalDensity.current
   val sheetOffset = runCatching { sheetState.requireOffset() }.getOrDefault(0f)
-  var sheetHeightPx by remember { mutableFloatStateOf(0f) }
+  var sheetNonPeekHeight by remember { mutableFloatStateOf(0f) }
   val transitionProgress =
-    remember(sheetOffset, sheetHeightPx) {
-      if (sheetHeightPx > 0f) (sheetOffset / sheetHeightPx).coerceIn(0f, 1f) else 0f
+    remember(sheetOffset, sheetNonPeekHeight) {
+      if (sheetNonPeekHeight > 0f) (sheetOffset / sheetNonPeekHeight).coerceIn(0f, 1f) else 0f
     }
   val transitionThreshold = .5f
   val thresholdProgress =
@@ -101,7 +101,7 @@ fun SharedTransitionScope.PlaceCategoryScreen(
               .navigationBarsPadding()
               .padding(horizontal = 16.dp)
               .onGloballyPositioned { layoutCoordinates ->
-                sheetHeightPx =
+                sheetNonPeekHeight =
                   layoutCoordinates.size.height.toFloat() - with(density) { peekHeight.toPx() }
               }
           },
@@ -120,11 +120,11 @@ fun SharedTransitionScope.PlaceCategoryScreen(
     }
 
   BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-    val peekHeight = if (isCompactHeight) 0.dp else maxHeight / 2
+    val sheetPeekHeight = if (isCompactHeight) 0.dp else maxHeight / 2
 
     BottomSheetScaffold(
       scaffoldState = scaffoldState,
-      sheetPeekHeight = peekHeight,
+      sheetPeekHeight = sheetPeekHeight,
       sheetDragHandle = {
         Column(
           modifier = Modifier.fillMaxWidth(),
@@ -140,14 +140,39 @@ fun SharedTransitionScope.PlaceCategoryScreen(
         }
       },
       sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-      sheetContent = { sheetContent(peekHeight) },
-    ) { innerPadding ->
-      Box(
-        modifier =
-          Modifier.fillMaxSize()
-            .padding(bottom = if (isCompactHeight) 0.dp else innerPadding.calculateBottomPadding())
-      ) {
-        MapSection(onBack = onBack)
+      sheetContent = { sheetContent(sheetPeekHeight) },
+    ) {
+      Box(modifier = Modifier.fillMaxSize()) {
+        content(
+          PaddingValues(
+            bottom =
+              if (isCompactHeight) {
+                WindowInsets.safeDrawing
+                  .only(WindowInsetsSides.Bottom)
+                  .asPaddingValues()
+                  .calculateBottomPadding()
+              } else {
+                sheetPeekHeight
+              },
+            end = if (isCompactHeight) sideSheetWidthDp.dp else 0.dp,
+          )
+        )
+
+        FilledTonalIconButton(
+          onClick = onBack,
+          colors =
+            IconButtonDefaults.filledTonalIconButtonColors(
+              containerColor = MaterialTheme.colorScheme.surface.copy(alpha = .5f),
+              contentColor = MaterialTheme.colorScheme.onSurface,
+            ),
+          modifier =
+            Modifier.padding(horizontal = 16.dp).systemBarsPadding().align(Alignment.TopStart),
+        ) {
+          Icon(
+            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+            contentDescription = stringResource(commonR.string.back),
+          )
+        }
 
         if (isCompactHeight) {
           Surface(
@@ -249,32 +274,6 @@ private fun PlaceListItem(place: Place) {
       text = place.name,
       style = MaterialTheme.typography.titleMedium,
       color = MaterialTheme.colorScheme.onSurface,
-    )
-  }
-}
-
-@Composable
-private fun MapSection(modifier: Modifier = Modifier, onBack: () -> Unit) {
-  Box(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceDim)) {
-    FilledTonalIconButton(
-      onClick = onBack,
-      colors =
-        IconButtonDefaults.filledTonalIconButtonColors(
-          containerColor = MaterialTheme.colorScheme.surface.copy(alpha = .5f),
-          contentColor = MaterialTheme.colorScheme.onSurface,
-        ),
-      modifier = Modifier.padding(horizontal = 16.dp).systemBarsPadding().align(Alignment.TopStart),
-    ) {
-      Icon(
-        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-        contentDescription = stringResource(commonR.string.back),
-      )
-    }
-
-    Text(
-      text = "Map Placeholder",
-      modifier = Modifier.align(Alignment.Center),
-      color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
   }
 }
