@@ -251,11 +251,9 @@ fun SharedTransitionScope.MainScreen(
   var sheetNonPeekHeight by sheetNonPeekHeightState
   val expandedProgress by expandedProgressState
 
-  val placesFullyOpaque = selectedPage != MainPage.Camera || !cameraPermissionState.isGranted
-  val placesContentAlpha by
-    remember(placesFullyOpaque) { derivedStateOf { if (placesFullyOpaque) 1f else contentAlpha } }
-  val placesContainerAlpha by
-    remember(placesFullyOpaque) { derivedStateOf { if (placesFullyOpaque) 1f else containerAlpha } }
+  val placesFullyOpaque = selectedPage == MainPage.Camera && !cameraPermissionState.isGranted
+  val placesContentAlpha = if (placesFullyOpaque) 1f else contentAlpha
+  val placesContainerAlpha = if (placesFullyOpaque) 1f else containerAlpha
 
   val placesSheetContent =
     @Composable {
