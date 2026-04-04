@@ -71,7 +71,8 @@ fun SharedTransitionScope.PlaceCategoryScreen(
   val sheetState = scaffoldState.bottomSheetState
 
   val density = LocalDensity.current
-  val (sheetNonPeekHeightState, expandedProgressState) = rememberBottomSheetExpandedProgress(sheetState)
+  val (sheetNonPeekHeightState, expandedProgressState) =
+    rememberBottomSheetExpandedProgress(sheetState)
   var sheetNonPeekHeight by sheetNonPeekHeightState
   val expandedProgress by expandedProgressState
 
@@ -129,7 +130,6 @@ fun SharedTransitionScope.PlaceCategoryScreen(
           BottomSheetDefaults.DragHandle()
         }
       },
-      sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
       sheetContent = { sheetContent(sheetPeekHeight) },
     ) {
       Box(modifier = Modifier.fillMaxSize()) {
@@ -167,7 +167,7 @@ fun SharedTransitionScope.PlaceCategoryScreen(
         if (isCompactHeight) {
           Surface(
             modifier = Modifier.fillMaxHeight().align(Alignment.CenterEnd),
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            color = BottomSheetDefaults.ContainerColor,
             tonalElevation = 1.dp,
           ) {
             sheetContent(0.dp)
@@ -193,7 +193,7 @@ private fun SharedTransitionScope.PlaceCategoryHeader(
     Row(verticalAlignment = Alignment.CenterVertically) {
       Surface(
         shape = ToggleButtonDefaults.shapes().checkedShape,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        color = MaterialTheme.colorScheme.surfaceContainerHighest,
         modifier =
           Modifier.size(72.dp)
             .sharedBounds(
