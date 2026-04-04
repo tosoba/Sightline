@@ -67,7 +67,7 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
         ToggleButtonDefaults.toggleButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)
           .run {
             copy(
-              containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = alpha)
+              containerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = alpha)
             )
           }
       ToggleButton(
@@ -107,7 +107,7 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
         ToggleButtonDefaults.toggleButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)
           .run {
             copy(
-              containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = alpha)
+              containerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = alpha)
             )
           }
 
@@ -120,9 +120,9 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
           },
         colors =
           CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = alpha),
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = alpha),
             disabledContainerColor =
-              MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = alpha),
+              MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = alpha),
           ),
         modifier = modifier,
         onClick =
