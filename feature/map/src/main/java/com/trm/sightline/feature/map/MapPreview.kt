@@ -26,11 +26,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.trm.sightline.core.model.MapCameraPosition
 import com.trm.sightline.core.model.Place
+import java.io.BufferedReader
 import kotlin.math.abs
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonPrimitive
@@ -132,8 +134,11 @@ fun MapPreview(
     MaplibreMap(
       modifier = Modifier.fillMaxSize(),
       baseStyle =
-        BaseStyle.Uri(
-          "https://tiles.openfreemap.org/styles/${if (isSystemInDarkTheme()) OpenFreeMapStyle.Dark.name.lowercase() else OpenFreeMapStyle.Liberty.name.lowercase()}"
+        BaseStyle.Json(
+          LocalResources.current
+            .openRawResource(if (isSystemInDarkTheme()) R.raw.dark_style else R.raw.light_style)
+            .bufferedReader()
+            .use(BufferedReader::readText)
         ),
       options = MapOptions(ornamentOptions = OrnamentOptions.AllDisabled),
       cameraState = cameraState,
@@ -257,11 +262,3 @@ fun rememberPlacesBoundingBox(places: List<Place>, percentageIncrease: Double = 
       north = maxLat + latDelta * paddingFactor,
     )
   }
-
-private enum class OpenFreeMapStyle {
-  Bright,
-  Liberty,
-  Positron,
-  Dark,
-  Fiord,
-}
