@@ -100,8 +100,6 @@ fun SharedTransitionScope.MainScreen(
       (pagerState.currentPage + pagerState.currentPageOffsetFraction).coerceIn(0f, 1f)
     }
   }
-  val containerAlpha = 0.5f + (pageChangeProgress * 0.4f)
-  val contentAlpha = 0.5f + (pageChangeProgress * 0.5f)
   val selectedPage = MainPage.entries[pagerState.currentPage]
   var toolbarsVisible by remember { mutableStateOf(true) }
   LaunchedEffect(pagerState.currentPage) { toolbarsVisible = true }
@@ -252,9 +250,8 @@ fun SharedTransitionScope.MainScreen(
   val expandedProgress by expandedProgressState
 
   val placesFullyOpaque = selectedPage == MainPage.Camera && !cameraPermissionState.isGranted
-  val placesContentAlpha = if (placesFullyOpaque) 1f else contentAlpha
-  val placesContainerAlpha = if (placesFullyOpaque) 1f else containerAlpha
-
+  val placesContentAlpha = if (placesFullyOpaque) 1f else 0.5f + (pageChangeProgress * 0.5f)
+  val placesContainerAlpha = if (placesFullyOpaque) 1f else 0.5f + (pageChangeProgress * 0.4f)
   val placesSheetContent =
     @Composable {
       val density = LocalDensity.current

@@ -112,10 +112,12 @@ fun SharedTransitionScope.PlaceCategoryScreen(
 
   BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
     val sheetPeekHeight = if (isCompactHeight) 0.dp else maxHeight / 2
+    val sheetContainerColor = BottomSheetDefaults.ContainerColor.copy(alpha = .9f)
 
     BottomSheetScaffold(
       scaffoldState = scaffoldState,
       sheetPeekHeight = sheetPeekHeight,
+      sheetContainerColor = sheetContainerColor,
       sheetDragHandle = {
         Column(
           modifier = Modifier.fillMaxWidth(),
@@ -167,7 +169,7 @@ fun SharedTransitionScope.PlaceCategoryScreen(
         if (isCompactHeight) {
           Surface(
             modifier = Modifier.fillMaxHeight().align(Alignment.CenterEnd),
-            color = BottomSheetDefaults.ContainerColor,
+            color = sheetContainerColor,
             tonalElevation = 1.dp,
           ) {
             sheetContent(0.dp)
