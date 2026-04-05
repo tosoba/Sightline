@@ -11,6 +11,7 @@ import androidx.lifecycle.viewModelScope
 import com.trm.sightline.core.common.RequestError
 import com.trm.sightline.core.common.messageResource
 import com.trm.sightline.core.common.toRequestError
+import com.trm.sightline.core.common.util.location
 import com.trm.sightline.core.common.util.locationEnabledFlow
 import com.trm.sightline.core.common.util.locationUpdatesFlow
 import com.trm.sightline.core.domain.AddressRepository
@@ -22,6 +23,10 @@ import com.trm.sightline.core.model.MapCameraPosition
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.util.concurrent.atomic.AtomicLong
+import javax.inject.Inject
+import kotlin.coroutines.cancellation.CancellationException
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
@@ -44,10 +49,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
-import java.util.concurrent.atomic.AtomicLong
-import javax.inject.Inject
-import kotlin.coroutines.cancellation.CancellationException
-import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @HiltViewModel
@@ -211,12 +212,14 @@ constructor(
             places[category] =
               withTimeout(REQUEST_TIMEOUT_MS) {
                 LoadingState.Loaded(
-                  placesRepository.fetchPlaces(
-                    category = category,
-                    latitude = location.latitude,
-                    longitude = location.longitude,
-                    radiusMeters = 1_000f,
-                  )
+                  placesRepository
+                    .fetchPlaces(
+                      category = category,
+                      latitude = location.latitude,
+                      longitude = location.longitude,
+                      radiusMeters = 1_000f,
+                    )
+                    .sortedBy { location.distanceTo(it.location) }
                 )
               }
           } catch (ex: Exception) {

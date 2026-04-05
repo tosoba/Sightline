@@ -31,6 +31,8 @@ android {
 }
 
 dependencies {
+  implementation(project(":core:model"))
+
   implementation(libs.androidx.activity.compose)
   implementation(libs.androidx.compose.ui)
   implementation(libs.androidx.lifecycle.runtime.compose)

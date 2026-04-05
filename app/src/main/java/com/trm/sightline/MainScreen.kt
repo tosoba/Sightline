@@ -3,6 +3,7 @@ package com.trm.sightline
 import android.Manifest
 import android.app.Activity
 import android.content.Intent
+import android.location.Location
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -58,8 +59,6 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.trm.sightline.composable.MainPager
 import com.trm.sightline.composable.MainPagerToolbar
 import com.trm.sightline.composable.MainScreenErrorMessage
@@ -72,7 +71,9 @@ import com.trm.sightline.core.common.util.CheckLocationSettingsResult
 import com.trm.sightline.core.common.util.checkLocationSettings
 import com.trm.sightline.core.common.util.rememberBottomSheetScaffoldStateForScreenHeight
 import com.trm.sightline.core.common.util.startAppSettingsActivity
+import com.trm.sightline.core.model.CustomLocation
 import com.trm.sightline.core.model.LoadingState
+import com.trm.sightline.core.model.MapCameraPosition
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
 import com.trm.sightline.core.ui.rememberBottomSheetExpandedProgress
@@ -88,8 +89,23 @@ import kotlinx.coroutines.launch
 @Composable
 fun SharedTransitionScope.MainScreen(
   isCompactHeight: Boolean,
+  places: Map<PlaceCategory, LoadingState<List<Place>>>,
+  allPlaces: List<Place>,
+  userLocation: Location?,
+  userLocationAddress: LoadingState<String>,
+  customLocation: Location?,
+  customLocationAddress: String,
+  customLocationSearchResults: LoadingState<List<CustomLocation>>,
+  isUserLocationEnabled: Boolean,
+  lastMapPosition: MapCameraPosition?,
+  errorMessage: Int?,
   animatedVisibilityScope: AnimatedVisibilityScope,
+  onUserLocationEnabledChange: (Boolean) -> Unit,
+  onCustomLocationAddressChange: (String) -> Unit,
+  onCustomLocationSearchResultClick: (CustomLocation) -> Unit,
+  onTogglePlaceCategory: (PlaceCategory) -> Unit,
   onCategoryClick: (PlaceCategory, List<Place>) -> Unit,
+  onMapPositionChanged: (MapCameraPosition) -> Unit,
 ) {
   val context = LocalContext.current
   val scope = rememberCoroutineScope()
@@ -104,19 +120,17 @@ fun SharedTransitionScope.MainScreen(
   var toolbarsVisible by remember { mutableStateOf(true) }
   LaunchedEffect(pagerState.currentPage) { toolbarsVisible = true }
 
-  val viewModel = hiltViewModel<MainViewModel>()
-
   val locationSettingsLauncher =
     rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result
       ->
-      if (result.resultCode == Activity.RESULT_OK) viewModel.setUserLocationEnabled(true)
+      if (result.resultCode == Activity.RESULT_OK) onUserLocationEnabledChange(true)
     }
   var showLocationDisabledDialog by remember { mutableStateOf(false) }
 
   suspend fun checkLocationSettings() {
     when (val result = context.checkLocationSettings()) {
       CheckLocationSettingsResult.Enabled -> {
-        viewModel.setUserLocationEnabled(true)
+        onUserLocationEnabledChange(true)
       }
       is CheckLocationSettingsResult.DisabledResolvable -> {
         locationSettingsLauncher.launch(result.intentSenderRequest)
@@ -223,9 +237,7 @@ fun SharedTransitionScope.MainScreen(
     )
   }
 
-  val userLocationEnabled =
-    viewModel.userLocationEnabled.collectAsStateWithLifecycle().value &&
-      locationPermissionState.isGranted
+  val userLocationEnabled = isUserLocationEnabled && locationPermissionState.isGranted
 
   val scaffoldState = rememberBottomSheetScaffoldStateForScreenHeight(isCompactHeight)
   val sheetState = scaffoldState.bottomSheetState
@@ -255,20 +267,15 @@ fun SharedTransitionScope.MainScreen(
   val placesSheetContent =
     @Composable {
       val density = LocalDensity.current
-      val customLocationAddress by viewModel.customLocationAddress.collectAsStateWithLifecycle()
-      val gpsLocationAddress by viewModel.userLocationAddress.collectAsStateWithLifecycle()
-      val customLocationSearchResults by
-        viewModel.customLocationSearchResults.collectAsStateWithLifecycle()
 
       PlacesContent(
-        places = viewModel.places,
+        places = places,
         locationAddress =
-          if (userLocationEnabled) gpsLocationAddress
+          if (userLocationEnabled) userLocationAddress
           else LoadingState.Loaded(customLocationAddress),
         userLocationEnabled = userLocationEnabled,
         placeCategoriesEnabled =
-          if (userLocationEnabled) viewModel.userLocation != null
-          else viewModel.customLocation != null,
+          if (userLocationEnabled) userLocation != null else customLocation != null,
         customLocationSearchResults = customLocationSearchResults,
         layout =
           if (isCompactHeight || sheetState.targetValue == SheetValue.Expanded) PlacesLayout.Grid
@@ -313,12 +320,12 @@ fun SharedTransitionScope.MainScreen(
             }
           } else {
             locationPermissionFlowInProgress = false
-            viewModel.setUserLocationEnabled(false)
+            onUserLocationEnabledChange(false)
           }
         },
-        onCustomLocationAddressChange = viewModel::setCustomLocationAddress,
-        onCustomLocationSearchResultClick = viewModel::onCustomLocationSearchResultClick,
-        onTogglePlaceCategory = viewModel::onTogglePlaceCategory,
+        onCustomLocationAddressChange = onCustomLocationAddressChange,
+        onCustomLocationSearchResultClick = onCustomLocationSearchResultClick,
+        onTogglePlaceCategory = onTogglePlaceCategory,
         onCategoryClick = onCategoryClick,
       )
     }
@@ -355,15 +362,14 @@ fun SharedTransitionScope.MainScreen(
             ),
         contentAlignment = Alignment.Center,
       ) {
-        val lastMapPosition by viewModel.lastMapPosition.collectAsStateWithLifecycle()
         val cameraPreviewBlurred by remember {
           derivedStateOf { !isCompactHeight && expandedProgress != 0f }
         }
 
         MainPager(
           pagerState = pagerState,
-          location = if (userLocationEnabled) viewModel.userLocation else viewModel.customLocation,
-          places = viewModel.allPlaces,
+          location = if (userLocationEnabled) userLocation else customLocation,
+          places = allPlaces,
           lastMapPosition = lastMapPosition,
           isCompactHeight = isCompactHeight,
           cameraPreviewBlurred = cameraPreviewBlurred,
@@ -390,7 +396,7 @@ fun SharedTransitionScope.MainScreen(
               end = if (isCompactHeight) sideSheetWidthDp.dp else 0.dp,
             ),
           onCameraPreviewTouch = { toolbarsVisible = !toolbarsVisible },
-          onMapPositionChanged = viewModel::saveMapPosition,
+          onMapPositionChanged = onMapPositionChanged,
         )
 
         MainPagerToolbar(
@@ -413,7 +419,6 @@ fun SharedTransitionScope.MainScreen(
       }
     }
 
-    val errorMessage by viewModel.errorMessage.collectAsStateWithLifecycle()
     MainScreenErrorMessage(
       message = errorMessage?.let { stringResource(it) }.orEmpty(),
       visible = errorMessage != null,

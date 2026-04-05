@@ -1,8 +1,10 @@
 package com.trm.sightline.feature.category
 
+import android.location.Location
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -27,6 +29,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Place
@@ -50,10 +54,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.trm.sightline.core.ar.util.sideSheetWidthDp
 import com.trm.sightline.core.common.R as commonR
+import com.trm.sightline.core.common.util.formattedDistance
 import com.trm.sightline.core.common.util.rememberBottomSheetScaffoldStateForScreenHeight
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
@@ -64,6 +71,7 @@ import com.trm.sightline.core.ui.rememberBottomSheetExpandedProgress
 @Composable
 fun SharedTransitionScope.PlaceCategoryScreen(
   route: PlaceCategoryRoute,
+  location: Location?,
   isCompactHeight: Boolean,
   animatedVisibilityScope: AnimatedVisibilityScope,
   onBack: () -> Unit,
@@ -108,7 +116,9 @@ fun SharedTransitionScope.PlaceCategoryScreen(
           )
         }
 
-        items(route.places, key = Place::id) { place -> PlaceListItem(place = place) }
+        items(route.places, key = Place::id) { place ->
+          PlaceListItem(place = place, location = location)
+        }
       }
     }
 
@@ -244,7 +254,7 @@ private fun SharedTransitionScope.PlaceCategoryHeader(
 }
 
 @Composable
-private fun PlaceListItem(place: Place) {
+private fun PlaceListItem(place: Place, location: Location?) {
   Row(
     modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
     verticalAlignment = Alignment.CenterVertically,
@@ -254,12 +264,37 @@ private fun PlaceListItem(place: Place) {
       color = MaterialTheme.colorScheme.surfaceVariant,
       modifier = Modifier.size(64.dp),
     ) {
-      Icon(
-        imageVector = Icons.Default.Place,
-        contentDescription = null,
-        modifier = Modifier.padding(16.dp),
-        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-      )
+      Box(contentAlignment = Alignment.Center) {
+        if (location != null) {
+          BasicText(
+            text =
+              remember(place, location) {
+                location
+                  .distanceTo(
+                    Location("").apply {
+                      latitude = place.latitude
+                      longitude = place.longitude
+                    }
+                  )
+                  .formattedDistance()
+              },
+            style =
+              MaterialTheme.typography.labelLarge.copy(
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+              ),
+            autoSize = TextAutoSize.StepBased(minFontSize = 10.sp, maxFontSize = 14.sp),
+            modifier = Modifier.padding(4.dp).basicMarquee(iterations = Int.MAX_VALUE),
+          )
+        } else {
+          Icon(
+            imageVector = Icons.Default.Place,
+            contentDescription = null,
+            modifier = Modifier.padding(16.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
+        }
+      }
     }
 
     Spacer(modifier = Modifier.width(16.dp))
