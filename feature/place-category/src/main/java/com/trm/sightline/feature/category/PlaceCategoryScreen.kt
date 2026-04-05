@@ -43,6 +43,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.ToggleButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -262,10 +263,41 @@ private fun PlaceListItem(place: Place) {
 
     Spacer(modifier = Modifier.width(16.dp))
 
-    Text(
-      text = place.name,
-      style = MaterialTheme.typography.titleMedium,
-      color = MaterialTheme.colorScheme.onSurface,
-    )
+    Column {
+      Text(
+        text = place.name,
+        style = MaterialTheme.typography.titleMedium,
+        color = MaterialTheme.colorScheme.onSurface,
+      )
+
+      val tourismOrLeisure = place.tags["tourism"] ?: place.tags["leisure"]
+      if (tourismOrLeisure != null) {
+        Text(
+          text = tourismOrLeisure.replace('_', ' ').replaceFirstChar(Char::uppercase),
+          style = MaterialTheme.typography.bodyMedium,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+      }
+
+      val address =
+        remember(place.tags) {
+          listOfNotNull(
+              listOfNotNull(place.tags["addr:housenumber"], place.tags["addr:street"])
+                .joinToString(" ")
+                .takeIf(String::isNotBlank),
+              place.tags["addr:unit"]?.let { "Unit $it" },
+              place.tags["addr:city"],
+              listOfNotNull(place.tags["addr:state"], place.tags["addr:postcode"]).joinToString(" "),
+            )
+            .joinToString(", ")
+        }
+      if (address.isNotBlank()) {
+        Text(
+          text = address,
+          style = MaterialTheme.typography.bodySmall,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+      }
+    }
   }
 }
