@@ -22,20 +22,24 @@ import com.trm.sightline.core.ar.util.isCompactHeight
 import com.trm.sightline.core.ar.util.navigationBarsBottomInsetPx
 import com.trm.sightline.core.ar.util.spToPx
 import com.trm.sightline.core.ar.util.statusBarTopInsetPx
+import com.trm.sightline.core.common.util.formattedAddress
 import com.trm.sightline.core.common.util.roundToDecimalPlaces
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import com.trm.sightline.core.common.util.tourismOrLeisure
 import java.util.Objects
 import kotlin.math.abs
 import kotlin.math.atan
 import kotlin.math.cos
 import kotlin.math.roundToInt
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 class ARMarkerRenderer(private val context: Context) {
   private val markerPaddingPx: Float = context.dpToPx(MARKER_PADDING_DP)
   private val markerTitleTextSizePx: Float = context.spToPx(MARKER_TITLE_TEXT_SIZE_SP)
   private val markerDistanceTextSizePx: Float = context.spToPx(MARKER_DISTANCE_TEXT_SIZE_SP)
+  private val markerTourismTextSizePx: Float = context.spToPx(MARKER_TOURISM_TEXT_SIZE_SP)
+  private val markerAddressTextSizePx: Float = context.spToPx(MARKER_ADDRESS_TEXT_SIZE_SP)
 
   internal val markerHeightPx: Float
   internal val markerWidthPx: Float
@@ -43,14 +47,16 @@ class ARMarkerRenderer(private val context: Context) {
   private val overlapGuardPx: Float
   private val cameraViewHeightPx: Float
 
-  // Minimum height for a marker to be legible: 2 title lines + 1 distance line +
-  // top and bottom padding. Derived from actual text sizes so it scales with
-  // font size and display density rather than a fixed breakpoint.
+  // Minimum marker height must satisfy two constraints:
+  //   1. Fit at least one name line + top/bottom padding (text legibility).
+  //   2. Leave the left distance box large enough to be legible — box height =
+  //      markerHeight - 2*padding, so the box constraint drives a larger minimum.
+  // The two are evaluated with maxOf() and the tighter bound wins.
   private val minMarkerHeightPx: Float
     get() {
-      val titleLineHeightPx = markerTitleTextSizePx * LINE_HEIGHT_MULTIPLIER
-      val distanceLineHeightPx = markerDistanceTextSizePx * LINE_HEIGHT_MULTIPLIER
-      return titleLineHeightPx * 2 + distanceLineHeightPx + markerPaddingPx * 2
+      val nameLineHeightPx = markerTitleTextSizePx * LINE_HEIGHT_MULTIPLIER
+      val minBoxPx = context.dpToPx(MIN_LEFT_BOX_SIZE_DP)
+      return maxOf(nameLineHeightPx + markerPaddingPx * 2, minBoxPx + markerPaddingPx * 2)
     }
 
   // How many rows fit given the available height and the minimum legible marker height.
@@ -133,7 +139,7 @@ class ARMarkerRenderer(private val context: Context) {
   // Full derivation:
   //   In convert3dTo2d, the screen X separation for two markers in the same row is:
   //     ΔscreenX = ΔvpX · cos(roll) - ΔvpY · sin(roll)
-  //   where ΔvpX = 2·tan(Δβ/2)·screenRatioX is minimised when the camera azimuth
+  //   where ΔvpX = 2·tan(Δβ/2)·screenRatioX is minimized when the camera azimuth
   //   bisects the two bearings, and ΔvpY is non-zero when places differ in elevation.
   //
   //   Worst case: roll at MAX_EXPECTED_ROLL_RADIANS shrinks the ΔvpX contribution by
@@ -142,6 +148,8 @@ class ARMarkerRenderer(private val context: Context) {
   //
   //     Δβ ≥ 2·atan((markerWidthPx + overlapGuardPx) / (2·screenRatioX·cos(maxRoll)))
   private var markerAngularWidthDeg: Double = 0.0
+
+  // ── Paints ────────────────────────────────────────────────────────────────
 
   private val titleTextPaint: TextPaint by
     lazy(LazyThreadSafetyMode.NONE) {
@@ -157,16 +165,57 @@ class ARMarkerRenderer(private val context: Context) {
       }
     }
 
-  private val distanceTextPaint: TextPaint by
+  // Centred variant used exclusively inside the left distance box.
+  private val distanceCenteredTextPaint: TextPaint by
     lazy(LazyThreadSafetyMode.NONE) {
       TextPaint().apply {
         color = Color.WHITE
         style = Paint.Style.FILL
         isAntiAlias = true
         textSize = markerDistanceTextSizePx
+        textAlign = Paint.Align.CENTER
+        isLinearText = true
+        setShadowLayer(2.0f, 1.5f, 1.5f, Color.GRAY)
+      }
+    }
+
+  // Secondary label — tourism / leisure type (e.g. "restaurant", "museum").
+  private val tourismTextPaint: TextPaint by
+    lazy(LazyThreadSafetyMode.NONE) {
+      TextPaint().apply {
+        color = Color.WHITE
+        alpha = (0.80f * 255).toInt()
+        style = Paint.Style.FILL
+        isAntiAlias = true
+        textSize = markerTourismTextSizePx
         textAlign = Paint.Align.LEFT
         isLinearText = true
         setShadowLayer(2.0f, 3.0f, 3.0f, Color.GRAY)
+      }
+    }
+
+  // Tertiary label — formatted address, shown only when height permits.
+  private val addressTextPaint: TextPaint by
+    lazy(LazyThreadSafetyMode.NONE) {
+      TextPaint().apply {
+        color = Color.WHITE
+        alpha = (0.60f * 255).toInt()
+        style = Paint.Style.FILL
+        isAntiAlias = true
+        textSize = markerAddressTextSizePx
+        textAlign = Paint.Align.LEFT
+        isLinearText = true
+        setShadowLayer(2.0f, 3.0f, 3.0f, Color.GRAY)
+      }
+    }
+
+  private val surfaceBackgroundPaint: Paint by
+    lazy(LazyThreadSafetyMode.NONE) {
+      Paint().apply {
+        color = Color.WHITE
+        alpha = (0.18f * 255).toInt()
+        style = Paint.Style.FILL
+        isAntiAlias = true
       }
     }
 
@@ -281,8 +330,7 @@ class ARMarkerRenderer(private val context: Context) {
 
       val cornerRadiusPx = context.dpToPx(MARKER_RECT_F_CORNER_RADIUS_DP)
       canvas.drawRoundRect(markerRectF, cornerRadiusPx, cornerRadiusPx, borderPaint)
-      canvas.drawTitleText(marker, markerRectF)
-      canvas.drawDistanceText(marker, markerRectF)
+      canvas.drawMarkerContent(marker, markerRectF)
 
       drawnRects.add(RoundedRectF(markerRectF, cornerRadiusPx))
     }
@@ -299,6 +347,109 @@ class ARMarkerRenderer(private val context: Context) {
     _drawnMarkerRectFs.value = drawnRects
     firstFrame = false
   }
+
+  /**
+   * Draws a [PlaceListItem]-style layout inside [rectF]:
+   * ```
+   * ┌──────────────────────────────────────────────────┐
+   * │  ┌──────────┐  Place Name (bold, up to 2 lines)  │
+   * │  │  500 m   │  tourism / leisure type (smaller)  │
+   * │  └──────────┘  address (smallest, if space)      │
+   * └──────────────────────────────────────────────────┘
+   * ```
+   *
+   * Text priority (high → low): name > tourism/leisure > address. Each lower-priority text is only
+   * drawn when vertical space remains after the higher-priority texts have been accommodated.
+   */
+  private fun Canvas.drawMarkerContent(marker: ARMarker, rectF: RectF) {
+    val cornerRadiusPx = context.dpToPx(MARKER_RECT_F_CORNER_RADIUS_DP)
+
+    // ── Left distance "Surface" box ──────────────────────────────────────
+    // Square, vertically centred, height = markerHeight - 2×padding,
+    // clamped to MIN_LEFT_BOX_SIZE_DP so text stays legible at small heights.
+    val leftBoxSize =
+      (markerHeightPx - markerPaddingPx * 2).coerceAtLeast(context.dpToPx(MIN_LEFT_BOX_SIZE_DP))
+    val leftBoxLeft = rectF.left + markerPaddingPx
+    val leftBoxTop = rectF.centerY() - leftBoxSize / 2f
+    val leftBoxRectF =
+      RectF(leftBoxLeft, leftBoxTop, leftBoxLeft + leftBoxSize, leftBoxTop + leftBoxSize)
+
+    drawRoundRect(leftBoxRectF, cornerRadiusPx, cornerRadiusPx, surfaceBackgroundPaint)
+
+    // Distance text centred both axes inside the box.
+    val distanceFm = distanceCenteredTextPaint.fontMetrics
+    val distanceBaseline = leftBoxRectF.centerY() - (distanceFm.ascent + distanceFm.descent) / 2f
+    drawText(
+      marker.formattedDistance(),
+      leftBoxRectF.centerX(),
+      distanceBaseline,
+      distanceCenteredTextPaint,
+    )
+
+    // ── Right text column ────────────────────────────────────────────────
+    // Starts just after the box with half-padding gap; stays inside the right
+    // margin. We track how much vertical space the column has consumed so that
+    // each lower-priority row can check whether it still fits.
+    val textLeft = leftBoxRectF.right + markerPaddingPx / 2f
+    val textRight = rectF.right - markerPaddingPx
+    val textWidth = (textRight - textLeft).coerceAtLeast(0f)
+    val textEllipsisWidth = (textWidth - ELLIPSIS_WIDTH_PX).coerceAtLeast(0f)
+
+    val textAreaTop = rectF.top + markerPaddingPx
+    val textAreaBottom = rectF.bottom - markerPaddingPx
+    val textAreaHeight = textAreaBottom - textAreaTop
+
+    val nameLineH = markerTitleTextSizePx * LINE_HEIGHT_MULTIPLIER
+    val tourismLineH = markerTourismTextSizePx * LINE_HEIGHT_MULTIPLIER
+    val addressLineH = markerAddressTextSizePx * LINE_HEIGHT_MULTIPLIER
+
+    // ── Name (highest priority) ──────────────────────────────────────────
+    // Allow a second line when the text wraps AND there is room for it.
+    val nameWraps = titleTextPaint.measureText(marker.place.name) > textWidth
+    val maxNameLines = if (nameWraps && nameLineH * 2 <= textAreaHeight) 2 else 1
+    drawMultilineText(
+      text = marker.place.name,
+      textPaint = titleTextPaint,
+      width = textEllipsisWidth.toInt().coerceAtLeast(1),
+      x = textLeft,
+      y = textAreaTop,
+      ellipsize = TextUtils.TruncateAt.END,
+      maxLines = maxNameLines,
+    )
+    var consumedHeight = nameLineH * maxNameLines
+
+    // ── Tourism / leisure type (lower priority) ──────────────────────────
+    val tourismText = marker.place.tourismOrLeisure
+    if (tourismText != null && consumedHeight + tourismLineH <= textAreaHeight) {
+      val ellipsized =
+        TextUtils.ellipsize(
+          tourismText,
+          tourismTextPaint,
+          textEllipsisWidth,
+          TextUtils.TruncateAt.END,
+        )
+      // Convert top-of-line offset to Canvas baseline (ascent is negative).
+      val baseline = textAreaTop + consumedHeight - tourismTextPaint.fontMetrics.ascent
+      drawText(ellipsized, 0, ellipsized.length, textLeft, baseline, tourismTextPaint)
+      consumedHeight += tourismLineH
+    }
+
+    // ── Address (lowest priority) ────────────────────────────────────────
+    val addressText = marker.place.formattedAddress
+    if (addressText != null && consumedHeight + addressLineH <= textAreaHeight) {
+      val ellipsized =
+        TextUtils.ellipsize(
+          addressText,
+          addressTextPaint,
+          textEllipsisWidth,
+          TextUtils.TruncateAt.END,
+        )
+      val baseline = textAreaTop + consumedHeight - addressTextPaint.fontMetrics.ascent
+      drawText(ellipsized, 0, ellipsized.length, textLeft, baseline, addressTextPaint)
+    }
+  }
+
+  // ── Instance state ────────────────────────────────────────────────────────
 
   internal fun onSaveInstanceState(): Bundle =
     Bundle().apply {
@@ -333,36 +484,6 @@ class ARMarkerRenderer(private val context: Context) {
   }
 
   private fun normalizeBearing(bearing: Float): Float = (bearing + 360f) % 360f
-
-  private fun Canvas.drawTitleText(marker: ARMarker, rectF: RectF) {
-    drawMultilineText(
-      text = marker.place.name,
-      textPaint = titleTextPaint,
-      width = (rectF.width() - MARKER_PADDING_DP * 2 - ELLIPSIS_WIDTH_PX).toInt(),
-      x = marker.x - markerWidthPx / 2 + markerPaddingPx,
-      y = marker.y - markerHeightPx / 2 + markerPaddingPx,
-      ellipsize = TextUtils.TruncateAt.END,
-      maxLines = 2,
-    )
-  }
-
-  private fun Canvas.drawDistanceText(marker: ARMarker, rectF: RectF) {
-    val distance =
-      TextUtils.ellipsize(
-        marker.formattedDistance(),
-        distanceTextPaint,
-        rectF.width() - MARKER_PADDING_DP * 2 - ELLIPSIS_WIDTH_PX,
-        TextUtils.TruncateAt.END,
-      )
-    drawText(
-      distance,
-      0,
-      distance.length,
-      marker.x - markerWidthPx / 2 + markerPaddingPx,
-      marker.y + markerHeightPx / 2 - markerPaddingPx,
-      distanceTextPaint,
-    )
-  }
 
   private fun ARMarker.formattedDistance(): String =
     if (distance >= 1_000) "${(distance / 1_000).roundToDecimalPlaces(1)} km"
@@ -421,9 +542,20 @@ class ARMarkerRenderer(private val context: Context) {
 
     private const val MARKER_PADDING_DP = 16f
     private const val ELLIPSIS_WIDTH_PX = 10f
-    private const val MARKER_TITLE_TEXT_SIZE_SP = 16f
-    private const val MARKER_DISTANCE_TEXT_SIZE_SP = 14f
+
+    // Text sizes for the three right-column labels.
+    private const val MARKER_TITLE_TEXT_SIZE_SP = 16f // name — primary, bold
+    private const val MARKER_DISTANCE_TEXT_SIZE_SP = 14f // distance — inside left box
+    private const val MARKER_TOURISM_TEXT_SIZE_SP = 13f // tourism/leisure — secondary
+    private const val MARKER_ADDRESS_TEXT_SIZE_SP = 11f // address — tertiary
+
     private const val MARKER_RECT_F_CORNER_RADIUS_DP = 16f
+
+    // The left distance box must be at least this tall (= wide, it's square) to keep
+    // the distance text readable. Mirrors the 64dp Surface in PlaceListItem, scaled
+    // down slightly to fit inside the AR marker's inner height.
+    private const val MIN_LEFT_BOX_SIZE_DP = 48f
+
     private const val LOCATION_REASSIGN_THRESHOLD_METERS = 10f
   }
 }
