@@ -57,6 +57,7 @@ import com.trm.sightline.core.common.R as commonR
 import com.trm.sightline.core.common.util.rememberBottomSheetScaffoldStateForScreenHeight
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
+import com.trm.sightline.core.ui.icon
 import com.trm.sightline.core.ui.rememberBottomSheetExpandedProgress
 
 @OptIn(ExperimentalSharedTransitionApi::class, ExperimentalMaterial3Api::class)
@@ -206,7 +207,7 @@ private fun SharedTransitionScope.PlaceCategoryHeader(
       ) {
         Box(contentAlignment = Alignment.Center) {
           Icon(
-            imageVector = Icons.Default.Place,
+            imageVector = category.icon,
             contentDescription = null,
             modifier = Modifier.size(32.dp),
             tint = MaterialTheme.colorScheme.onSurface,

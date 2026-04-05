@@ -33,6 +33,7 @@ dependencies {
   implementation(project(":core:ar"))
   implementation(project(":core:common"))
   implementation(project(":core:model"))
+  implementation(project(":core:ui"))
 
   implementation(libs.androidx.core.ktx)
   implementation(libs.androidx.appcompat)
