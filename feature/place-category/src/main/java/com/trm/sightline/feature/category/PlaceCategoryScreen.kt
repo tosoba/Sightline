@@ -4,7 +4,6 @@ import android.location.Location
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -29,11 +28,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.text.BasicText
-import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -54,10 +50,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.trm.sightline.core.ar.util.sideSheetWidthDp
 import com.trm.sightline.core.common.R as commonR
 import com.trm.sightline.core.common.util.formattedAddress
@@ -267,54 +262,31 @@ private fun PlaceListItem(place: Place, location: Location?) {
       modifier = Modifier.size(64.dp),
     ) {
       Box(contentAlignment = Alignment.Center) {
-        if (location != null) {
-          BasicText(
-            text =
-              remember(place, location) {
-                location
-                  .distanceTo(
-                    Location("").apply {
-                      latitude = place.latitude
-                      longitude = place.longitude
-                    }
-                  )
-                  .formattedDistance()
-              },
-            style =
-              MaterialTheme.typography.labelLarge.copy(
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-              ),
-            autoSize = TextAutoSize.StepBased(minFontSize = 10.sp, maxFontSize = 14.sp),
-            modifier = Modifier.padding(4.dp).basicMarquee(iterations = Int.MAX_VALUE),
-          )
-        } else {
-          Icon(
-            imageVector = Icons.Default.Place,
-            contentDescription = null,
-            modifier = Modifier.padding(16.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-          )
-        }
+        Text(
+          text = place.name.placeInitials(),
+          style = MaterialTheme.typography.titleLarge,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
       }
     }
 
     Spacer(modifier = Modifier.width(16.dp))
 
     Column {
+      val displayName =
+        remember(place) {
+          buildString {
+            append(place.name)
+            place.tourismOrLeisure?.let { append(" · $it") }
+          }
+        }
       Text(
-        text = place.name,
+        text = displayName,
         style = MaterialTheme.typography.titleMedium,
         color = MaterialTheme.colorScheme.onSurface,
+        maxLines = 2,
+        overflow = TextOverflow.Ellipsis,
       )
-
-      place.tourismOrLeisure?.let {
-        Text(
-          text = it,
-          style = MaterialTheme.typography.bodyMedium,
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-      }
 
       place.formattedAddress?.let {
         Text(
@@ -323,6 +295,33 @@ private fun PlaceListItem(place: Place, location: Location?) {
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
       }
+
+      if (location != null) {
+        Text(
+          text =
+            remember(place, location) {
+              location
+                .distanceTo(
+                  Location("").apply {
+                    latitude = place.latitude
+                    longitude = place.longitude
+                  }
+                )
+                .formattedDistance()
+            },
+          style = MaterialTheme.typography.labelLarge,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+      }
     }
+  }
+}
+
+private fun String.placeInitials(): String {
+  val words = trim().split(Regex("\\s+")).filter { it.isNotEmpty() }
+  return when {
+    words.isEmpty() -> "?"
+    words.size >= 2 -> "${words[0].first()}${words[1].first()}".uppercase()
+    else -> words[0].first().toString().uppercase()
   }
 }

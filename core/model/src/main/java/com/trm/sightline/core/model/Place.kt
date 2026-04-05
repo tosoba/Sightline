@@ -9,6 +9,7 @@ data class Place(
   val name: String,
   val latitude: Double,
   val longitude: Double,
+  val category: PlaceCategory,
   val tags: Map<String, String>,
 ) {
   override fun equals(other: Any?): Boolean = this === other || (other is Place && other.id == id)

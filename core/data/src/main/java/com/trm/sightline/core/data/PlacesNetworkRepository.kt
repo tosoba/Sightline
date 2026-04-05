@@ -36,6 +36,7 @@ class PlacesNetworkRepository @Inject constructor(private val overpassApi: Overp
           name = requireNotNull(node.tags["name"]),
           latitude = node.lat,
           longitude = node.lon,
+          category = category,
           tags = node.tags.orEmpty(),
         )
       }
