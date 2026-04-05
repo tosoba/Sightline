@@ -60,8 +60,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.trm.sightline.core.ar.util.sideSheetWidthDp
 import com.trm.sightline.core.common.R as commonR
+import com.trm.sightline.core.common.util.formattedAddress
 import com.trm.sightline.core.common.util.formattedDistance
 import com.trm.sightline.core.common.util.rememberBottomSheetScaffoldStateForScreenHeight
+import com.trm.sightline.core.common.util.tourismOrLeisure
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
 import com.trm.sightline.core.ui.icon
@@ -306,30 +308,17 @@ private fun PlaceListItem(place: Place, location: Location?) {
         color = MaterialTheme.colorScheme.onSurface,
       )
 
-      val tourismOrLeisure = place.tags["tourism"] ?: place.tags["leisure"]
-      if (tourismOrLeisure != null) {
+      place.tourismOrLeisure?.let {
         Text(
-          text = tourismOrLeisure.replace('_', ' ').replaceFirstChar(Char::uppercase),
+          text = it,
           style = MaterialTheme.typography.bodyMedium,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
       }
 
-      val address =
-        remember(place.tags) {
-          listOfNotNull(
-              listOfNotNull(place.tags["addr:housenumber"], place.tags["addr:street"])
-                .joinToString(" ")
-                .takeIf(String::isNotBlank),
-              place.tags["addr:unit"]?.let { "Unit $it" },
-              place.tags["addr:city"],
-              listOfNotNull(place.tags["addr:state"], place.tags["addr:postcode"]).joinToString(" "),
-            )
-            .joinToString(", ")
-        }
-      if (address.isNotBlank()) {
+      place.formattedAddress?.let {
         Text(
-          text = address,
+          text = it,
           style = MaterialTheme.typography.bodySmall,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
