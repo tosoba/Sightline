@@ -281,7 +281,7 @@ class ARMarkerRenderer(private val context: Context) {
       povLocation?.let { reassignSlots(it, canvas.width, canvas.height) }
     }
 
-    val drawnRects = mutableListOf<RoundedRectF>()
+    val drawnRectFs = mutableListOf<RoundedRectF>()
     val renderedMarkerIds = HashSet<Long>()
     var maxPageThisFrame = 0
     var currentPageAfterScreenRotation = Int.MAX_VALUE
@@ -315,7 +315,7 @@ class ARMarkerRenderer(private val context: Context) {
       canvas.drawRoundRect(markerRectF, cornerRadiusPx, cornerRadiusPx, borderPaint)
       canvas.drawMarkerContent(marker, markerRectF)
 
-      drawnRects.add(RoundedRectF(markerRectF, cornerRadiusPx))
+      drawnRectFs.add(RoundedRectF(markerRectF, cornerRadiusPx))
     }
 
     maxPage = maxPageThisFrame
@@ -327,7 +327,7 @@ class ARMarkerRenderer(private val context: Context) {
 
     lastDrawnMarkerIds = renderedMarkerIds
     _markersPagingState.value = MarkersPagingState(currentPage, maxPage)
-    _drawnMarkerRectFs.value = drawnRects
+    _drawnMarkerRectFs.value = drawnRectFs
     firstFrame = false
   }
 
@@ -411,7 +411,9 @@ class ARMarkerRenderer(private val context: Context) {
     val consumedHeight = nameLineH * maxNameLines
 
     // Distance — drawn below the name when vertical space remains.
-    if (consumedHeight + distLineH <= textAreaHeight) {
+    // NAME_DISTANCE_GAP_DP adds a small breathing gap so the two labels don't feel cramped.
+    val nameDistanceGapPx = context.dpToPx(NAME_DISTANCE_GAP_DP)
+    if (consumedHeight + nameDistanceGapPx + distLineH <= textAreaHeight) {
       val ellipsized =
         TextUtils.ellipsize(
           marker.formattedDistance(),
@@ -420,7 +422,8 @@ class ARMarkerRenderer(private val context: Context) {
           TextUtils.TruncateAt.END,
         )
       // Convert top-of-line to Canvas baseline (fontMetrics.ascent is negative).
-      val baseline = textAreaTop + consumedHeight - distanceLabelPaint.fontMetrics.ascent
+      val baseline =
+        textAreaTop + consumedHeight + nameDistanceGapPx - distanceLabelPaint.fontMetrics.ascent
       drawText(ellipsized, 0, ellipsized.length, textLeft, baseline, distanceLabelPaint)
     }
   }
@@ -464,7 +467,7 @@ class ARMarkerRenderer(private val context: Context) {
    * Converts Compose [PathNode] path data to an [android.graphics.Path].
    *
    * All 19 SVG path command variants are handled. For SVG arc commands, the standard endpoint →
-   * center parameterisation (SVG spec §B.2.4) is used to produce an Android `arcTo` call. Rotated
+   * center parameterization (SVG spec §B.2.4) is used to produce an Android `arcTo` call. Rotated
    * arcs (xRotation ≠ 0) fall back to a straight line; Material Icons do not use them.
    *
    * Reflective curve/quad commands track the previous control point so that the reflection is
@@ -670,8 +673,8 @@ class ARMarkerRenderer(private val context: Context) {
   }
 
   /**
-   * Converts an SVG arc (endpoint parameterisation) to an Android [android.graphics.Path.arcTo]
-   * call using the standard centre-parameterisation derivation from SVG spec §B.2.4.
+   * Converts an SVG arc (endpoint parameterization) to an Android [android.graphics.Path.arcTo]
+   * call using the standard center-parameterization derivation from SVG spec §B.2.4.
    *
    * Rotated arcs (xRotation ≠ 0) are extremely rare in Material Icons and fall back to a straight
    * line — implementing canvas-rotation for baked paths would require decomposing into cubic
@@ -719,7 +722,7 @@ class ARMarkerRenderer(private val context: Context) {
     val rxSq = rxD * rxD
     val rySq = ryD * ryD
 
-    // Centre in the rotated frame (cx', cy')
+    // Center in the rotated frame (cx', cy')
     val num = rxSq * rySq - rxSq * y1pSq - rySq * x1pSq
     val den = rxSq * y1pSq + rySq * x1pSq
     val sq = if (den == 0.0) 0.0 else sqrt(maxOf(0.0, num / den))
@@ -828,6 +831,10 @@ class ARMarkerRenderer(private val context: Context) {
     private const val MARKER_PADDING_DP = 16f
     private const val ELLIPSIS_WIDTH_PX = 10f
 
+    // Extra vertical gap inserted between the name block and the distance label.
+    // Keeps the two from feeling cramped without pushing distance out of short markers.
+    private const val NAME_DISTANCE_GAP_DP = 2f
+
     // Text sizes: title matches PlaceListItem's titleMedium (16sp);
     // distance uses the same size as labelLarge (14sp).
     private const val MARKER_TITLE_TEXT_SIZE_SP = 16f
@@ -835,7 +842,7 @@ class ARMarkerRenderer(private val context: Context) {
 
     private const val MARKER_RECT_F_CORNER_RADIUS_DP = 16f
 
-    // Left icon box must be at least this tall so the icon is recognisable.
+    // Left icon box must be at least this tall so the icon is recognizable.
     // Mirrors the 64dp Surface in PlaceListItem, scaled down for the AR context.
     private const val MIN_LEFT_BOX_SIZE_DP = 48f
 
