@@ -45,6 +45,7 @@ class MainActivity : ComponentActivity() {
           viewModel.customLocationSearchResults.collectAsStateWithLifecycle()
         val lastMapPosition by viewModel.lastMapPosition.collectAsStateWithLifecycle()
         val errorMessage by viewModel.errorMessage.collectAsStateWithLifecycle()
+        val searchRadius by viewModel.searchRadius.collectAsStateWithLifecycle()
 
         val currentLocation =
           remember(userLocationEnabled, viewModel.userLocation, viewModel.customLocation) {
@@ -70,6 +71,7 @@ class MainActivity : ComponentActivity() {
                     isUserLocationEnabled = userLocationEnabled,
                     lastMapPosition = lastMapPosition,
                     errorMessage = errorMessage,
+                    searchRadius = searchRadius,
                     animatedVisibilityScope = LocalNavAnimatedContentScope.current,
                     onUserLocationEnabledChange = viewModel::setUserLocationEnabled,
                     onCustomLocationAddressChange = viewModel::setCustomLocationAddress,
@@ -80,6 +82,7 @@ class MainActivity : ComponentActivity() {
                       backStack.add(PlaceCategoryRoute(category, places))
                     },
                     onMapPositionChanged = viewModel::saveMapPosition,
+                    onSearchRadiusChange = viewModel::setSearchRadius,
                   )
                 }
                 entry<PlaceCategoryRoute> { route ->

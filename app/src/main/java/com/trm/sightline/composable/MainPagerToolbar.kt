@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
@@ -15,7 +16,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingToolbarHorizontalFabPosition
@@ -27,11 +31,16 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalFloatingToolbar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import com.trm.sightline.MainPage
 import com.trm.sightline.core.ar.util.collapsedBottomSheetContentHeightDp
@@ -43,8 +52,9 @@ fun BoxScope.MainPagerToolbar(
   visible: Boolean,
   isCompactHeight: Boolean,
   selectedPage: MainPage,
+  searchRadius: Int,
   onPageSelected: (MainPage) -> Unit,
-  onSettingsClick: () -> Unit,
+  onSearchRadiusChange: (Int) -> Unit,
 ) {
   val toolbarContent =
     @Composable { showLabel: Boolean ->
@@ -87,7 +97,12 @@ fun BoxScope.MainPagerToolbar(
       VerticalFloatingToolbar(
         expanded = true,
         floatingActionButtonPosition = FloatingToolbarVerticalFabPosition.Top,
-        floatingActionButton = { SettingsFloatingActionButton(onSettingsClick) },
+        floatingActionButton = {
+          SettingsFloatingActionButton(
+            searchRadius = searchRadius,
+            onSearchRadiusChange = onSearchRadiusChange,
+          )
+        },
       ) {
         toolbarContent(false)
       }
@@ -95,7 +110,12 @@ fun BoxScope.MainPagerToolbar(
       HorizontalFloatingToolbar(
         expanded = true,
         floatingActionButtonPosition = FloatingToolbarHorizontalFabPosition.Start,
-        floatingActionButton = { SettingsFloatingActionButton(onSettingsClick) },
+        floatingActionButton = {
+          SettingsFloatingActionButton(
+            searchRadius = searchRadius,
+            onSearchRadiusChange = onSearchRadiusChange,
+          )
+        },
       ) {
         toolbarContent(true)
       }
@@ -104,9 +124,38 @@ fun BoxScope.MainPagerToolbar(
 }
 
 @Composable
-private fun SettingsFloatingActionButton(onClick: () -> Unit) {
-  FloatingActionButton(onClick = onClick) {
-    Icon(imageVector = Icons.Default.Settings, contentDescription = null)
+private fun SettingsFloatingActionButton(searchRadius: Int, onSearchRadiusChange: (Int) -> Unit) {
+  var menuExpanded by remember { mutableStateOf(false) }
+
+  Box {
+    FloatingActionButton(onClick = { menuExpanded = !menuExpanded }) {
+      Icon(imageVector = Icons.Default.Settings, contentDescription = null)
+    }
+
+    DropdownMenu(
+      expanded = menuExpanded,
+      onDismissRequest = { menuExpanded = false },
+      offset = DpOffset(x = 0.dp, y = (-16).dp),
+    ) {
+      listOf(500, 1000, 2000, 5000).forEach { radius ->
+        DropdownMenuItem(
+          text = {
+            val label = if (radius >= 1000) "${radius / 1000}km" else "${radius}m"
+            Text(label)
+          },
+          onClick = {
+            onSearchRadiusChange(radius)
+            menuExpanded = false
+          },
+          trailingIcon =
+            if (searchRadius == radius) {
+              { Icon(Icons.Default.Check, contentDescription = null) }
+            } else {
+              null
+            },
+        )
+      }
+    }
   }
 }
 

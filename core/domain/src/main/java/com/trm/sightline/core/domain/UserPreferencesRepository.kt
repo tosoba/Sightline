@@ -16,4 +16,8 @@ interface UserPreferencesRepository {
   suspend fun setUserLocationEnabled(userLocationEnabled: Boolean)
 
   suspend fun setLastMapPosition(position: MapCameraPosition)
+
+  fun getSearchRadius(): Flow<Int>
+
+  suspend fun setSearchRadius(radius: Int)
 }

@@ -87,4 +87,15 @@ class UserPreferencesLocalRepository(private val userPreferencesStore: DataStore
         .build()
     }
   }
+
+  override fun getSearchRadius(): Flow<Int> =
+    userPreferencesStore.data.map { preferences ->
+      if (preferences.hasSearchRadius()) preferences.searchRadius else 1000
+    }
+
+  override suspend fun setSearchRadius(radius: Int) {
+    userPreferencesStore.updateData { preferences ->
+      preferences.toBuilder().setSearchRadius(radius).build()
+    }
+  }
 }

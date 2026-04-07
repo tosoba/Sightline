@@ -93,6 +93,7 @@ fun SharedTransitionScope.MainScreen(
   isUserLocationEnabled: Boolean,
   lastMapPosition: MapCameraPosition?,
   errorMessage: Int?,
+  searchRadius: Int,
   animatedVisibilityScope: AnimatedVisibilityScope,
   onUserLocationEnabledChange: (Boolean) -> Unit,
   onCustomLocationAddressChange: (String) -> Unit,
@@ -100,6 +101,7 @@ fun SharedTransitionScope.MainScreen(
   onTogglePlaceCategory: (PlaceCategory) -> Unit,
   onCategoryClick: (PlaceCategory, List<Place>) -> Unit,
   onMapPositionChanged: (MapCameraPosition) -> Unit,
+  onSearchRadiusChange: (Int) -> Unit,
 ) {
   val context = LocalContext.current
   val scope = rememberCoroutineScope()
@@ -398,10 +400,11 @@ fun SharedTransitionScope.MainScreen(
             toolbarsVisible && (isCompactHeight || sheetState.targetValue != SheetValue.Expanded),
           isCompactHeight = isCompactHeight,
           selectedPage = selectedPage,
+          searchRadius = searchRadius,
           onPageSelected = { page ->
             scope.launch { pagerState.animateScrollToPage(page.ordinal) }
           },
-          onSettingsClick = {},
+          onSearchRadiusChange = onSearchRadiusChange,
         )
 
         if (isCompactHeight) {

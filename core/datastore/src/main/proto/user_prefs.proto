@@ -14,4 +14,5 @@ message UserPreferences {
   optional double last_map_zoom = 8;
   optional double last_map_bearing = 9;
   optional double last_map_tilt = 10;
+  optional int32 search_radius = 11;
 }

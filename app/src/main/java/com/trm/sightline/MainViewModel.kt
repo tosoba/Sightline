@@ -90,6 +90,15 @@ constructor(
         initialValue = null,
       )
 
+  val searchRadius: StateFlow<Int> =
+    userPreferencesRepository
+      .getSearchRadius()
+      .stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = 1000,
+      )
+
   var userLocation: Location? by mutableStateOf(null)
     private set
 
@@ -217,7 +226,7 @@ constructor(
                       category = category,
                       latitude = location.latitude,
                       longitude = location.longitude,
-                      radiusMeters = 1_000f,
+                      radiusMeters = searchRadius.value.toFloat(),
                     )
                     .sortedBy { location.distanceTo(it.location) }
                 )
@@ -270,6 +279,10 @@ constructor(
 
   fun saveMapPosition(position: MapCameraPosition) {
     viewModelScope.launch { mapPositionUpdates.emit(position) }
+  }
+
+  fun setSearchRadius(radius: Int) {
+    viewModelScope.launch { userPreferencesRepository.setSearchRadius(radius) }
   }
 
   companion object {
