@@ -816,7 +816,7 @@ class ARMarkerRenderer(private val context: Context) {
 
   companion object {
     private const val MARKER_VERTICAL_SPACING_PX = 50f
-    private const val LINE_HEIGHT_MULTIPLIER = 1.2f
+    private const val LINE_HEIGHT_MULTIPLIER = 1.1f
 
     private const val MIN_ROWS = 1
     private const val MAX_ROWS = 6
@@ -828,17 +828,15 @@ class ARMarkerRenderer(private val context: Context) {
     private const val MARKER_OVERLAP_GUARD_FRACTION = 0.5f
     private const val MAX_EXPECTED_ROLL_RADIANS = Math.PI / 6
 
-    private const val MARKER_PADDING_DP = 16f
+    private const val MARKER_PADDING_DP = 12f
     private const val ELLIPSIS_WIDTH_PX = 10f
 
     // Extra vertical gap inserted between the name block and the distance label.
     // Keeps the two from feeling cramped without pushing distance out of short markers.
-    private const val NAME_DISTANCE_GAP_DP = 2f
+    private const val NAME_DISTANCE_GAP_DP = 4f
 
-    // Text sizes: title matches PlaceListItem's titleMedium (16sp);
-    // distance uses the same size as labelLarge (14sp).
-    private const val MARKER_TITLE_TEXT_SIZE_SP = 16f
-    private const val MARKER_DISTANCE_TEXT_SIZE_SP = 14f
+    private const val MARKER_TITLE_TEXT_SIZE_SP = 14f
+    private const val MARKER_DISTANCE_TEXT_SIZE_SP = 12f
 
     private const val MARKER_RECT_F_CORNER_RADIUS_DP = 16f
 
