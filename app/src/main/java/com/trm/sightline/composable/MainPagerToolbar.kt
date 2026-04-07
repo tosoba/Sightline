@@ -14,7 +14,12 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingToolbarHorizontalFabPosition
+import androidx.compose.material3.FloatingToolbarVerticalFabPosition
 import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -39,6 +44,7 @@ fun BoxScope.MainPagerToolbar(
   isCompactHeight: Boolean,
   selectedPage: MainPage,
   onPageSelected: (MainPage) -> Unit,
+  onSettingsClick: () -> Unit,
 ) {
   val toolbarContent =
     @Composable { showLabel: Boolean ->
@@ -78,10 +84,29 @@ fun BoxScope.MainPagerToolbar(
       },
   ) {
     if (isCompactHeight) {
-      VerticalFloatingToolbar(expanded = true, content = { toolbarContent(false) })
+      VerticalFloatingToolbar(
+        expanded = true,
+        floatingActionButtonPosition = FloatingToolbarVerticalFabPosition.Top,
+        floatingActionButton = { SettingsFloatingActionButton(onSettingsClick) },
+      ) {
+        toolbarContent(false)
+      }
     } else {
-      HorizontalFloatingToolbar(expanded = true, content = { toolbarContent(true) })
+      HorizontalFloatingToolbar(
+        expanded = true,
+        floatingActionButtonPosition = FloatingToolbarHorizontalFabPosition.Start,
+        floatingActionButton = { SettingsFloatingActionButton(onSettingsClick) },
+      ) {
+        toolbarContent(true)
+      }
     }
+  }
+}
+
+@Composable
+private fun SettingsFloatingActionButton(onClick: () -> Unit) {
+  FloatingActionButton(onClick = onClick) {
+    Icon(imageVector = Icons.Default.Settings, contentDescription = null)
   }
 }
 

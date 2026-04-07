@@ -63,6 +63,7 @@ import com.trm.sightline.composable.MainScreenErrorMessage
 import com.trm.sightline.core.ar.util.collapsedBottomSheetContentHeightDp
 import com.trm.sightline.core.ar.util.sideSheetWidthDp
 import com.trm.sightline.core.common.PermissionStatus
+import com.trm.sightline.core.common.R as commonR
 import com.trm.sightline.core.common.rememberPermissionState
 import com.trm.sightline.core.common.util.CheckLocationSettingsResult
 import com.trm.sightline.core.common.util.checkLocationSettings
@@ -77,7 +78,6 @@ import com.trm.sightline.core.ui.rememberBottomSheetExpandedProgress
 import com.trm.sightline.feature.places.PlacesContent
 import com.trm.sightline.feature.places.PlacesLayout
 import kotlinx.coroutines.launch
-import com.trm.sightline.core.common.R as commonR
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -398,7 +398,10 @@ fun SharedTransitionScope.MainScreen(
             toolbarsVisible && (isCompactHeight || sheetState.targetValue != SheetValue.Expanded),
           isCompactHeight = isCompactHeight,
           selectedPage = selectedPage,
-          onPageSelected = { page -> scope.launch { pagerState.animateScrollToPage(page.ordinal) } },
+          onPageSelected = { page ->
+            scope.launch { pagerState.animateScrollToPage(page.ordinal) }
+          },
+          onSettingsClick = {},
         )
 
         if (isCompactHeight) {
