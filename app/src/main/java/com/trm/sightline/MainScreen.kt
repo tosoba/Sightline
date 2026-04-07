@@ -74,6 +74,7 @@ import com.trm.sightline.core.model.LoadingState
 import com.trm.sightline.core.model.MapCameraPosition
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
+import com.trm.sightline.core.model.PlaceSearchRadius
 import com.trm.sightline.core.ui.rememberBottomSheetExpandedProgress
 import com.trm.sightline.feature.places.PlacesContent
 import com.trm.sightline.feature.places.PlacesLayout
@@ -93,7 +94,7 @@ fun SharedTransitionScope.MainScreen(
   isUserLocationEnabled: Boolean,
   lastMapPosition: MapCameraPosition?,
   errorMessage: Int?,
-  searchRadius: Int,
+  searchRadius: PlaceSearchRadius,
   animatedVisibilityScope: AnimatedVisibilityScope,
   onUserLocationEnabledChange: (Boolean) -> Unit,
   onCustomLocationAddressChange: (String) -> Unit,
@@ -101,7 +102,7 @@ fun SharedTransitionScope.MainScreen(
   onTogglePlaceCategory: (PlaceCategory) -> Unit,
   onCategoryClick: (PlaceCategory, List<Place>) -> Unit,
   onMapPositionChanged: (MapCameraPosition) -> Unit,
-  onSearchRadiusChange: (Int) -> Unit,
+  onSearchRadiusChange: (PlaceSearchRadius) -> Unit,
 ) {
   val context = LocalContext.current
   val scope = rememberCoroutineScope()

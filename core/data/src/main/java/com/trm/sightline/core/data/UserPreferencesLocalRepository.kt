@@ -5,6 +5,7 @@ import com.trm.sightline.core.datastore.UserPreferences
 import com.trm.sightline.core.domain.UserPreferencesRepository
 import com.trm.sightline.core.model.CustomLocation
 import com.trm.sightline.core.model.MapCameraPosition
+import com.trm.sightline.core.model.PlaceSearchRadius
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -88,14 +89,15 @@ class UserPreferencesLocalRepository(private val userPreferencesStore: DataStore
     }
   }
 
-  override fun getSearchRadius(): Flow<Int> =
+  override fun getSearchRadius(): Flow<PlaceSearchRadius> =
     userPreferencesStore.data.map { preferences ->
-      if (preferences.hasSearchRadius()) preferences.searchRadius else 1000
+      if (preferences.hasSearchRadius()) PlaceSearchRadius.fromMeters(preferences.searchRadius)
+      else PlaceSearchRadius.OneKilometer
     }
 
-  override suspend fun setSearchRadius(radius: Int) {
+  override suspend fun setSearchRadius(radius: PlaceSearchRadius) {
     userPreferencesStore.updateData { preferences ->
-      preferences.toBuilder().setSearchRadius(radius).build()
+      preferences.toBuilder().setSearchRadius(radius.meters).build()
     }
   }
 }

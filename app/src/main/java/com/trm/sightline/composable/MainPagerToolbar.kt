@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import com.trm.sightline.MainPage
 import com.trm.sightline.core.ar.util.collapsedBottomSheetContentHeightDp
 import com.trm.sightline.core.ar.util.collapsedBottomSheetDragHandleHeightDp
+import com.trm.sightline.core.model.PlaceSearchRadius
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -52,9 +53,9 @@ fun BoxScope.MainPagerToolbar(
   visible: Boolean,
   isCompactHeight: Boolean,
   selectedPage: MainPage,
-  searchRadius: Int,
+  searchRadius: PlaceSearchRadius,
   onPageSelected: (MainPage) -> Unit,
-  onSearchRadiusChange: (Int) -> Unit,
+  onSearchRadiusChange: (PlaceSearchRadius) -> Unit,
 ) {
   val toolbarContent =
     @Composable { showLabel: Boolean ->
@@ -124,7 +125,10 @@ fun BoxScope.MainPagerToolbar(
 }
 
 @Composable
-private fun SettingsFloatingActionButton(searchRadius: Int, onSearchRadiusChange: (Int) -> Unit) {
+private fun SettingsFloatingActionButton(
+  searchRadius: PlaceSearchRadius,
+  onSearchRadiusChange: (PlaceSearchRadius) -> Unit,
+) {
   var menuExpanded by remember { mutableStateOf(false) }
 
   Box {
@@ -137,10 +141,11 @@ private fun SettingsFloatingActionButton(searchRadius: Int, onSearchRadiusChange
       onDismissRequest = { menuExpanded = false },
       offset = DpOffset(x = 0.dp, y = (-16).dp),
     ) {
-      listOf(500, 1000, 2000, 5000).forEach { radius ->
+      PlaceSearchRadius.entries.forEach { radius ->
         DropdownMenuItem(
           text = {
-            val label = if (radius >= 1000) "${radius / 1000}km" else "${radius}m"
+            val label =
+              if (radius.meters >= 1000) "${radius.meters / 1000}km" else "${radius.meters}m"
             Text(label)
           },
           onClick = {

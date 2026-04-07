@@ -22,6 +22,7 @@ import com.trm.sightline.core.model.LoadingState
 import com.trm.sightline.core.model.MapCameraPosition
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
+import com.trm.sightline.core.model.PlaceSearchRadius
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.concurrent.atomic.AtomicLong
 import javax.inject.Inject
@@ -90,13 +91,13 @@ constructor(
         initialValue = null,
       )
 
-  val searchRadius: StateFlow<Int> =
+  val searchRadius: StateFlow<PlaceSearchRadius> =
     userPreferencesRepository
       .getSearchRadius()
       .stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = 1000,
+        initialValue = PlaceSearchRadius.OneKilometer,
       )
 
   var userLocation: Location? by mutableStateOf(null)
@@ -226,7 +227,7 @@ constructor(
                       category = category,
                       latitude = location.latitude,
                       longitude = location.longitude,
-                      radiusMeters = searchRadius.value.toFloat(),
+                      radiusMeters = searchRadius.value.meters.toFloat(),
                     )
                     .sortedBy { location.distanceTo(it.location) }
                 )
@@ -281,7 +282,7 @@ constructor(
     viewModelScope.launch { mapPositionUpdates.emit(position) }
   }
 
-  fun setSearchRadius(radius: Int) {
+  fun setSearchRadius(radius: PlaceSearchRadius) {
     viewModelScope.launch { userPreferencesRepository.setSearchRadius(radius) }
   }
 

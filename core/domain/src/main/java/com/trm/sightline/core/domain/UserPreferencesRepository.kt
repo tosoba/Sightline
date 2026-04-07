@@ -2,6 +2,7 @@ package com.trm.sightline.core.domain
 
 import com.trm.sightline.core.model.CustomLocation
 import com.trm.sightline.core.model.MapCameraPosition
+import com.trm.sightline.core.model.PlaceSearchRadius
 import kotlinx.coroutines.flow.Flow
 
 interface UserPreferencesRepository {
@@ -17,7 +18,7 @@ interface UserPreferencesRepository {
 
   suspend fun setLastMapPosition(position: MapCameraPosition)
 
-  fun getSearchRadius(): Flow<Int>
+  fun getSearchRadius(): Flow<PlaceSearchRadius>
 
-  suspend fun setSearchRadius(radius: Int)
+  suspend fun setSearchRadius(radius: PlaceSearchRadius)
 }
