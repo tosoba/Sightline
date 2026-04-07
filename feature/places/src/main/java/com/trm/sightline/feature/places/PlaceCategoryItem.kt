@@ -151,6 +151,7 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
                 )
                 .fillMaxHeight()
                 .heightIn(min = 72.dp)
+                .padding(8.dp)
                 .aspectRatio(1f),
           ) {
             PlaceCategoryItemIconLoadingState(
