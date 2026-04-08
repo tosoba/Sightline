@@ -1,6 +1,8 @@
 package com.trm.sightline.feature.category
 
+import android.content.Intent
 import android.location.Location
+import android.net.Uri
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.clickable
@@ -49,11 +51,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import com.trm.sightline.core.ar.util.sideSheetWidthDp
 import com.trm.sightline.core.common.R as commonR
 import com.trm.sightline.core.common.util.formattedAddress
@@ -312,7 +317,7 @@ private fun PlaceListItem(place: Place, location: Location?, onClick: () -> Unit
 
     Spacer(modifier = Modifier.width(16.dp))
 
-    Column {
+    Column(modifier = Modifier.weight(1f)) {
       val displayName =
         remember(place) {
           buildString {
@@ -353,6 +358,25 @@ private fun PlaceListItem(place: Place, location: Location?, onClick: () -> Unit
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
       }
+    }
+
+    val context = LocalContext.current
+    FilledTonalIconButton(
+      onClick = {
+        context.startActivity(
+          Intent(
+              Intent.ACTION_VIEW,
+              "geo:${place.latitude},${place.longitude}?q=${Uri.encode(place.name)}".toUri(),
+            )
+            .setPackage("com.google.android.apps.maps")
+        )
+      }
+    ) {
+      Icon(
+        painter = painterResource(R.drawable.google_maps),
+        contentDescription = stringResource(commonR.string.open_in_google_maps),
+        modifier = Modifier.size(24.dp),
+      )
     }
   }
 }

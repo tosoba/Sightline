@@ -7,4 +7,5 @@
     <string name="cancel">Cancel</string>
     <string name="back">Back</string>
     <string name="places_count">%1$d places</string>
+    <string name="open_in_google_maps">Open in Google Maps</string>
 </resources>
