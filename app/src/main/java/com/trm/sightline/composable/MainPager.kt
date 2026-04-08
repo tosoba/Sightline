@@ -31,8 +31,8 @@ import com.trm.sightline.core.ar.util.sideSheetRectF
 import com.trm.sightline.core.ar.util.sideSheetWidthDp
 import com.trm.sightline.core.model.MapCameraPosition
 import com.trm.sightline.core.model.Place
-import com.trm.sightline.feature.camera.CameraContent
 import com.trm.sightline.feature.camera.CameraPreviewPagePicker
+import com.trm.sightline.feature.camera.CameraScreen
 import com.trm.sightline.feature.map.MapScreen
 
 @Composable
@@ -58,8 +58,7 @@ fun MainPager(
   ) { page ->
     when (MainPage.entries[page]) {
       MainPage.Camera -> {
-        val context = LocalContext.current
-        CameraContent(
+        CameraScreen(
           previewEnabled =
             pagerState.currentPage == MainPage.Camera.ordinal && !cameraPreviewBlurred,
           previewBlurred = cameraPreviewBlurred,
@@ -67,10 +66,12 @@ fun MainPager(
           places = places,
           blurredRectFs =
             listOf(
-              RoundedRectF(
-                rectF = if (isCompactHeight) context.sideSheetRectF else context.bottomSheetRectF,
-                cornerRadius = if (isCompactHeight) 0f else context.dpToPx(64f),
-              )
+              with(LocalContext.current) {
+                RoundedRectF(
+                  rectF = if (isCompactHeight) sideSheetRectF else bottomSheetRectF,
+                  cornerRadius = if (isCompactHeight) 0f else dpToPx(64f),
+                )
+              }
             ),
           padding = contentPadding,
           cameraPermissionGranted = cameraPermissionGranted,

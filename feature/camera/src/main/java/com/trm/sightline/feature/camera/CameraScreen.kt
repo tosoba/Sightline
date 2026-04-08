@@ -14,7 +14,7 @@ import com.trm.sightline.core.ar.view.ARMarkerRenderer
 import com.trm.sightline.core.model.Place
 
 @Composable
-fun CameraContent(
+fun CameraScreen(
   previewEnabled: Boolean,
   previewBlurred: Boolean,
   location: Location?,
