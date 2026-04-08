@@ -1,7 +1,6 @@
 package com.trm.sightline.core.ui
 
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Man
 import androidx.compose.material3.MaterialTheme
@@ -42,9 +41,14 @@ import org.maplibre.spatialk.geojson.Point
 import org.maplibre.spatialk.geojson.Position
 
 @Composable
-fun MapPreview(cameraState: CameraState, placesBoundingBox: BoundingBox?, places: List<Place>) {
+fun MapPreview(
+  cameraState: CameraState,
+  placesBoundingBox: BoundingBox?,
+  places: List<Place>,
+  modifier: Modifier = Modifier,
+) {
   MaplibreMap(
-    modifier = Modifier.fillMaxSize(),
+    modifier = modifier,
     baseStyle =
       BaseStyle.Json(
         LocalResources.current

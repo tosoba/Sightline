@@ -5,6 +5,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FilterCenterFocus
@@ -38,8 +39,8 @@ fun MapScreen(
   places: List<Place>,
   padding: PaddingValues,
   modifier: Modifier = Modifier,
-  lastMapPosition: MapCameraPosition? = null,
-  onPause: ((MapCameraPosition) -> Unit)? = null,
+  lastMapPosition: MapCameraPosition?,
+  onPause: (MapCameraPosition) -> Unit,
 ) {
   val scope = rememberCoroutineScope()
 
@@ -83,26 +84,29 @@ fun MapScreen(
     }
   }
 
-  onPause?.let { action ->
-    LifecycleResumeEffect(Unit) {
-      onPauseOrDispose {
-        with(cameraState.position) {
-          action(
-            MapCameraPosition(
-              latitude = target.latitude,
-              longitude = target.longitude,
-              zoom = zoom,
-              bearing = bearing,
-              tilt = tilt,
-            )
+  LifecycleResumeEffect(Unit) {
+    onPauseOrDispose {
+      with(cameraState.position) {
+        onPause(
+          MapCameraPosition(
+            latitude = target.latitude,
+            longitude = target.longitude,
+            zoom = zoom,
+            bearing = bearing,
+            tilt = tilt,
           )
-        }
+        )
       }
     }
   }
 
   Box(modifier = modifier) {
-    MapPreview(cameraState = cameraState, placesBoundingBox = placesBoundingBox, places = places)
+    MapPreview(
+      cameraState = cameraState,
+      placesBoundingBox = placesBoundingBox,
+      places = places,
+      modifier = Modifier.fillMaxSize(),
+    )
 
     AnimatedVisibility(
       visible = showResetToPlacesBoundingBoxButton,

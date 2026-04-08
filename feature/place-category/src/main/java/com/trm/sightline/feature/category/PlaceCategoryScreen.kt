@@ -53,15 +53,19 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.trm.sightline.core.ar.util.sideSheetWidthDp
+import com.trm.sightline.core.common.R as commonR
 import com.trm.sightline.core.common.util.formattedAddress
 import com.trm.sightline.core.common.util.formattedDistance
 import com.trm.sightline.core.common.util.rememberBottomSheetScaffoldStateForScreenHeight
 import com.trm.sightline.core.common.util.tourismOrLeisure
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
+import com.trm.sightline.core.ui.MapCameraAnimateToPlacesBoundingBoxEffect
+import com.trm.sightline.core.ui.MapPreview
 import com.trm.sightline.core.ui.icon
 import com.trm.sightline.core.ui.rememberBottomSheetExpandedProgress
-import com.trm.sightline.core.common.R as commonR
+import com.trm.sightline.core.ui.rememberMapPlacesBoundingBox
+import org.maplibre.compose.camera.rememberCameraState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -71,7 +75,6 @@ fun SharedTransitionScope.PlaceCategoryScreen(
   isCompactHeight: Boolean,
   animatedVisibilityScope: AnimatedVisibilityScope,
   onBack: () -> Unit,
-  content: @Composable (PaddingValues) -> Unit,
 ) {
   val scaffoldState = rememberBottomSheetScaffoldStateForScreenHeight(isCompactHeight)
   val sheetState = scaffoldState.bottomSheetState
@@ -143,7 +146,7 @@ fun SharedTransitionScope.PlaceCategoryScreen(
       sheetContent = { sheetContent(sheetPeekHeight) },
     ) {
       Box(modifier = Modifier.fillMaxSize()) {
-        content(
+        val mapPadding =
           PaddingValues(
             bottom =
               if (isCompactHeight) {
@@ -156,6 +159,21 @@ fun SharedTransitionScope.PlaceCategoryScreen(
               },
             end = if (isCompactHeight) sideSheetWidthDp.dp else 0.dp,
           )
+        val placesBoundingBox =
+          rememberMapPlacesBoundingBox(places = route.places, percentageIncrease = 0.1)
+        val cameraState = rememberCameraState()
+
+        MapCameraAnimateToPlacesBoundingBoxEffect(
+          placesBoundingBox = placesBoundingBox,
+          padding = mapPadding,
+          cameraState = cameraState,
+        )
+
+        MapPreview(
+          cameraState = cameraState,
+          placesBoundingBox = placesBoundingBox,
+          places = route.places,
+          modifier = Modifier.fillMaxSize(),
         )
 
         FilledTonalIconButton(

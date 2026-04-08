@@ -41,6 +41,6 @@ dependencies {
   implementation(libs.androidx.compose.ui.tooling.preview)
 
   implementation(libs.kotlinx.serialization.json)
-  implementation(libs.maplibre.compose)
+  api(libs.maplibre.compose)
   implementation(libs.material)
 }
