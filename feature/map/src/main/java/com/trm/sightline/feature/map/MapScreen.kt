@@ -24,12 +24,13 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.trm.sightline.core.model.MapCameraPosition
 import com.trm.sightline.core.model.Place
+import com.trm.sightline.core.ui.MapCameraAnimateToPlacesBoundingBoxEffect
 import com.trm.sightline.core.ui.MapPreview
+import com.trm.sightline.core.ui.rememberMapPlacesBoundingBox
 import kotlin.math.abs
 import kotlinx.coroutines.launch
 import org.maplibre.compose.camera.CameraPosition
 import org.maplibre.compose.camera.rememberCameraState
-import org.maplibre.spatialk.geojson.BoundingBox
 import org.maplibre.spatialk.geojson.Position
 
 @Composable
@@ -42,7 +43,7 @@ fun MapScreen(
 ) {
   val scope = rememberCoroutineScope()
 
-  val placesBoundingBox = rememberPlacesBoundingBox(places = places, percentageIncrease = 0.1)
+  val placesBoundingBox = rememberMapPlacesBoundingBox(places = places, percentageIncrease = 0.1)
   val cameraState = rememberCameraState(firstPosition = CameraPosition(padding = padding))
   var initialPositionRestored by rememberSaveable { mutableStateOf(false) }
 
@@ -59,11 +60,11 @@ fun MapScreen(
           abs(cameraState.position.target.longitude - placesCenter.longitude) > 0.0001)
     }
 
-  LaunchedEffect(placesBoundingBox, padding) {
-    if (placesBoundingBox != null) {
-      cameraState.animateTo(boundingBox = placesBoundingBox, padding = padding)
-    }
-  }
+  MapCameraAnimateToPlacesBoundingBoxEffect(
+    placesBoundingBox = placesBoundingBox,
+    padding = padding,
+    cameraState = cameraState,
+  )
 
   if (placesBoundingBox == null && !initialPositionRestored) {
     LaunchedEffect(lastMapPosition, padding) {
@@ -123,29 +124,3 @@ fun MapScreen(
     }
   }
 }
-
-@Composable
-private fun rememberPlacesBoundingBox(
-  places: List<Place>,
-  percentageIncrease: Double = 0.0,
-): BoundingBox? =
-  remember(places, percentageIncrease) {
-    if (places.isEmpty()) return@remember null
-
-    val minLat = places.minOf(Place::latitude)
-    val maxLat = places.maxOf(Place::latitude)
-    val minLon = places.minOf(Place::longitude)
-    val maxLon = places.maxOf(Place::longitude)
-
-    val latDelta = maxLat - minLat
-    val lonDelta = maxLon - minLon
-
-    val paddingFactor = percentageIncrease / 2.0
-
-    BoundingBox(
-      west = minLon - lonDelta * paddingFactor,
-      south = minLat - latDelta * paddingFactor,
-      east = maxLon + lonDelta * paddingFactor,
-      north = maxLat + latDelta * paddingFactor,
-    )
-  }
