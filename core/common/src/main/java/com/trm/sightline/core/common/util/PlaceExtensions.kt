@@ -17,10 +17,16 @@ val Place.formattedAddress: String?
   get() =
     listOfNotNull(
         listOfNotNull(tags["addr:street"], tags["addr:housenumber"])
+          .filter(String::isNotBlank)
           .joinToString(" ")
           .takeIf(String::isNotBlank),
-        tags["addr:city"],
-        listOfNotNull(tags["addr:state"], tags["addr:postcode"]).joinToString(" "),
+        tags["addr:city"].takeUnless(String?::isNullOrBlank)?.trim(),
+        listOfNotNull(tags["addr:state"], tags["addr:postcode"])
+          .filter(String::isNotBlank)
+          .joinToString(" ")
+          .trim()
+          .takeIf(String::isNotBlank),
       )
       .joinToString(", ")
+      .trim()
       .takeIf(String::isNotBlank)

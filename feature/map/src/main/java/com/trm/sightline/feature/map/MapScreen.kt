@@ -72,7 +72,8 @@ fun MapScreen(
       if (lastMapPosition != null) {
         cameraState.animateTo(
           CameraPosition(
-            target = Position(lastMapPosition.longitude, lastMapPosition.latitude),
+            target =
+              Position(longitude = lastMapPosition.longitude, latitude = lastMapPosition.latitude),
             zoom = lastMapPosition.zoom,
             bearing = lastMapPosition.bearing,
             tilt = lastMapPosition.tilt,

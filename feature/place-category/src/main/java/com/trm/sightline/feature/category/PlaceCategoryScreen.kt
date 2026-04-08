@@ -3,6 +3,7 @@ package com.trm.sightline.feature.category
 import android.location.Location
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -43,6 +44,7 @@ import androidx.compose.material3.ToggleButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -65,7 +67,10 @@ import com.trm.sightline.core.ui.MapPreview
 import com.trm.sightline.core.ui.icon
 import com.trm.sightline.core.ui.rememberBottomSheetExpandedProgress
 import com.trm.sightline.core.ui.rememberMapPlacesBoundingBox
+import kotlinx.coroutines.launch
+import org.maplibre.compose.camera.CameraPosition
 import org.maplibre.compose.camera.rememberCameraState
+import org.maplibre.spatialk.geojson.Position
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -76,6 +81,7 @@ fun SharedTransitionScope.PlaceCategoryScreen(
   animatedVisibilityScope: AnimatedVisibilityScope,
   onBack: () -> Unit,
 ) {
+  val scope = rememberCoroutineScope()
   val scaffoldState = rememberBottomSheetScaffoldStateForScreenHeight(isCompactHeight)
   val sheetState = scaffoldState.bottomSheetState
 
@@ -85,45 +91,71 @@ fun SharedTransitionScope.PlaceCategoryScreen(
   var sheetNonPeekHeight by sheetNonPeekHeightState
   val expandedProgress by expandedProgressState
 
-  val sheetContent =
-    @Composable { peekHeight: Dp ->
-      LazyColumn(
-        modifier =
-          if (isCompactHeight) {
-            Modifier.width(sideSheetWidthDp.dp)
-              .fillMaxHeight()
-              .systemBarsPadding()
-              .navigationBarsPadding()
-              .windowInsetsPadding(WindowInsets.displayCutout.only(WindowInsetsSides.End))
-              .padding(horizontal = 16.dp)
-          } else {
-            Modifier.fillMaxWidth()
-              .navigationBarsPadding()
-              .padding(horizontal = 16.dp)
-              .onGloballyPositioned { layoutCoordinates ->
-                sheetNonPeekHeight =
-                  layoutCoordinates.size.height.toFloat() - with(density) { peekHeight.toPx() }
-              }
-          },
-        contentPadding = PaddingValues(bottom = 16.dp),
-      ) {
-        item {
-          PlaceCategoryHeader(
-            category = route.category,
-            placesCount = route.places.size,
-            animatedVisibilityScope = animatedVisibilityScope,
-          )
-        }
+  val mapPlacesBoundingBox =
+    rememberMapPlacesBoundingBox(places = route.places, percentageIncrease = 0.1)
+  val mapCameraState = rememberCameraState()
 
-        items(route.places, key = Place::id) { place ->
-          PlaceListItem(place = place, location = location)
-        }
+  @Composable
+  fun sheetContent(peekHeight: Dp, onPlaceItemClick: (Place) -> Unit) {
+    LazyColumn(
+      modifier =
+        if (isCompactHeight) {
+          Modifier.width(sideSheetWidthDp.dp)
+            .fillMaxHeight()
+            .systemBarsPadding()
+            .navigationBarsPadding()
+            .windowInsetsPadding(WindowInsets.displayCutout.only(WindowInsetsSides.End))
+        } else {
+          Modifier.fillMaxWidth().navigationBarsPadding().onGloballyPositioned { layoutCoordinates
+            ->
+            sheetNonPeekHeight =
+              layoutCoordinates.size.height.toFloat() - with(density) { peekHeight.toPx() }
+          }
+        },
+      contentPadding = PaddingValues(bottom = 16.dp),
+    ) {
+      item {
+        PlaceCategoryHeader(
+          category = route.category,
+          placesCount = route.places.size,
+          animatedVisibilityScope = animatedVisibilityScope,
+        )
+      }
+
+      items(route.places, key = Place::id) { place ->
+        PlaceListItem(place = place, location = location, onClick = { onPlaceItemClick(place) })
       }
     }
+  }
 
   BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
     val sheetPeekHeight = if (isCompactHeight) 0.dp else maxHeight / 2
     val sheetContainerColor = BottomSheetDefaults.ContainerColor.copy(alpha = .9f)
+    val mapPadding =
+      PaddingValues(
+        bottom =
+          if (isCompactHeight) {
+            WindowInsets.safeDrawing
+              .only(WindowInsetsSides.Bottom)
+              .asPaddingValues()
+              .calculateBottomPadding()
+          } else {
+            sheetPeekHeight
+          },
+        end = if (isCompactHeight) sideSheetWidthDp.dp else 0.dp,
+      )
+
+    suspend fun animateToPlace(place: Place) {
+      mapCameraState.animateTo(
+        CameraPosition(
+          target = Position(longitude = place.longitude, latitude = place.latitude),
+          bearing = mapCameraState.position.bearing,
+          padding = mapPadding,
+          tilt = mapCameraState.position.tilt,
+          zoom = mapCameraState.position.zoom,
+        )
+      )
+    }
 
     BottomSheetScaffold(
       scaffoldState = scaffoldState,
@@ -143,35 +175,23 @@ fun SharedTransitionScope.PlaceCategoryScreen(
           BottomSheetDefaults.DragHandle()
         }
       },
-      sheetContent = { sheetContent(sheetPeekHeight) },
+      sheetContent = {
+        sheetContent(
+          peekHeight = sheetPeekHeight,
+          onPlaceItemClick = { place -> scope.launch { animateToPlace(place) } },
+        )
+      },
     ) {
       Box(modifier = Modifier.fillMaxSize()) {
-        val mapPadding =
-          PaddingValues(
-            bottom =
-              if (isCompactHeight) {
-                WindowInsets.safeDrawing
-                  .only(WindowInsetsSides.Bottom)
-                  .asPaddingValues()
-                  .calculateBottomPadding()
-              } else {
-                sheetPeekHeight
-              },
-            end = if (isCompactHeight) sideSheetWidthDp.dp else 0.dp,
-          )
-        val placesBoundingBox =
-          rememberMapPlacesBoundingBox(places = route.places, percentageIncrease = 0.1)
-        val cameraState = rememberCameraState()
-
         MapCameraAnimateToPlacesBoundingBoxEffect(
-          placesBoundingBox = placesBoundingBox,
+          placesBoundingBox = mapPlacesBoundingBox,
           padding = mapPadding,
-          cameraState = cameraState,
+          cameraState = mapCameraState,
         )
 
         MapPreview(
-          cameraState = cameraState,
-          placesBoundingBox = placesBoundingBox,
+          cameraState = mapCameraState,
+          placesBoundingBox = mapPlacesBoundingBox,
           places = route.places,
           modifier = Modifier.fillMaxSize(),
         )
@@ -180,7 +200,7 @@ fun SharedTransitionScope.PlaceCategoryScreen(
           onClick = onBack,
           colors =
             IconButtonDefaults.filledTonalIconButtonColors(
-              containerColor = MaterialTheme.colorScheme.surface.copy(alpha = .5f),
+              containerColor = MaterialTheme.colorScheme.surface,
               contentColor = MaterialTheme.colorScheme.onSurface,
             ),
           modifier =
@@ -198,7 +218,10 @@ fun SharedTransitionScope.PlaceCategoryScreen(
             color = sheetContainerColor,
             tonalElevation = 1.dp,
           ) {
-            sheetContent(0.dp)
+            sheetContent(
+              peekHeight = sheetPeekHeight,
+              onPlaceItemClick = { place -> scope.launch { animateToPlace(place) } },
+            )
           }
         }
       }
@@ -214,10 +237,7 @@ private fun SharedTransitionScope.PlaceCategoryHeader(
   animatedVisibilityScope: AnimatedVisibilityScope,
   modifier: Modifier = Modifier,
 ) {
-  Column(
-    modifier = modifier.fillMaxWidth().padding(vertical = 16.dp),
-    horizontalAlignment = Alignment.Start,
-  ) {
+  Column(modifier = modifier.fillMaxWidth().padding(16.dp), horizontalAlignment = Alignment.Start) {
     Row(verticalAlignment = Alignment.CenterVertically) {
       Surface(
         shape = ToggleButtonDefaults.shapes().checkedShape,
@@ -268,9 +288,12 @@ private fun SharedTransitionScope.PlaceCategoryHeader(
 }
 
 @Composable
-private fun PlaceListItem(place: Place, location: Location?) {
+private fun PlaceListItem(place: Place, location: Location?, onClick: () -> Unit) {
   Row(
-    modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+    modifier =
+      Modifier.fillMaxWidth()
+        .clickable(onClick = onClick)
+        .padding(vertical = 12.dp, horizontal = 16.dp),
     verticalAlignment = Alignment.CenterVertically,
   ) {
     Surface(
@@ -335,7 +358,7 @@ private fun PlaceListItem(place: Place, location: Location?) {
 }
 
 private fun String.placeInitials(): String {
-  val words = trim().split(Regex("\\s+")).filter { it.isNotEmpty() }
+  val words = trim().split(Regex("\\s+")).filter(String::isNotEmpty)
   return when {
     words.isEmpty() -> "?"
     words.size >= 2 -> "${words[0].first()}${words[1].first()}".uppercase()
