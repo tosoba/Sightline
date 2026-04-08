@@ -11,4 +11,9 @@ fun <T : Number> T.roundToDecimalPlaces(places: Int): BigDecimal {
 }
 
 fun Float.formattedDistance(): String =
-  if (this >= 1_000) "${(this / 1_000).roundToDecimalPlaces(1)} km" else "${this.roundToInt()} m"
+  if (this >= 1_000) {
+    val km = (this / 1_000).roundToDecimalPlaces(1)
+    if (km.stripTrailingZeros().scale() <= 0) "${km.toInt()} km" else "$km km"
+  } else {
+    "${this.roundToInt()} m"
+  }

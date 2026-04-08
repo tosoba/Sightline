@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import com.trm.sightline.MainPage
 import com.trm.sightline.core.ar.util.collapsedBottomSheetContentHeightDp
 import com.trm.sightline.core.ar.util.collapsedBottomSheetDragHandleHeightDp
+import com.trm.sightline.core.common.util.formattedDistance
 import com.trm.sightline.core.model.PlaceSearchRadius
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -143,11 +144,7 @@ private fun SettingsFloatingActionButton(
     ) {
       PlaceSearchRadius.entries.forEach { radius ->
         DropdownMenuItem(
-          text = {
-            val label =
-              if (radius.meters >= 1000) "${radius.meters / 1000}km" else "${radius.meters}m"
-            Text(label)
-          },
+          text = { Text(text = radius.meters.toFloat().formattedDistance()) },
           onClick = {
             onSearchRadiusChange(radius)
             menuExpanded = false
