@@ -21,7 +21,7 @@ import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import androidx.navigation3.ui.NavDisplay
 import com.trm.sightline.feature.category.PlaceCategoryRoute
 import com.trm.sightline.feature.category.PlaceCategoryScreen
-import com.trm.sightline.feature.map.MapPreview
+import com.trm.sightline.feature.map.MapScreen
 import com.trm.sightline.ui.theme.SightlineTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -93,7 +93,7 @@ class MainActivity : ComponentActivity() {
                     animatedVisibilityScope = LocalNavAnimatedContentScope.current,
                     onBack = dropUnlessResumed { backStack.removeLastOrNull() },
                   ) {
-                    MapPreview(
+                    MapScreen(
                       places = route.places,
                       padding = it,
                       modifier = Modifier.fillMaxSize(),

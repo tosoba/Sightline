@@ -33,7 +33,7 @@ import com.trm.sightline.core.model.MapCameraPosition
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.feature.camera.CameraContent
 import com.trm.sightline.feature.camera.CameraPreviewPagePicker
-import com.trm.sightline.feature.map.MapPreview
+import com.trm.sightline.feature.map.MapScreen
 
 @Composable
 fun MainPager(
@@ -111,7 +111,7 @@ fun MainPager(
         }
       }
       MainPage.Map -> {
-        MapPreview(
+        MapScreen(
           places = places,
           padding = contentPadding,
           modifier = Modifier.fillMaxSize(),

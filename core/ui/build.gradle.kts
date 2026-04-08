@@ -31,8 +31,6 @@ android {
 dependencies {
   implementation(project(":core:model"))
 
-  implementation(libs.material)
-
   implementation(libs.androidx.activity.compose)
   implementation(platform(libs.androidx.compose.bom))
   implementation(libs.androidx.compose.ui)
@@ -40,4 +38,9 @@ dependencies {
   implementation(libs.androidx.compose.foundation)
   implementation(libs.androidx.compose.material3)
   implementation(libs.androidx.compose.material.icons.extended)
+  implementation(libs.androidx.compose.ui.tooling.preview)
+
+  implementation(libs.kotlinx.serialization.json)
+  implementation(libs.maplibre.compose)
+  implementation(libs.material)
 }
