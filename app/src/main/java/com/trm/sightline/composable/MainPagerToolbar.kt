@@ -166,7 +166,7 @@ private fun MainPagerToolbarItem(
   label: String,
   icon: ImageVector,
   isSelected: Boolean,
-  showLabel: Boolean = true,
+  showLabel: Boolean,
   onClick: () -> Unit,
 ) {
   Surface(
