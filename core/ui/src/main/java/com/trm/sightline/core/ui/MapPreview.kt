@@ -2,12 +2,11 @@ package com.trm.sightline.core.ui
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Man
+import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.unit.DpSize
@@ -101,17 +100,14 @@ fun MapPreview(
       id = "clustered-markers",
       source = source,
       filter = feature.has("point_count"),
-      color = const(Color.Green),
-      opacity = const(0.5f),
+      color = const(MaterialTheme.colorScheme.primaryContainer),
+      opacity = const(.9f),
       radius =
         step(
           input = feature["point_count"].asNumber(),
-          fallback = const(15.dp),
-          25 to const(20.dp),
-          100 to const(30.dp),
-          500 to const(40.dp),
-          1000 to const(50.dp),
-          5000 to const(60.dp),
+          fallback = const(24.dp),
+          50 to const(32.dp),
+          100 to const(48.dp),
         ),
     )
 
@@ -121,7 +117,7 @@ fun MapPreview(
       filter = feature.has("point_count"),
       textField = feature["point_count_abbreviated"].asString(),
       textFont = const(listOf("Noto Sans Regular")),
-      textColor = const(MaterialTheme.colorScheme.onBackground),
+      textColor = const(MaterialTheme.colorScheme.onPrimaryContainer),
     )
 
     SymbolLayer(
@@ -129,7 +125,7 @@ fun MapPreview(
       source = source,
       filter = !feature.has("point_count"),
       iconImage =
-        image(value = rememberVectorPainter(Icons.Filled.Man), size = DpSize(14.dp, 14.dp)),
+        image(value = rememberVectorPainter(Icons.Filled.Place), size = DpSize(32.dp, 32.dp)),
       iconAllowOverlap = const(true),
     )
   }
