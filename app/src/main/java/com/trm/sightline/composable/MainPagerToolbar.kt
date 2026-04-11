@@ -17,14 +17,11 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.FloatingToolbarHorizontalFabPosition
 import androidx.compose.material3.FloatingToolbarVerticalFabPosition
-import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -39,10 +36,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.trm.sightline.MainPage
+import com.trm.sightline.R
 import com.trm.sightline.core.ar.util.collapsedBottomSheetContentHeightDp
 import com.trm.sightline.core.ar.util.collapsedBottomSheetDragHandleHeightDp
 import com.trm.sightline.core.common.util.formattedDistance
@@ -58,19 +55,6 @@ fun BoxScope.MainPagerToolbar(
   onPageSelected: (MainPage) -> Unit,
   onSearchRadiusChange: (PlaceSearchRadius) -> Unit,
 ) {
-  val toolbarContent =
-    @Composable { showLabel: Boolean ->
-      MainPage.entries.forEach { page ->
-        MainPagerToolbarItem(
-          label = stringResource(page.labelRes),
-          icon = page.icon,
-          isSelected = selectedPage == page,
-          showLabel = showLabel,
-        ) {
-          onPageSelected(page)
-        }
-      }
-    }
   AnimatedVisibility(
     visible = visible,
     enter = fadeIn(),
@@ -95,80 +79,27 @@ fun BoxScope.MainPagerToolbar(
           )
       },
   ) {
-    if (isCompactHeight) {
-      VerticalFloatingToolbar(
-        expanded = true,
-        floatingActionButtonPosition = FloatingToolbarVerticalFabPosition.Top,
-        floatingActionButton = {
-          SettingsFloatingActionButton(
-            searchRadius = searchRadius,
-            onSearchRadiusChange = onSearchRadiusChange,
-          )
-        },
-      ) {
-        toolbarContent(false)
-      }
-    } else {
-      HorizontalFloatingToolbar(
-        expanded = true,
-        floatingActionButtonPosition = FloatingToolbarHorizontalFabPosition.Start,
-        floatingActionButton = {
-          SettingsFloatingActionButton(
-            searchRadius = searchRadius,
-            onSearchRadiusChange = onSearchRadiusChange,
-          )
-        },
-      ) {
-        toolbarContent(true)
-      }
-    }
-  }
-}
-
-@Composable
-private fun SettingsFloatingActionButton(
-  searchRadius: PlaceSearchRadius,
-  onSearchRadiusChange: (PlaceSearchRadius) -> Unit,
-) {
-  var menuExpanded by remember { mutableStateOf(false) }
-
-  Box {
-    FloatingActionButton(onClick = { menuExpanded = !menuExpanded }) {
-      Icon(imageVector = Icons.Default.Settings, contentDescription = null)
-    }
-
-    DropdownMenu(
-      expanded = menuExpanded,
-      onDismissRequest = { menuExpanded = false },
-      offset = DpOffset(x = 0.dp, y = (-16).dp),
-    ) {
-      PlaceSearchRadius.entries.forEach { radius ->
-        DropdownMenuItem(
-          text = { Text(text = radius.meters.toFloat().formattedDistance()) },
-          onClick = {
-            onSearchRadiusChange(radius)
-            menuExpanded = false
-          },
-          trailingIcon =
-            if (searchRadius == radius) {
-              { Icon(Icons.Default.Check, contentDescription = null) }
-            } else {
-              null
-            },
+    VerticalFloatingToolbar(
+      expanded = true,
+      floatingActionButtonPosition = FloatingToolbarVerticalFabPosition.Top,
+      floatingActionButton = {
+        SettingsFloatingActionButton(
+          searchRadius = searchRadius,
+          onSearchRadiusChange = onSearchRadiusChange,
         )
+      },
+    ) {
+      MainPage.entries.forEach { page ->
+        MainPagerToolbarItem(icon = page.icon, isSelected = selectedPage == page) {
+          onPageSelected(page)
+        }
       }
     }
   }
 }
 
 @Composable
-private fun MainPagerToolbarItem(
-  label: String,
-  icon: ImageVector,
-  isSelected: Boolean,
-  showLabel: Boolean,
-  onClick: () -> Unit,
-) {
+private fun MainPagerToolbarItem(icon: ImageVector, isSelected: Boolean, onClick: () -> Unit) {
   Surface(
     selected = isSelected,
     onClick = onClick,
@@ -184,9 +115,39 @@ private fun MainPagerToolbarItem(
       horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
       Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(20.dp))
+    }
+  }
+}
 
-      if (isSelected && showLabel) {
-        Text(text = label, style = MaterialTheme.typography.labelLarge)
+@Composable
+private fun SettingsFloatingActionButton(
+  searchRadius: PlaceSearchRadius,
+  onSearchRadiusChange: (PlaceSearchRadius) -> Unit,
+) {
+  var menuExpanded by remember { mutableStateOf(false) }
+
+  Box {
+    FloatingActionButton(onClick = { menuExpanded = !menuExpanded }) {
+      Icon(painter = painterResource(R.drawable.outline_distance_24), contentDescription = null)
+    }
+
+    DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
+      DropdownMenuItem(text = { Text("Select max range:") }, enabled = false, onClick = {})
+
+      PlaceSearchRadius.entries.forEach { radius ->
+        DropdownMenuItem(
+          text = { Text(text = radius.meters.toFloat().formattedDistance()) },
+          onClick = {
+            onSearchRadiusChange(radius)
+            menuExpanded = false
+          },
+          trailingIcon =
+            if (searchRadius == radius) {
+              { Icon(Icons.Default.Check, contentDescription = null) }
+            } else {
+              null
+            },
+        )
       }
     }
   }
