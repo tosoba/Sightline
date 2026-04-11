@@ -187,9 +187,9 @@ float udRoundBox(vec2 p, vec2 b, float r) {
 }
 
 float computeBox() {
-    vec2 res = vec2(width, height);
-    vec2 coord = vec2(gl_FragCoord.x - float(x), gl_FragCoord.y - float(y));
-    return udRoundBox(2. * coord - res, res, cornerRadius);
+    vec2 halfRes = vec2(width, height) * 0.5;
+    vec2 coord = vec2(gl_FragCoord.x - float(x), gl_FragCoord.y - float(y)) - halfRes;
+    return udRoundBox(coord, halfRes, cornerRadius);
 }
 
 void main() {
