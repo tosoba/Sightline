@@ -1,18 +1,15 @@
 package com.trm.sightline.core.ui
 
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.trm.sightline.core.model.Place
-import java.io.BufferedReader
 import kotlinx.serialization.json.JsonPrimitive
 import org.maplibre.compose.camera.CameraState
 import org.maplibre.compose.expressions.dsl.asNumber
@@ -38,6 +35,7 @@ import org.maplibre.spatialk.geojson.Feature
 import org.maplibre.spatialk.geojson.FeatureCollection
 import org.maplibre.spatialk.geojson.Point
 import org.maplibre.spatialk.geojson.Position
+import java.io.BufferedReader
 
 @Composable
 fun MapPreview(
@@ -100,7 +98,13 @@ fun MapPreview(
       id = "clustered-markers",
       source = source,
       filter = feature.has("point_count"),
-      color = const(MaterialTheme.colorScheme.primaryContainer),
+      color =
+        step(
+          input = feature["point_count"].asNumber(),
+          fallback = const(MaterialTheme.colorScheme.tertiaryContainer),
+          50 to const(MaterialTheme.colorScheme.secondaryContainer),
+          100 to const(MaterialTheme.colorScheme.primaryContainer),
+        ),
       opacity = const(.9f),
       radius =
         step(
@@ -117,7 +121,13 @@ fun MapPreview(
       filter = feature.has("point_count"),
       textField = feature["point_count_abbreviated"].asString(),
       textFont = const(listOf("Noto Sans Regular")),
-      textColor = const(MaterialTheme.colorScheme.onPrimaryContainer),
+      textColor =
+        step(
+          input = feature["point_count"].asNumber(),
+          fallback = const(MaterialTheme.colorScheme.onTertiaryContainer),
+          50 to const(MaterialTheme.colorScheme.onSecondaryContainer),
+          100 to const(MaterialTheme.colorScheme.onPrimaryContainer),
+        ),
     )
 
     SymbolLayer(
@@ -125,7 +135,12 @@ fun MapPreview(
       source = source,
       filter = !feature.has("point_count"),
       iconImage =
-        image(value = rememberVectorPainter(Icons.Filled.Place), size = DpSize(32.dp, 32.dp)),
+        image(
+          value =
+            painterResource(R.drawable.google_maps)
+              .tinted(MaterialTheme.colorScheme.onSurfaceVariant),
+          size = DpSize(32.dp, 32.dp),
+        ),
       iconAllowOverlap = const(true),
     )
   }

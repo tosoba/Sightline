@@ -60,7 +60,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import com.trm.sightline.core.ar.util.sideSheetWidthDp
-import com.trm.sightline.core.common.R as commonR
 import com.trm.sightline.core.common.util.formattedAddress
 import com.trm.sightline.core.common.util.formattedDistance
 import com.trm.sightline.core.common.util.rememberBottomSheetScaffoldStateForScreenHeight
@@ -76,6 +75,8 @@ import kotlinx.coroutines.launch
 import org.maplibre.compose.camera.CameraPosition
 import org.maplibre.compose.camera.rememberCameraState
 import org.maplibre.spatialk.geojson.Position
+import com.trm.sightline.core.common.R as commonR
+import com.trm.sightline.core.ui.R as uiR
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -373,7 +374,7 @@ private fun PlaceListItem(place: Place, location: Location?, onClick: () -> Unit
       }
     ) {
       Icon(
-        painter = painterResource(R.drawable.google_maps),
+        painter = painterResource(uiR.drawable.google_maps),
         contentDescription = stringResource(commonR.string.open_in_google_maps),
         modifier = Modifier.size(24.dp),
       )
