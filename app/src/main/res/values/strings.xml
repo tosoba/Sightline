@@ -8,4 +8,5 @@
     <string name="map_label">Map</string>
     <string name="camera_permission_required_title">Camera permission required</string>
     <string name="camera_permission_permanently_denied_message">Camera access was permanently denied. Open Settings to grant it.</string>
+    <string name="select_max_range">Select max range:</string>
 </resources>
