@@ -69,7 +69,7 @@ fun MainPager(
               with(LocalContext.current) {
                 RoundedRectF(
                   rectF = if (isCompactHeight) sideSheetRectF else bottomSheetRectF,
-                  cornerRadius = if (isCompactHeight) 0f else dpToPx(64f),
+                  cornerRadius = if (isCompactHeight) 0f else dpToPx(32f),
                 )
               }
             ),
