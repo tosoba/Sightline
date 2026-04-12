@@ -3,8 +3,11 @@ package com.trm.sightline.feature.category
 import android.content.Intent
 import android.location.Location
 import android.net.Uri
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -59,6 +62,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.currentStateAsState
 import com.trm.sightline.core.ar.util.sideSheetWidthDp
 import com.trm.sightline.core.common.util.formattedAddress
 import com.trm.sightline.core.common.util.formattedDistance
@@ -189,18 +195,28 @@ fun SharedTransitionScope.PlaceCategoryScreen(
       },
     ) {
       Box(modifier = Modifier.fillMaxSize()) {
-        MapCameraAnimateToPlacesBoundingBoxEffect(
-          placesBoundingBox = mapPlacesBoundingBox,
-          padding = mapPadding,
-          cameraState = mapCameraState,
-        )
+        AnimatedVisibility(
+          visible =
+            LocalLifecycleOwner.current.lifecycle
+              .currentStateAsState()
+              .value
+              .isAtLeast(Lifecycle.State.STARTED),
+          enter = fadeIn(),
+          exit = fadeOut(),
+        ) {
+          MapCameraAnimateToPlacesBoundingBoxEffect(
+            placesBoundingBox = mapPlacesBoundingBox,
+            padding = mapPadding,
+            cameraState = mapCameraState,
+          )
 
-        MapPreview(
-          cameraState = mapCameraState,
-          placesBoundingBox = mapPlacesBoundingBox,
-          places = route.places,
-          modifier = Modifier.fillMaxSize(),
-        )
+          MapPreview(
+            cameraState = mapCameraState,
+            placesBoundingBox = mapPlacesBoundingBox,
+            places = route.places,
+            modifier = Modifier.fillMaxSize(),
+          )
+        }
 
         FilledTonalIconButton(
           onClick = onBack,

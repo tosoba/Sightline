@@ -4,14 +4,16 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.SharedTransitionLayout
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.WindowHeightSizeClass
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.dropUnlessResumed
@@ -55,6 +57,12 @@ class MainActivity : ComponentActivity() {
         SharedTransitionLayout {
           NavDisplay(
             backStack = backStack,
+            predictivePopTransitionSpec = {
+              ContentTransform(
+                fadeIn(spring(dampingRatio = 1.0f, stiffness = 1600.0f)),
+                fadeOut(spring(dampingRatio = 1.0f, stiffness = 1600.0f)),
+              )
+            },
             entryProvider =
               entryProvider {
                 entry<MainRoute> {
