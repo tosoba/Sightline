@@ -21,17 +21,17 @@ import com.google.common.util.concurrent.ListenableFuture
 import com.trm.sightline.core.ar.camera.surface.SurfaceViewRenderSurface
 import com.trm.sightline.core.ar.camera.surface.TextureViewRenderSurface
 import com.trm.sightline.core.ar.model.RoundedRectF
-import kotlinx.coroutines.channels.BufferOverflow
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
-import timber.log.Timber
 import java.util.Locale
 import java.util.concurrent.Executor
 import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.math.abs
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import timber.log.Timber
 
 class OpenGLRenderer {
   companion object {
@@ -83,7 +83,10 @@ class OpenGLRenderer {
 
   private val rectFsCoordinates: FloatArray
     get() {
-      val coordinates = FloatArray((markerRectFs.size + otherRectFs.size) * COORDINATES_PER_RECT_F)
+      val markers = markerRectFs
+      val others = otherRectFs
+
+      val coordinates = FloatArray((markers.size + others.size) * COORDINATES_PER_RECT_F)
       var index = 0
 
       fun fillCoordinatesOf(rectFs: Collection<RoundedRectF>) {
@@ -97,8 +100,8 @@ class OpenGLRenderer {
         }
       }
 
-      fillCoordinatesOf(otherRectFs)
-      fillCoordinatesOf(markerRectFs)
+      fillCoordinatesOf(markers)
+      fillCoordinatesOf(others)
       return coordinates
     }
 
