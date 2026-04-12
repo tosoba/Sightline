@@ -4,8 +4,8 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -17,17 +17,20 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.FloatingToolbarVerticalFabPosition
+import androidx.compose.material3.FloatingActionButtonMenu
+import androidx.compose.material3.FloatingActionButtonMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuDefaults
+import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.ToggleFloatingActionButton
+import androidx.compose.material3.TooltipAnchorPosition
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.VerticalFloatingToolbar
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -62,38 +65,37 @@ fun BoxScope.MainPagerToolbar(
     enter = fadeIn(),
     exit = fadeOut(),
     modifier =
-      if (isCompactHeight) {
-        Modifier.align(Alignment.BottomStart)
-          .windowInsetsPadding(
-            WindowInsets.safeDrawing.only(WindowInsetsSides.Start + WindowInsetsSides.Bottom)
-          )
-          .padding(16.dp)
-      } else {
-        Modifier.align(Alignment.BottomStart)
-          .windowInsetsPadding(
-            WindowInsets.safeDrawing.only(WindowInsetsSides.Start + WindowInsetsSides.Bottom)
-          )
-          .padding(
-            start = 16.dp,
-            end = 16.dp,
-            bottom =
-              (16 + collapsedBottomSheetContentHeightDp + collapsedBottomSheetDragHandleHeightDp).dp,
-          )
-      },
-  ) {
-    VerticalFloatingToolbar(
-      expanded = true,
-      floatingActionButtonPosition = FloatingToolbarVerticalFabPosition.Top,
-      floatingActionButton = {
-        SettingsFloatingActionButton(
-          searchRadius = searchRadius,
-          onSearchRadiusChange = onSearchRadiusChange,
+      Modifier.align(Alignment.BottomStart)
+        .windowInsetsPadding(
+          WindowInsets.safeDrawing.only(WindowInsetsSides.Start + WindowInsetsSides.Bottom)
         )
-      },
-    ) {
-      MainPage.entries.forEach { page ->
-        MainPagerToolbarItem(icon = page.icon, isSelected = selectedPage == page) {
-          onPageSelected(page)
+        .padding(
+          top = 16.dp,
+          start = 16.dp,
+          end = 16.dp,
+          bottom =
+            (16 +
+                if (isCompactHeight) {
+                  0
+                } else {
+                  collapsedBottomSheetContentHeightDp + collapsedBottomSheetDragHandleHeightDp
+                })
+              .dp,
+        ),
+  ) {
+    Column(horizontalAlignment = Alignment.Start) {
+      MainPagerPlaceSearchRadiusMenu(
+        searchRadius = searchRadius,
+        onSearchRadiusChange = onSearchRadiusChange,
+      )
+
+      VerticalFloatingToolbar(expanded = true) {
+        MainPage.entries.forEach { page ->
+          MainPagerToolbarItem(
+            icon = page.icon,
+            isSelected = selectedPage == page,
+            onClick = { onPageSelected(page) },
+          )
         }
       }
     }
@@ -123,43 +125,46 @@ private fun MainPagerToolbarItem(icon: ImageVector, isSelected: Boolean, onClick
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun SettingsFloatingActionButton(
+private fun MainPagerPlaceSearchRadiusMenu(
   searchRadius: PlaceSearchRadius,
   onSearchRadiusChange: (PlaceSearchRadius) -> Unit,
 ) {
   var menuExpanded by remember { mutableStateOf(false) }
 
-  Box {
-    FloatingActionButton(onClick = { menuExpanded = !menuExpanded }) {
-      Icon(painter = painterResource(R.drawable.outline_distance_24), contentDescription = null)
-    }
-
-    DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
-      DropdownMenuItem(
-        text = { Text(text = stringResource(R.string.select_max_range)) },
-        enabled = false,
-        colors =
-          MenuDefaults.selectableItemColors().run {
-            copy(disabledTextColor = textColor, disabledContainerColor = containerColor)
-          },
-        onClick = {},
-      )
-
-      PlaceSearchRadius.entries.forEach { radius ->
-        DropdownMenuItem(
-          text = { Text(text = radius.meters.toFloat().formattedDistance()) },
-          onClick = {
-            onSearchRadiusChange(radius)
-            menuExpanded = false
-          },
-          trailingIcon =
-            if (searchRadius == radius) {
-              { Icon(Icons.Default.Check, contentDescription = null) }
-            } else {
-              null
-            },
-        )
+  FloatingActionButtonMenu(
+    expanded = menuExpanded,
+    horizontalAlignment = Alignment.Start,
+    button = {
+      TooltipBox(
+        positionProvider =
+          TooltipDefaults.rememberTooltipPositionProvider(
+            if (menuExpanded) TooltipAnchorPosition.Start else TooltipAnchorPosition.Above
+          ),
+        tooltip = { PlainTooltip { Text(text = stringResource(R.string.select_max_range)) } },
+        state = rememberTooltipState(),
+      ) {
+        ToggleFloatingActionButton(
+          checked = menuExpanded,
+          onCheckedChange = { menuExpanded = it },
+        ) {
+          Icon(painter = painterResource(R.drawable.outline_distance_24), contentDescription = null)
+        }
       }
+    },
+  ) {
+    PlaceSearchRadius.entries.forEach { radius ->
+      FloatingActionButtonMenuItem(
+        onClick = {
+          onSearchRadiusChange(radius)
+          menuExpanded = false
+        },
+        text = { Text(text = radius.meters.toFloat().formattedDistance()) },
+        icon = {
+          if (searchRadius == radius) {
+            Icon(Icons.Default.Check, contentDescription = null)
+          }
+        },
+      )
     }
   }
 }
