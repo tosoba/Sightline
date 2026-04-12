@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -134,6 +135,7 @@ private fun MainPagerPlaceSearchRadiusMenu(
   FloatingActionButtonMenu(
     expanded = menuExpanded,
     horizontalAlignment = Alignment.Start,
+    modifier = Modifier.offset(x = (-4).dp),
     button = {
       TooltipBox(
         positionProvider =
