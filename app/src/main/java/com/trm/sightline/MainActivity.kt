@@ -23,7 +23,7 @@ import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import androidx.navigation3.ui.NavDisplay
 import com.trm.sightline.feature.category.PlaceCategoryRoute
 import com.trm.sightline.feature.category.PlaceCategoryScreen
-import com.trm.sightline.ui.theme.SightlineTheme
+import com.trm.sightline.core.ui.theme.SightlineTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)

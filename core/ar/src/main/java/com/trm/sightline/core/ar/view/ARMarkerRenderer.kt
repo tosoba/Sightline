@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.vector.PathNode
 import androidx.compose.ui.graphics.vector.VectorGroup
 import androidx.compose.ui.graphics.vector.VectorNode
 import androidx.compose.ui.graphics.vector.VectorPath
+import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.withSave
 import com.trm.sightline.core.ar.model.ARMarker
 import com.trm.sightline.core.ar.model.MarkersPagingState
@@ -34,7 +35,11 @@ import com.trm.sightline.core.ar.util.statusBarTopInsetPx
 import com.trm.sightline.core.common.util.roundToDecimalPlaces
 import com.trm.sightline.core.common.util.tourismOrLeisure
 import com.trm.sightline.core.model.PlaceCategory
+import com.trm.sightline.core.ui.R
 import com.trm.sightline.core.ui.icon
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import java.util.Objects
 import kotlin.math.abs
 import kotlin.math.acos
@@ -42,9 +47,6 @@ import kotlin.math.atan
 import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 
 class ARMarkerRenderer(private val context: Context) {
   private val markerPaddingPx: Float = context.dpToPx(MARKER_PADDING_DP)
@@ -162,8 +164,14 @@ class ARMarkerRenderer(private val context: Context) {
         isAntiAlias = true
         textSize = markerTitleTextSizePx
         textAlign = Paint.Align.LEFT
-        typeface = Typeface.DEFAULT_BOLD
+        typeface =
+          try {
+            Typeface.create(ResourcesCompat.getFont(context, R.font.inter), Typeface.BOLD)
+          } catch (_: Exception) {
+            Typeface.DEFAULT_BOLD
+          }
         isLinearText = true
+
         setShadowLayer(2.0f, 3.0f, 3.0f, Color.GRAY)
       }
     }
@@ -178,7 +186,14 @@ class ARMarkerRenderer(private val context: Context) {
         isAntiAlias = true
         textSize = markerDistanceTextSizePx
         textAlign = Paint.Align.LEFT
+        typeface =
+          try {
+            ResourcesCompat.getFont(context, R.font.roboto)
+          } catch (_: Exception) {
+            Typeface.DEFAULT
+          }
         isLinearText = true
+
         setShadowLayer(2.0f, 3.0f, 3.0f, Color.GRAY)
       }
     }
@@ -833,7 +848,7 @@ class ARMarkerRenderer(private val context: Context) {
 
     // Extra vertical gap inserted between the name block and the distance label.
     // Keeps the two from feeling cramped without pushing distance out of short markers.
-    private const val NAME_DISTANCE_GAP_DP = 4f
+    private const val NAME_DISTANCE_GAP_DP = 8f
 
     private const val MARKER_TITLE_TEXT_SIZE_SP = 14f
     private const val MARKER_DISTANCE_TEXT_SIZE_SP = 12f
