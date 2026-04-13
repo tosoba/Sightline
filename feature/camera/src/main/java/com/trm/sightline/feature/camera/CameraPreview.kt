@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -128,6 +129,8 @@ fun CameraPreview(
           openGLRenderer.previewStreamStates.collectAsStateWithLifecycle(
             PreviewView.StreamState.IDLE
           )
+        val contrastingColor = MaterialTheme.colorScheme.surfaceContainerLow
+
         LaunchedEffect(lifecycleOwner) {
           lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
             arView.markerRenderer.drawnMarkerRectFs.collect { openGLRenderer.markerRectFs = it }
@@ -137,6 +140,11 @@ fun CameraPreview(
         LaunchedEffect(blurred, streamState) {
           if (streamState == PreviewView.StreamState.STREAMING) {
             openGLRenderer.setBlurEnabled(enabled = blurred, animated = true)
+            openGLRenderer.setContrastingColor(
+              red = contrastingColor.red.toInt(),
+              green = contrastingColor.green.toInt(),
+              blue = contrastingColor.blue.toInt(),
+            )
           }
         }
 
