@@ -20,7 +20,7 @@ val Context.phoneRotation: Int
     } ?: Surface.ROTATION_0
 
 const val sideSheetWidthDp = 400
-const val collapsedBottomSheetContentHeightDp = 216
+const val collapsedBottomSheetContentHeightDp = 186
 const val collapsedBottomSheetDragHandleHeightDp = 48
 
 internal val Context.cameraPreviewVerticalPaddingPx: Float
