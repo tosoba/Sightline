@@ -24,10 +24,6 @@ import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
 import com.trm.sightline.core.model.PlaceSearchRadius
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.util.concurrent.atomic.AtomicLong
-import javax.inject.Inject
-import kotlin.coroutines.cancellation.CancellationException
-import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
@@ -38,6 +34,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emptyFlow
@@ -50,6 +47,10 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
+import java.util.concurrent.atomic.AtomicLong
+import javax.inject.Inject
+import kotlin.coroutines.cancellation.CancellationException
+import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @HiltViewModel
@@ -165,13 +166,13 @@ constructor(
   }
 
   private fun handleUserLocation() {
-    application
-      .locationEnabledFlow()
-      .onEach { isLocationEnabled ->
-        if (!isLocationEnabled && userLocationEnabled.value) {
-          userPreferencesRepository.setUserLocationEnabled(false)
-        }
+    combine(application.locationEnabledFlow(), userLocationEnabled) {
+        isLocationEnabled,
+        userLocationEnabled ->
+        !isLocationEnabled && userLocationEnabled
       }
+      .filter { it }
+      .onEach { userPreferencesRepository.setUserLocationEnabled(false) }
       .launchIn(viewModelScope)
 
     userLocationEnabled
