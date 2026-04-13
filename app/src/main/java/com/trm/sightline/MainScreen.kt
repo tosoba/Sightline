@@ -50,6 +50,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -63,7 +64,6 @@ import com.trm.sightline.composable.MainScreenErrorMessage
 import com.trm.sightline.core.ar.util.collapsedBottomSheetContentHeightDp
 import com.trm.sightline.core.ar.util.sideSheetWidthDp
 import com.trm.sightline.core.common.PermissionStatus
-import com.trm.sightline.core.common.R as commonR
 import com.trm.sightline.core.common.rememberPermissionState
 import com.trm.sightline.core.common.util.CheckLocationSettingsResult
 import com.trm.sightline.core.common.util.checkLocationSettings
@@ -79,6 +79,7 @@ import com.trm.sightline.core.ui.rememberBottomSheetExpandedProgress
 import com.trm.sightline.feature.places.PlacesContent
 import com.trm.sightline.feature.places.PlacesLayout
 import kotlinx.coroutines.launch
+import com.trm.sightline.core.common.R as commonR
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -108,11 +109,6 @@ fun SharedTransitionScope.MainScreen(
   val scope = rememberCoroutineScope()
 
   val pagerState = rememberPagerState(pageCount = MainPage.entries::size)
-  val pageChangeProgress by remember {
-    derivedStateOf {
-      (pagerState.currentPage + pagerState.currentPageOffsetFraction).coerceIn(0f, 1f)
-    }
-  }
   val selectedPage = MainPage.entries[pagerState.currentPage]
   var toolbarsVisible by remember { mutableStateOf(true) }
   LaunchedEffect(pagerState.currentPage) { toolbarsVisible = true }
@@ -258,13 +254,9 @@ fun SharedTransitionScope.MainScreen(
   var sheetNonPeekHeight by sheetNonPeekHeightState
   val expandedProgress by expandedProgressState
 
-  val placesFullyOpaque = selectedPage == MainPage.Camera && !cameraPermissionState.isGranted
-  val placesContentAlpha = if (placesFullyOpaque) 1f else 0.5f + (pageChangeProgress * 0.5f)
-  val placesContainerAlpha = if (placesFullyOpaque) 1f else 0.5f + (pageChangeProgress * 0.4f)
   val placesSheetContent =
     @Composable {
       val density = LocalDensity.current
-
       PlacesContent(
         places = places,
         locationAddress =
@@ -277,7 +269,11 @@ fun SharedTransitionScope.MainScreen(
         layout =
           if (isCompactHeight || sheetState.targetValue == SheetValue.Expanded) PlacesLayout.Grid
           else PlacesLayout.Row,
-        alpha = placesContentAlpha,
+        alpha =
+          when (selectedPage) {
+            MainPage.Camera -> .75f
+            MainPage.Map -> 1f
+          },
         animatedVisibilityScope = animatedVisibilityScope,
         modifier =
           if (isCompactHeight) {
@@ -327,6 +323,12 @@ fun SharedTransitionScope.MainScreen(
       )
     }
 
+  val sheetContainerColor =
+    when (selectedPage) {
+      MainPage.Map -> BottomSheetDefaults.ContainerColor.copy(alpha = .9f)
+      MainPage.Camera if cameraPermissionState.isGranted -> Color.Transparent
+      else -> BottomSheetDefaults.ContainerColor
+    }
   Box(modifier = Modifier.fillMaxSize()) {
     BottomSheetScaffold(
       scaffoldState = scaffoldState,
@@ -344,7 +346,7 @@ fun SharedTransitionScope.MainScreen(
           BottomSheetDefaults.DragHandle()
         }
       },
-      sheetContainerColor = BottomSheetDefaults.ContainerColor.copy(alpha = placesContainerAlpha),
+      sheetContainerColor = sheetContainerColor,
       sheetPeekHeight = sheetPeekHeight,
       sheetContent = { placesSheetContent() },
     ) { innerPadding ->
@@ -411,7 +413,7 @@ fun SharedTransitionScope.MainScreen(
         if (isCompactHeight) {
           Surface(
             modifier = Modifier.fillMaxHeight().align(Alignment.CenterEnd),
-            color = BottomSheetDefaults.ContainerColor.copy(alpha = placesContainerAlpha),
+            color = sheetContainerColor,
             tonalElevation = 1.dp,
           ) {
             placesSheetContent()
