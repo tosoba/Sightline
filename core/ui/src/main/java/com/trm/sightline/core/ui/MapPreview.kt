@@ -2,10 +2,13 @@ package com.trm.sightline.core.ui
 
 import android.location.Location
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.DpSize
@@ -176,7 +179,8 @@ fun MapPreview(
         iconImage =
           image(
             value =
-              painterResource(R.drawable.my_location).tinted(MaterialTheme.colorScheme.onSurface),
+              rememberVectorPainter(Icons.Default.MyLocation)
+                .tinted(MaterialTheme.colorScheme.onSurface),
             size = DpSize(32.dp, 32.dp),
           ),
         iconAllowOverlap = const(true),

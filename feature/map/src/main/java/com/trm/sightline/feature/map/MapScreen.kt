@@ -1,16 +1,19 @@
 package com.trm.sightline.feature.map
 
+import android.location.Location
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FilterCenterFocus
+import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -23,17 +26,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
-import android.location.Location
 import com.trm.sightline.core.model.MapCameraPosition
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.ui.MapCameraAnimateToPlacesBoundingBoxEffect
 import com.trm.sightline.core.ui.MapPreview
 import com.trm.sightline.core.ui.rememberMapPlacesBoundingBox
-import kotlin.math.abs
 import kotlinx.coroutines.launch
 import org.maplibre.compose.camera.CameraPosition
 import org.maplibre.compose.camera.rememberCameraState
 import org.maplibre.spatialk.geojson.Position
+import kotlin.math.abs
 
 @Composable
 fun MapScreen(
@@ -59,8 +61,17 @@ fun MapScreen(
   val showResetToPlacesBoundingBoxButton =
     remember(cameraState.position.target, placesCenter) {
       placesCenter != null &&
-        (abs(cameraState.position.target.latitude - placesCenter.latitude) > 0.0001 ||
-          abs(cameraState.position.target.longitude - placesCenter.longitude) > 0.0001)
+        (abs(cameraState.position.target.latitude - placesCenter.latitude) > MIN_COORDINATE_DELTA ||
+          abs(cameraState.position.target.longitude - placesCenter.longitude) >
+            MIN_COORDINATE_DELTA)
+    }
+  val showResetToCurrentLocationButton =
+    remember(cameraState.position.target, currentLocation) {
+      currentLocation != null &&
+        (abs(cameraState.position.target.latitude - currentLocation.latitude) >
+          MIN_COORDINATE_DELTA ||
+          abs(cameraState.position.target.longitude - currentLocation.longitude) >
+            MIN_COORDINATE_DELTA)
     }
 
   MapCameraAnimateToPlacesBoundingBoxEffect(
@@ -112,23 +123,49 @@ fun MapScreen(
       currentLocation = currentLocation,
     )
 
-    AnimatedVisibility(
-      visible = showResetToPlacesBoundingBoxButton,
-      enter = fadeIn(),
-      exit = fadeOut(),
+    Column(
       modifier = Modifier.align(Alignment.BottomEnd).padding(padding).padding(16.dp),
+      horizontalAlignment = Alignment.End,
+      verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-      FloatingActionButton(
-        onClick = {
-          if (placesBoundingBox != null) {
-            scope.launch {
-              cameraState.animateTo(boundingBox = placesBoundingBox, padding = padding)
+      AnimatedVisibility(visible = showResetToCurrentLocationButton) {
+        FloatingActionButton(
+          containerColor = MaterialTheme.colorScheme.secondaryContainer,
+          onClick = {
+            currentLocation?.let {
+              scope.launch {
+                cameraState.animateTo(
+                  CameraPosition(
+                    target = Position(longitude = it.longitude, latitude = it.latitude),
+                    zoom = cameraState.position.zoom,
+                    bearing = cameraState.position.bearing,
+                    tilt = cameraState.position.tilt,
+                    padding = padding,
+                  )
+                )
+              }
+            }
+          },
+        ) {
+          Icon(imageVector = Icons.Default.MyLocation, contentDescription = null)
+        }
+      }
+
+      AnimatedVisibility(visible = showResetToPlacesBoundingBoxButton) {
+        FloatingActionButton(
+          onClick = {
+            if (placesBoundingBox != null) {
+              scope.launch {
+                cameraState.animateTo(boundingBox = placesBoundingBox, padding = padding)
+              }
             }
           }
+        ) {
+          Icon(imageVector = Icons.Default.FilterCenterFocus, contentDescription = null)
         }
-      ) {
-        Icon(imageVector = Icons.Default.FilterCenterFocus, contentDescription = null)
       }
     }
   }
 }
+
+private const val MIN_COORDINATE_DELTA = 0.0001
