@@ -61,17 +61,18 @@ fun MapScreen(
   val showResetToPlacesBoundingBoxButton =
     remember(cameraState.position.target, placesCenter) {
       placesCenter != null &&
-        (abs(cameraState.position.target.latitude - placesCenter.latitude) > MIN_COORDINATE_DELTA ||
-          abs(cameraState.position.target.longitude - placesCenter.longitude) >
-            MIN_COORDINATE_DELTA)
+        cameraState.position.target.isAwayFrom(
+          latitude = placesCenter.latitude,
+          longitude = placesCenter.longitude,
+        )
     }
   val showResetToCurrentLocationButton =
     remember(cameraState.position.target, currentLocation) {
       currentLocation != null &&
-        (abs(cameraState.position.target.latitude - currentLocation.latitude) >
-          MIN_COORDINATE_DELTA ||
-          abs(cameraState.position.target.longitude - currentLocation.longitude) >
-            MIN_COORDINATE_DELTA)
+        cameraState.position.target.isAwayFrom(
+          latitude = currentLocation.latitude,
+          longitude = currentLocation.longitude,
+        )
     }
 
   MapCameraAnimateToPlacesBoundingBoxEffect(
@@ -167,5 +168,9 @@ fun MapScreen(
     }
   }
 }
+
+private fun Position.isAwayFrom(latitude: Double, longitude: Double): Boolean =
+  abs(this.latitude - latitude) > MIN_COORDINATE_DELTA ||
+    abs(this.longitude - longitude) > MIN_COORDINATE_DELTA
 
 private const val MIN_COORDINATE_DELTA = 0.0001
