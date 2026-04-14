@@ -21,9 +21,9 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import androidx.navigation3.ui.NavDisplay
+import com.trm.sightline.core.ui.theme.SightlineTheme
 import com.trm.sightline.feature.category.PlaceCategoryRoute
 import com.trm.sightline.feature.category.PlaceCategoryScreen
-import com.trm.sightline.core.ui.theme.SightlineTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
@@ -47,7 +47,6 @@ class MainActivity : ComponentActivity() {
         val lastMapPosition by viewModel.lastMapPosition.collectAsStateWithLifecycle()
         val errorMessage by viewModel.errorMessage.collectAsStateWithLifecycle()
         val searchRadius by viewModel.searchRadius.collectAsStateWithLifecycle()
-
         val currentLocation =
           remember(userLocationEnabled, viewModel.userLocation, viewModel.customLocation) {
             if (userLocationEnabled && viewModel.userLocation != null) viewModel.userLocation
@@ -70,6 +69,7 @@ class MainActivity : ComponentActivity() {
                     isCompactHeight = isCompactHeight,
                     places = viewModel.places,
                     allPlaces = viewModel.allPlaces,
+                    currentLocation = currentLocation,
                     userLocation = viewModel.userLocation,
                     userLocationAddress = userLocationAddress,
                     customLocation = viewModel.customLocation,

@@ -87,6 +87,7 @@ fun SharedTransitionScope.MainScreen(
   isCompactHeight: Boolean,
   places: Map<PlaceCategory, LoadingState<List<Place>>>,
   allPlaces: List<Place>,
+  currentLocation: Location?,
   userLocation: Location?,
   userLocationAddress: LoadingState<String>,
   customLocation: Location?,
@@ -367,7 +368,7 @@ fun SharedTransitionScope.MainScreen(
 
         MainPager(
           pagerState = pagerState,
-          location = if (userLocationEnabled) userLocation else customLocation,
+          location = currentLocation,
           places = allPlaces,
           lastMapPosition = lastMapPosition,
           isCompactHeight = isCompactHeight,

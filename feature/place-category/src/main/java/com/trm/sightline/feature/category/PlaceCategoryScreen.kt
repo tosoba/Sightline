@@ -215,6 +215,7 @@ fun SharedTransitionScope.PlaceCategoryScreen(
             placesBoundingBox = mapPlacesBoundingBox,
             places = route.places,
             modifier = Modifier.fillMaxSize(),
+            currentLocation = location,
           )
         }
 

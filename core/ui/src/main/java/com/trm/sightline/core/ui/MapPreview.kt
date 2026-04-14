@@ -1,5 +1,6 @@
 package com.trm.sightline.core.ui
 
+import android.location.Location
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -43,6 +44,7 @@ fun MapPreview(
   placesBoundingBox: BoundingBox?,
   places: List<Place>,
   modifier: Modifier = Modifier,
+  currentLocation: Location? = null,
 ) {
   MaplibreMap(
     modifier = modifier,
@@ -57,91 +59,128 @@ fun MapPreview(
     cameraState = cameraState,
     boundingBox = placesBoundingBox,
   ) {
-    if (places.isEmpty()) return@MaplibreMap
-
-    val source =
-      rememberGeoJsonSource(
-        data =
-          remember(places) {
-            GeoJsonData.Features(
-              FeatureCollection(
-                places.map {
-                  Feature(
-                    id = JsonPrimitive(it.id.toString()),
-                    geometry = Point(Position(longitude = it.longitude, latitude = it.latitude)),
-                    properties = Unit,
-                  )
-                }
-              )
-            )
-          },
-        options =
-          remember {
-            GeoJsonOptions(
-              cluster = true,
-              clusterRadius = 32,
-              clusterMaxZoom = 16,
-              clusterProperties =
-                mapOf(
-                  "total_range" to
-                    GeoJsonOptions.ClusterPropertyAggregator(
-                      mapper = feature["current_range_meters"].convertToNumber(),
-                      reducer =
-                        feature.accumulated().asNumber() + feature["total_range"].convertToNumber(),
+    if (places.isNotEmpty()) {
+      val placesSource =
+        rememberGeoJsonSource(
+          data =
+            remember(places) {
+              GeoJsonData.Features(
+                FeatureCollection(
+                  places.map {
+                    Feature(
+                      id = JsonPrimitive(it.id.toString()),
+                      geometry = Point(Position(longitude = it.longitude, latitude = it.latitude)),
+                      properties = Unit,
                     )
-                ),
-            )
-          },
+                  }
+                )
+              )
+            },
+          options =
+            remember {
+              GeoJsonOptions(
+                cluster = true,
+                clusterRadius = 32,
+                clusterMaxZoom = 16,
+                clusterProperties =
+                  mapOf(
+                    "total_range" to
+                      GeoJsonOptions.ClusterPropertyAggregator(
+                        mapper = feature["current_range_meters"].convertToNumber(),
+                        reducer =
+                          feature.accumulated().asNumber() +
+                            feature["total_range"].convertToNumber(),
+                      )
+                  ),
+              )
+            },
+        )
+
+      CircleLayer(
+        id = "clustered-places",
+        source = placesSource,
+        filter = feature.has("point_count"),
+        color =
+          step(
+            input = feature["point_count"].asNumber(),
+            fallback = const(MaterialTheme.colorScheme.tertiaryContainer),
+            50 to const(MaterialTheme.colorScheme.secondaryContainer),
+            100 to const(MaterialTheme.colorScheme.primaryContainer),
+          ),
+        opacity = const(.9f),
+        radius =
+          step(
+            input = feature["point_count"].asNumber(),
+            fallback = const(24.dp),
+            50 to const(32.dp),
+            100 to const(48.dp),
+          ),
       )
 
-    CircleLayer(
-      id = "clustered-markers",
-      source = source,
-      filter = feature.has("point_count"),
-      color =
-        step(
-          input = feature["point_count"].asNumber(),
-          fallback = const(MaterialTheme.colorScheme.tertiaryContainer),
-          50 to const(MaterialTheme.colorScheme.secondaryContainer),
-          100 to const(MaterialTheme.colorScheme.primaryContainer),
-        ),
-      opacity = const(.9f),
-      radius =
-        step(
-          input = feature["point_count"].asNumber(),
-          fallback = const(24.dp),
-          50 to const(32.dp),
-          100 to const(48.dp),
-        ),
-    )
+      SymbolLayer(
+        id = "clustered-places-count",
+        source = placesSource,
+        filter = feature.has("point_count"),
+        textField = feature["point_count_abbreviated"].asString(),
+        textFont = const(listOf("Noto Sans Regular")),
+        textColor =
+          step(
+            input = feature["point_count"].asNumber(),
+            fallback = const(MaterialTheme.colorScheme.onTertiaryContainer),
+            50 to const(MaterialTheme.colorScheme.onSecondaryContainer),
+            100 to const(MaterialTheme.colorScheme.onPrimaryContainer),
+          ),
+      )
 
-    SymbolLayer(
-      id = "clustered-markers-count",
-      source = source,
-      filter = feature.has("point_count"),
-      textField = feature["point_count_abbreviated"].asString(),
-      textFont = const(listOf("Noto Sans Regular")),
-      textColor =
-        step(
-          input = feature["point_count"].asNumber(),
-          fallback = const(MaterialTheme.colorScheme.onTertiaryContainer),
-          50 to const(MaterialTheme.colorScheme.onSecondaryContainer),
-          100 to const(MaterialTheme.colorScheme.onPrimaryContainer),
-        ),
-    )
+      SymbolLayer(
+        id = "unclustered-places",
+        source = placesSource,
+        filter = !feature.has("point_count"),
+        iconImage =
+          image(
+            value =
+              painterResource(R.drawable.google_maps)
+                .tinted(MaterialTheme.colorScheme.onSurfaceVariant),
+            size = DpSize(32.dp, 32.dp),
+          ),
+        iconAllowOverlap = const(true),
+      )
+    }
 
-    SymbolLayer(
-      id = "unclustered-markers",
-      source = source,
-      filter = !feature.has("point_count"),
-      iconImage =
-        image(
-          value =
-            painterResource(R.drawable.google_maps)
-              .tinted(MaterialTheme.colorScheme.onSurfaceVariant),
-          size = DpSize(32.dp, 32.dp),
-        ),
-      iconAllowOverlap = const(true),
-    )
+    if (currentLocation != null) {
+      SymbolLayer(
+        id = "current-location-layer",
+        source =
+          rememberGeoJsonSource(
+            data =
+              remember(currentLocation) {
+                GeoJsonData.Features(
+                  FeatureCollection(
+                    listOf(
+                      Feature(
+                        id = JsonPrimitive("current-location"),
+                        geometry =
+                          Point(
+                            Position(
+                              longitude = currentLocation.longitude,
+                              latitude = currentLocation.latitude,
+                            )
+                          ),
+                        properties = Unit,
+                      )
+                    )
+                  )
+                )
+              }
+          ),
+        iconImage =
+          image(
+            value =
+              painterResource(R.drawable.my_location).tinted(MaterialTheme.colorScheme.onSurface),
+            size = DpSize(32.dp, 32.dp),
+          ),
+        iconAllowOverlap = const(true),
+      )
+    }
   }
 }
