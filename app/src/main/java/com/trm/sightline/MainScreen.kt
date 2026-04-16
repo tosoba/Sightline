@@ -260,6 +260,9 @@ fun SharedTransitionScope.MainScreen(
   var sheetNonPeekHeight by sheetNonPeekHeightState
   val expandedProgress by expandedProgressState
   val sheetOffset by sheetOffsetState
+  val cameraPreviewBlurred by remember {
+    derivedStateOf { !isCompactHeight && expandedProgress != 0f }
+  }
 
   val placesSheetContent =
     @Composable {
@@ -274,8 +277,7 @@ fun SharedTransitionScope.MainScreen(
           if (userLocationEnabled) userLocation != null else customLocation != null,
         customLocationSearchResults = customLocationSearchResults,
         layout =
-          if (isCompactHeight || sheetState.targetValue == SheetValue.Expanded) PlacesLayout.Grid
-          else PlacesLayout.Row,
+          if (isCompactHeight || cameraPreviewBlurred) PlacesLayout.Grid else PlacesLayout.Row,
         alpha =
           when (selectedPage) {
             MainPage.Camera -> .75f
@@ -368,10 +370,6 @@ fun SharedTransitionScope.MainScreen(
             ),
         contentAlignment = Alignment.Center,
       ) {
-        val cameraPreviewBlurred by remember {
-          derivedStateOf { !isCompactHeight && expandedProgress != 0f }
-        }
-
         MainPager(
           pagerState = pagerState,
           location = currentLocation,
