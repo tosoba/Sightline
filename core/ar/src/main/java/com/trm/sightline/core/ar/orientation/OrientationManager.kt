@@ -28,7 +28,6 @@ class OrientationManager : SensorEventListener {
   private var oldOrientation: Orientation? = null
   private var sensorRunning = false
 
-  var smoothFactor: Float = SMOOTH_FACTOR
   var onOrientationChangedListener: OnOrientationChangedListener? = null
 
   var axisMode: Mode = Mode.COMPASS
@@ -47,7 +46,7 @@ class OrientationManager : SensorEventListener {
   private var secondAxis: Int = SensorManager.AXIS_MINUS_X
 
   // Tracks whether both fallback sensors have received at least one reading,
-  // so we don't compute orientation from a partially-initialised state.
+  // so we don't compute orientation from a partially-initialized state.
   private var hasGravity = false
   private var hasGeoMag = false
 
@@ -55,7 +54,7 @@ class OrientationManager : SensorEventListener {
   fun startSensor(context: Context): Boolean {
     if (sensorRunning) return true
 
-    val manager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+    val manager = context.getSystemService(SensorManager::class.java)
     val started = tryStartRotationVector(manager) || tryStartFallback(manager)
 
     if (started) {
@@ -153,14 +152,19 @@ class OrientationManager : SensorEventListener {
   private fun lowPass(newValue: Float, oldValue: Float): Float {
     val delta = newValue - oldValue
     return if (abs(delta) < CIRCLE / 2) {
-      if (abs(delta) > SMOOTH_THRESHOLD) newValue else oldValue + smoothFactor * delta
+      if (abs(delta) > SMOOTH_THRESHOLD) newValue else oldValue + SMOOTH_FACTOR * delta
     } else {
       val wrappedDelta = CIRCLE - abs(delta)
-      if (wrappedDelta > SMOOTH_THRESHOLD) newValue
-      else if (oldValue > newValue) {
-        ((oldValue + smoothFactor * wrappedDelta + CIRCLE) % CIRCLE)
-      } else {
-        ((oldValue - smoothFactor * wrappedDelta + CIRCLE) % CIRCLE)
+      when {
+        wrappedDelta > SMOOTH_THRESHOLD -> {
+          newValue
+        }
+        oldValue > newValue -> {
+          ((oldValue + SMOOTH_FACTOR * wrappedDelta + CIRCLE) % CIRCLE)
+        }
+        else -> {
+          ((oldValue - SMOOTH_FACTOR * wrappedDelta + CIRCLE) % CIRCLE)
+        }
       }
     }
   }
