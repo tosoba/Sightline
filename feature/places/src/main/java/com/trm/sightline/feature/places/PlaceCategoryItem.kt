@@ -41,10 +41,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.dropUnlessResumed
+import com.trm.sightline.core.common.R as commonR
 import com.trm.sightline.core.model.LoadingState
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
-import com.trm.sightline.core.common.R as commonR
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -61,20 +61,20 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
   onClick: (PlaceCategory) -> Unit,
   onCategoryClick: (PlaceCategory, List<Place>) -> Unit,
 ) {
+  val buttonColors =
+    ToggleButtonDefaults.toggleButtonColors(
+      containerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = alpha),
+      disabledContainerColor =
+        MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = alpha / 2f),
+    )
+
   when (layout) {
     PlacesLayout.Row -> {
-      val colors =
-        ToggleButtonDefaults.toggleButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)
-          .run {
-            copy(
-              containerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = alpha)
-            )
-          }
       ToggleButton(
         checked = selected,
         onCheckedChange = { onClick(category) },
         enabled = selected || enabled,
-        colors = colors,
+        colors = buttonColors,
         modifier = modifier,
       ) {
         Column(
@@ -84,7 +84,7 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
         ) {
           PlaceCategoryItemIconLoadingState(
             loadingState = loadingState,
-            trackColor = colors.checkedContentColor,
+            trackColor = buttonColors.checkedContentColor,
             icon = icon,
           )
 
@@ -103,13 +103,6 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
       val interactionSource = remember(::MutableInteractionSource)
       val isPressed by interactionSource.collectIsPressedAsState()
       val shapes = ToggleButtonDefaults.shapes()
-      val colors =
-        ToggleButtonDefaults.toggleButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)
-          .run {
-            copy(
-              containerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = alpha)
-            )
-          }
 
       Card(
         shape =
@@ -120,9 +113,9 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
           },
         colors =
           CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = alpha),
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = alpha),
             disabledContainerColor =
-              MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = alpha),
+              MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = alpha / 2f),
           ),
         modifier = modifier,
         onClick =
@@ -141,7 +134,7 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
             checked = selected,
             onCheckedChange = { onClick(category) },
             enabled = selected || enabled,
-            colors = colors,
+            colors = buttonColors,
             shapes = shapes,
             interactionSource = interactionSource,
             modifier =
@@ -156,7 +149,7 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
           ) {
             PlaceCategoryItemIconLoadingState(
               loadingState = loadingState,
-              trackColor = colors.checkedContentColor,
+              trackColor = buttonColors.checkedContentColor,
               icon = icon,
             )
           }
