@@ -1,7 +1,3 @@
 package com.trm.sightline.core.ar.orientation
 
-class Orientation {
-  var pitch = 0f
-  var roll = 0f
-  var azimuth = 0f
-}
+data class Orientation(var pitch: Float = 0f, var roll: Float = 0f, var azimuth: Float = 0f)
