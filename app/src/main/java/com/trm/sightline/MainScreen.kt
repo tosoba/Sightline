@@ -3,6 +3,7 @@ package com.trm.sightline
 import android.Manifest
 import android.app.Activity
 import android.content.Intent
+import android.graphics.RectF
 import android.location.Location
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -61,7 +62,11 @@ import androidx.compose.ui.unit.dp
 import com.trm.sightline.composable.MainPager
 import com.trm.sightline.composable.MainPagerToolbar
 import com.trm.sightline.composable.MainScreenErrorMessage
+import com.trm.sightline.core.ar.model.RoundedRectF
 import com.trm.sightline.core.ar.util.collapsedBottomSheetContentHeightDp
+import com.trm.sightline.core.ar.util.dpToPx
+import com.trm.sightline.core.ar.util.getScreenSize
+import com.trm.sightline.core.ar.util.sideSheetRectF
 import com.trm.sightline.core.ar.util.sideSheetWidthDp
 import com.trm.sightline.core.common.PermissionStatus
 import com.trm.sightline.core.common.R as commonR
@@ -250,10 +255,11 @@ fun SharedTransitionScope.MainScreen(
       collapsedBottomSheetContentHeightDp.dp +
         WindowInsets.navigationBars.getBottom(LocalDensity.current).dp
     }
-  val (sheetNonPeekHeightState, expandedProgressState) =
+  val (sheetNonPeekHeightState, expandedProgressState, sheetOffsetState) =
     rememberBottomSheetExpandedProgress(sheetState)
   var sheetNonPeekHeight by sheetNonPeekHeightState
   val expandedProgress by expandedProgressState
+  val sheetOffset by sheetOffsetState
 
   val placesSheetContent =
     @Composable {
@@ -373,6 +379,26 @@ fun SharedTransitionScope.MainScreen(
           lastMapPosition = lastMapPosition,
           isCompactHeight = isCompactHeight,
           cameraPreviewBlurred = cameraPreviewBlurred,
+          blurredRectFs =
+            listOf(
+              with(LocalContext.current) {
+                RoundedRectF(
+                  rectF =
+                    if (isCompactHeight) {
+                      sideSheetRectF
+                    } else {
+                      val screenSize = getScreenSize()
+                      RectF(
+                        0f,
+                        sheetOffset,
+                        screenSize.width.toFloat(),
+                        screenSize.height.toFloat(),
+                      )
+                    },
+                  cornerRadius = if (isCompactHeight) 0f else dpToPx(32f),
+                )
+              }
+            ),
           cameraPreviewOverlayVisible = toolbarsVisible,
           cameraPermissionGranted = cameraPermissionState.isGranted,
           onCameraPermissionGrantClick = {

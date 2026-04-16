@@ -12,6 +12,7 @@ import androidx.compose.runtime.remember
 data class BottomSheetExpandedProgressState(
   val nonPeekHeightState: MutableFloatState,
   val expandedProgress: State<Float>,
+  val sheetOffset: State<Float>,
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -44,6 +45,10 @@ fun rememberBottomSheetExpandedProgress(
   }
 
   return remember(nonPeekHeightState, expandedProgress) {
-    BottomSheetExpandedProgressState(nonPeekHeightState, expandedProgress)
+    BottomSheetExpandedProgressState(
+      nonPeekHeightState = nonPeekHeightState,
+      expandedProgress = expandedProgress,
+      sheetOffset = sheetOffset,
+    )
   }
 }

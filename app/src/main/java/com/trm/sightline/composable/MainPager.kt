@@ -18,16 +18,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.trm.sightline.MainPage
 import com.trm.sightline.core.ar.model.RoundedRectF
-import com.trm.sightline.core.ar.util.bottomSheetRectF
 import com.trm.sightline.core.ar.util.collapsedBottomSheetContentHeightDp
 import com.trm.sightline.core.ar.util.collapsedBottomSheetDragHandleHeightDp
-import com.trm.sightline.core.ar.util.dpToPx
-import com.trm.sightline.core.ar.util.sideSheetRectF
 import com.trm.sightline.core.ar.util.sideSheetWidthDp
 import com.trm.sightline.core.model.MapCameraPosition
 import com.trm.sightline.core.model.Place
@@ -43,6 +39,7 @@ fun MainPager(
   lastMapPosition: MapCameraPosition?,
   isCompactHeight: Boolean,
   cameraPreviewBlurred: Boolean,
+  blurredRectFs: List<RoundedRectF>,
   cameraPreviewOverlayVisible: Boolean,
   cameraPermissionGranted: Boolean,
   contentPadding: PaddingValues,
@@ -64,15 +61,7 @@ fun MainPager(
           previewBlurred = cameraPreviewBlurred,
           location = location,
           places = places,
-          blurredRectFs =
-            listOf(
-              with(LocalContext.current) {
-                RoundedRectF(
-                  rectF = if (isCompactHeight) sideSheetRectF else bottomSheetRectF,
-                  cornerRadius = if (isCompactHeight) 0f else dpToPx(32f),
-                )
-              }
-            ),
+          blurredRectFs = blurredRectFs,
           padding = contentPadding,
           cameraPermissionGranted = cameraPermissionGranted,
           onGrantPermissionClick = onCameraPermissionGrantClick,

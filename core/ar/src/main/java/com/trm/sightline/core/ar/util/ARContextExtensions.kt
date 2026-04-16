@@ -51,17 +51,6 @@ fun Context.dpToPx(value: Float): Float =
 fun Context.spToPx(value: Float): Float =
   TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, value, resources.displayMetrics)
 
-val Context.bottomSheetRectF: RectF
-  get() {
-    val screenSize = getScreenSize()
-    return RectF(
-      0f,
-      screenSize.height - bottomSheetHeightPx,
-      screenSize.width.toFloat(),
-      screenSize.height.toFloat(),
-    )
-  }
-
 val Context.sideSheetRectF: RectF
   get() {
     val screenSize = getScreenSize()
@@ -73,7 +62,7 @@ val Context.sideSheetRectF: RectF
     )
   }
 
-private fun Context.getScreenSize(
+fun Context.getScreenSize(
   includeLeftInset: Boolean = true,
   includeTopInset: Boolean = true,
   includeRightInset: Boolean = true,
