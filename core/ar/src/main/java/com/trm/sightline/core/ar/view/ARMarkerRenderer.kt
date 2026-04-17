@@ -30,6 +30,7 @@ import com.trm.sightline.core.ar.util.dpToPx
 import com.trm.sightline.core.ar.util.drawMultilineText
 import com.trm.sightline.core.ar.util.isCompactHeight
 import com.trm.sightline.core.ar.util.navigationBarsBottomInsetPx
+import com.trm.sightline.core.ar.util.sideSheetWidthDp
 import com.trm.sightline.core.ar.util.spToPx
 import com.trm.sightline.core.ar.util.statusBarTopInsetPx
 import com.trm.sightline.core.common.util.roundToDecimalPlaces
@@ -37,9 +38,6 @@ import com.trm.sightline.core.common.util.tourismOrLeisure
 import com.trm.sightline.core.model.PlaceCategory
 import com.trm.sightline.core.ui.R
 import com.trm.sightline.core.ui.icon
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import java.util.Objects
 import kotlin.math.abs
 import kotlin.math.acos
@@ -47,6 +45,9 @@ import kotlin.math.atan
 import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 class ARMarkerRenderer(private val context: Context) {
   private val markerPaddingPx: Float = context.dpToPx(MARKER_PADDING_DP)
@@ -301,6 +302,11 @@ class ARMarkerRenderer(private val context: Context) {
     var maxPageThisFrame = 0
     var currentPageAfterScreenRotation = Int.MAX_VALUE
 
+    // Clip markers to everything left of the side sheet
+    val markerClipRight =
+      if (context.isCompactHeight) canvas.width - context.dpToPx(sideSheetWidthDp.toFloat())
+      else canvas.width.toFloat()
+
     markers.forEach { marker ->
       val pagedMarker = pagedMarkers[marker.place.id] ?: return@forEach
       val position = pagedMarker.position ?: return@forEach
@@ -321,14 +327,18 @@ class ARMarkerRenderer(private val context: Context) {
       if (!marker.isDrawn) return@forEach
 
       val markerRectF = marker.rectF
-      val canvasRectF = RectF(0f, 0f, canvas.width.toFloat(), canvas.height.toFloat())
+      val canvasRectF = RectF(0f, 0f, markerClipRight, canvas.height.toFloat())
       if (!RectF.intersects(canvasRectF, markerRectF)) return@forEach
 
       renderedMarkerIds.add(marker.place.id)
 
       val cornerRadiusPx = context.dpToPx(MARKER_RECT_F_CORNER_RADIUS_DP)
-      canvas.drawRoundRect(markerRectF, cornerRadiusPx, cornerRadiusPx, borderPaint)
-      canvas.drawMarkerContent(marker, markerRectF)
+
+      canvas.withSave {
+        clipRect(0f, 0f, markerClipRight, canvas.height.toFloat())
+        drawRoundRect(markerRectF, cornerRadiusPx, cornerRadiusPx, borderPaint)
+        drawMarkerContent(marker, markerRectF)
+      }
 
       drawnRectFs.add(RoundedRectF(markerRectF, cornerRadiusPx))
     }
