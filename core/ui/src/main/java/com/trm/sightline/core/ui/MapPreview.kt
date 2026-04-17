@@ -14,6 +14,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.trm.sightline.core.model.Place
+import java.io.BufferedReader
 import kotlinx.serialization.json.JsonPrimitive
 import org.maplibre.compose.camera.CameraState
 import org.maplibre.compose.expressions.dsl.asNumber
@@ -27,6 +28,7 @@ import org.maplibre.compose.expressions.dsl.plus
 import org.maplibre.compose.expressions.dsl.step
 import org.maplibre.compose.layers.CircleLayer
 import org.maplibre.compose.layers.SymbolLayer
+import org.maplibre.compose.map.GestureOptions
 import org.maplibre.compose.map.MapOptions
 import org.maplibre.compose.map.MaplibreMap
 import org.maplibre.compose.map.OrnamentOptions
@@ -39,7 +41,6 @@ import org.maplibre.spatialk.geojson.Feature
 import org.maplibre.spatialk.geojson.FeatureCollection
 import org.maplibre.spatialk.geojson.Point
 import org.maplibre.spatialk.geojson.Position
-import java.io.BufferedReader
 
 @Composable
 fun MapPreview(
@@ -58,7 +59,11 @@ fun MapPreview(
           .bufferedReader()
           .use(BufferedReader::readText)
       ),
-    options = MapOptions(ornamentOptions = OrnamentOptions.AllDisabled),
+    options =
+      MapOptions(
+        gestureOptions = GestureOptions.RotationLocked,
+        ornamentOptions = OrnamentOptions.AllDisabled,
+      ),
     cameraState = cameraState,
     boundingBox = placesBoundingBox,
   ) {
