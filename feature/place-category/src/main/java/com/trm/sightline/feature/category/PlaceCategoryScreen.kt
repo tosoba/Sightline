@@ -66,6 +66,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.currentStateAsState
 import com.trm.sightline.core.ar.util.sideSheetWidthDp
+import com.trm.sightline.core.common.R as commonR
 import com.trm.sightline.core.common.util.formattedAddress
 import com.trm.sightline.core.common.util.formattedDistance
 import com.trm.sightline.core.common.util.rememberBottomSheetScaffoldStateForScreenHeight
@@ -74,6 +75,7 @@ import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
 import com.trm.sightline.core.ui.MapCameraAnimateToPlacesBoundingBoxEffect
 import com.trm.sightline.core.ui.MapPreview
+import com.trm.sightline.core.ui.R as uiR
 import com.trm.sightline.core.ui.icon
 import com.trm.sightline.core.ui.rememberBottomSheetExpandedProgress
 import com.trm.sightline.core.ui.rememberMapPlacesBoundingBox
@@ -81,8 +83,6 @@ import kotlinx.coroutines.launch
 import org.maplibre.compose.camera.CameraPosition
 import org.maplibre.compose.camera.rememberCameraState
 import org.maplibre.spatialk.geojson.Position
-import com.trm.sightline.core.common.R as commonR
-import com.trm.sightline.core.ui.R as uiR
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -184,7 +184,7 @@ fun SharedTransitionScope.PlaceCategoryScreen(
                 WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding() * expandedProgress
               )
           )
-          BottomSheetDefaults.DragHandle()
+          BottomSheetDefaults.DragHandle(color = MaterialTheme.colorScheme.onSurface)
         }
       },
       sheetContent = {

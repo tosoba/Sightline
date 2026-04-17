@@ -129,7 +129,7 @@ fun CameraPreview(
           openGLRenderer.previewStreamStates.collectAsStateWithLifecycle(
             PreviewView.StreamState.IDLE
           )
-        val contrastingColor = MaterialTheme.colorScheme.surfaceContainerLow
+        val contrastingColor = MaterialTheme.colorScheme.surfaceContainer
 
         LaunchedEffect(lifecycleOwner) {
           lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
