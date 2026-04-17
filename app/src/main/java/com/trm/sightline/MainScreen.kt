@@ -425,8 +425,7 @@ fun SharedTransitionScope.MainScreen(
         )
 
         MainPagerToolbar(
-          visible =
-            toolbarsVisible && (isCompactHeight || sheetState.targetValue != SheetValue.Expanded),
+          visible = toolbarsVisible && (isCompactHeight || !cameraPreviewBlurred),
           isCompactHeight = isCompactHeight,
           selectedPage = selectedPage,
           searchRadius = searchRadius,
