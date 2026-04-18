@@ -125,18 +125,21 @@ fun CameraPreview(
         }
 
         val openGLRenderer = rememberOpenGLRenderer(targetPreview, viewStub.value)
-        val streamState by
-          openGLRenderer.previewStreamStates.collectAsStateWithLifecycle(
-            PreviewView.StreamState.IDLE
-          )
-        val contrastingColor = MaterialTheme.colorScheme.surfaceContainer
 
         LaunchedEffect(lifecycleOwner) {
           lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
             arView.markerRenderer.drawnMarkerRectFs.collect { openGLRenderer.markerRectFs = it }
           }
         }
+        LaunchedEffect(location) { if (location == null) openGLRenderer.markerRectFs = emptyList() }
+
         LaunchedEffect(blurredRectFs) { openGLRenderer.otherRectFs = blurredRectFs }
+
+        val streamState by
+          openGLRenderer.previewStreamStates.collectAsStateWithLifecycle(
+            PreviewView.StreamState.IDLE
+          )
+        val contrastingColor = MaterialTheme.colorScheme.surfaceContainer
         LaunchedEffect(blurred, streamState) {
           if (streamState == PreviewView.StreamState.STREAMING) {
             openGLRenderer.setBlurEnabled(enabled = blurred, animated = true)
