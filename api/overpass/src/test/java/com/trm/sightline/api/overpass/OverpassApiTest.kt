@@ -3,10 +3,19 @@ package com.trm.sightline.api.overpass
 import com.trm.sightline.api.overpass.models.query.settings.Filter
 import com.trm.sightline.api.overpass.models.query.statements.NodeQuery
 import kotlinx.coroutines.test.runTest
+import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
 import org.junit.Test
 
 class OverpassApiTest {
-  private val overpassApi = OverpassApi.create()
+  private val overpassApi =
+    OverpassApi.create(
+      OkHttpClient.Builder()
+        .addInterceptor(
+          HttpLoggingInterceptor(::println).apply { level = HttpLoggingInterceptor.Level.BODY }
+        )
+        .build()
+    )
 
   @Test
   fun singleAmenity() = runTest {
