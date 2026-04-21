@@ -138,6 +138,7 @@ fun MapPreview(
             50 to const(MaterialTheme.colorScheme.onSecondaryContainer),
             100 to const(MaterialTheme.colorScheme.onPrimaryContainer),
           ),
+        textAllowOverlap = const(true),
       )
 
       SymbolLayer(
