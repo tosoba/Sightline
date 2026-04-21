@@ -150,51 +150,57 @@ fun SharedTransitionScope.PlacesContent(
       },
     ) {
       LazyColumn {
-        if (locationAddress is LoadingState.Loaded && locationAddress.data.trim().length < 3) {
-          item {
-            Box(
-              modifier = Modifier.fillParentMaxWidth().padding(16.dp).animateItem(),
-              contentAlignment = Alignment.Center,
-            ) {
-              Text(
-                text =
-                  if (locationAddress.data.trim().isEmpty()) {
-                    stringResource(R.string.start_typing_to_search)
-                  } else {
-                    stringResource(R.string.query_too_short)
+        when {
+          locationAddress is LoadingState.Loaded && locationAddress.data.trim().length < 3 -> {
+            item {
+              Box(
+                modifier = Modifier.fillParentMaxWidth().padding(16.dp).animateItem(),
+                contentAlignment = Alignment.Center,
+              ) {
+                Text(
+                  text =
+                    stringResource(
+                      if (locationAddress.data.trim().isEmpty()) R.string.start_typing_to_search
+                      else R.string.query_too_short
+                    ),
+                  style = MaterialTheme.typography.titleMedium,
+                  color = MaterialTheme.colorScheme.onSurface,
+                  textAlign = TextAlign.Center,
+                )
+              }
+            }
+          }
+          customLocationSearchResults is LoadingState.Loaded -> {
+            items(customLocationSearchResults.data) { result ->
+              ListItem(
+                headlineContent = { Text(text = result.address) },
+                leadingContent = {
+                  Icon(imageVector = Icons.Default.Place, contentDescription = null)
+                },
+                colors =
+                  ListItemDefaults.colors(
+                    containerColor = ListItemDefaults.colors().containerColor.copy(alpha = 0f)
+                  ),
+                modifier =
+                  Modifier.animateItem().clickable {
+                    focusManager.clearFocus()
+                    onCustomLocationSearchResultClick(result)
                   },
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center,
               )
             }
           }
-        } else if (customLocationSearchResults is LoadingState.Loaded) {
-          items(customLocationSearchResults.data) { result ->
-            ListItem(
-              headlineContent = { Text(text = result.address) },
-              leadingContent = {
-                Icon(imageVector = Icons.Default.Place, contentDescription = null)
-              },
-              colors =
-                ListItemDefaults.colors(
-                  containerColor = ListItemDefaults.colors().containerColor.copy(alpha = 0f)
-                ),
-              modifier =
-                Modifier.animateItem().clickable {
-                  focusManager.clearFocus()
-                  onCustomLocationSearchResultClick(result)
-                },
-            )
+          customLocationSearchResults is LoadingState.Loading -> {
+            item { LinearProgressIndicator(modifier = Modifier.fillMaxWidth().animateItem()) }
           }
-        } else if (customLocationSearchResults is LoadingState.Loading) {
-          item { LinearProgressIndicator(modifier = Modifier.fillMaxWidth().animateItem()) }
         }
       }
     }
 
     Spacer(modifier = Modifier.height(16.dp))
 
+    val rowLayoutCategories = remember {
+      PlaceCategory.entries.filter(PlaceCategory::showInRowLayout)
+    }
     AnimatedContent(targetState = layout) {
       when (it) {
         PlacesLayout.Row -> {
@@ -202,7 +208,7 @@ fun SharedTransitionScope.PlacesContent(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
           ) {
-            PlaceCategory.entries.filter(PlaceCategory::showInRowLayout).forEach { category ->
+            rowLayoutCategories.forEach { category ->
               PlaceCategoryItem(
                 category = category,
                 icon = category.icon,
@@ -226,7 +232,7 @@ fun SharedTransitionScope.PlacesContent(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
           ) {
-            items(PlaceCategory.entries) { category ->
+            items(items = PlaceCategory.entries, key = PlaceCategory::name) { category ->
               PlaceCategoryItem(
                 category = category,
                 icon = category.icon,
