@@ -24,6 +24,10 @@ import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
 import com.trm.sightline.core.model.PlaceSearchRadius
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.util.concurrent.atomic.AtomicLong
+import javax.inject.Inject
+import kotlin.coroutines.cancellation.CancellationException
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
@@ -47,10 +51,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
-import java.util.concurrent.atomic.AtomicLong
-import javax.inject.Inject
-import kotlin.coroutines.cancellation.CancellationException
-import kotlin.time.Duration.Companion.seconds
+import timber.log.Timber
 
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @HiltViewModel
@@ -127,6 +128,7 @@ constructor(
             emit(LoadingState.Loaded(addressRepository.search(query = query, limit = 100)))
           } catch (ex: Exception) {
             if (ex is CancellationException) throw ex
+            Timber.e(ex)
             handleRequestError(ex.toRequestError())
             emit(LoadingState.Loaded(emptyList()))
           }
@@ -192,6 +194,7 @@ constructor(
             )
         } catch (ex: Exception) {
           if (ex is CancellationException) throw ex
+          Timber.e(ex)
           handleRequestError(ex.toRequestError())
           _userLocationAddress.value = LoadingState.Loaded("")
         }
@@ -234,9 +237,10 @@ constructor(
                 )
               }
           } catch (ex: Exception) {
+            if (ex is CancellationException) throw ex
+            Timber.e(ex)
             places.remove(category)
             handleRequestError(ex.toRequestError())
-            if (ex is CancellationException) throw ex
           }
         }
         .launchIn(viewModelScope)
