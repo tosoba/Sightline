@@ -127,7 +127,9 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
         enabled = loadingState is LoadingState.Loaded<List<Place>>,
       ) {
         Row(
-          modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
+          modifier = Modifier
+            .fillMaxWidth()
+            .height(IntrinsicSize.Min),
           verticalAlignment = Alignment.CenterVertically,
         ) {
           ToggleButton(
@@ -138,7 +140,8 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
             shapes = shapes,
             interactionSource = interactionSource,
             modifier =
-              Modifier.sharedBounds(
+              Modifier
+                .sharedBounds(
                   sharedContentState = rememberSharedContentState(key = "icon-${category.name}"),
                   animatedVisibilityScope = animatedVisibilityScope,
                 )
@@ -154,8 +157,6 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
             )
           }
 
-          Spacer(modifier = Modifier.width(8.dp))
-
           Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
             Text(
               text = category.label,
@@ -163,7 +164,8 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
               color = MaterialTheme.colorScheme.onSurface,
               maxLines = 1,
               modifier =
-                Modifier.sharedElement(
+                Modifier
+                  .sharedElement(
                     sharedContentState = rememberSharedContentState(key = "title-${category.name}"),
                     animatedVisibilityScope = animatedVisibilityScope,
                   )
@@ -179,7 +181,8 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     modifier =
-                      Modifier.sharedElement(
+                      Modifier
+                        .sharedElement(
                           sharedContentState =
                             rememberSharedContentState(key = "count-${category.name}"),
                           animatedVisibilityScope = animatedVisibilityScope,
