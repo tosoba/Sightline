@@ -28,7 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.trm.sightline.core.model.MapCameraPosition
 import com.trm.sightline.core.model.Place
-import com.trm.sightline.core.ui.MapCameraAnimateToPlacesBoundingBoxEffect
+import com.trm.sightline.core.ui.MapCameraAnimateToBoundingBoxEffect
 import com.trm.sightline.core.ui.MapPreview
 import com.trm.sightline.core.ui.rememberMapPlacesBoundingBox
 import kotlinx.coroutines.launch
@@ -75,10 +75,10 @@ fun MapScreen(
         )
     }
 
-  MapCameraAnimateToPlacesBoundingBoxEffect(
-    placesBoundingBox = placesBoundingBox,
-    padding = padding,
+  MapCameraAnimateToBoundingBoxEffect(
+    boundingBox = placesBoundingBox,
     cameraState = cameraState,
+    padding = padding,
   )
 
   if (placesBoundingBox == null && !initialPositionRestored) {

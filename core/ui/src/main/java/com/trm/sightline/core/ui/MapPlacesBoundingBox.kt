@@ -35,14 +35,14 @@ fun rememberMapPlacesBoundingBox(
   }
 
 @Composable
-fun MapCameraAnimateToPlacesBoundingBoxEffect(
-  placesBoundingBox: BoundingBox?,
-  padding: PaddingValues,
+fun MapCameraAnimateToBoundingBoxEffect(
+  boundingBox: BoundingBox?,
   cameraState: CameraState,
+  padding: PaddingValues,
 ) {
-  LaunchedEffect(placesBoundingBox, padding) {
-    if (placesBoundingBox != null) {
-      cameraState.animateTo(boundingBox = placesBoundingBox, padding = padding)
+  LaunchedEffect(boundingBox, padding) {
+    if (boundingBox != null) {
+      cameraState.animateTo(boundingBox = boundingBox, padding = padding)
     }
   }
 }

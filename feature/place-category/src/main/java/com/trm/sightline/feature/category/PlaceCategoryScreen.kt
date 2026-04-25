@@ -73,7 +73,7 @@ import com.trm.sightline.core.common.util.rememberBottomSheetScaffoldStateForScr
 import com.trm.sightline.core.common.util.tourismOrLeisure
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
-import com.trm.sightline.core.ui.MapCameraAnimateToPlacesBoundingBoxEffect
+import com.trm.sightline.core.ui.MapCameraAnimateToBoundingBoxEffect
 import com.trm.sightline.core.ui.MapPreview
 import com.trm.sightline.core.ui.R as uiR
 import com.trm.sightline.core.ui.icon
@@ -204,10 +204,10 @@ fun SharedTransitionScope.PlaceCategoryScreen(
           enter = fadeIn(),
           exit = fadeOut(),
         ) {
-          MapCameraAnimateToPlacesBoundingBoxEffect(
-            placesBoundingBox = mapPlacesBoundingBox,
-            padding = mapPadding,
+          MapCameraAnimateToBoundingBoxEffect(
+            boundingBox = mapPlacesBoundingBox,
             cameraState = mapCameraState,
+            padding = mapPadding,
           )
 
           MapPreview(
