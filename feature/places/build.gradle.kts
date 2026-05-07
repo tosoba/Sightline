@@ -5,7 +5,7 @@ plugins {
 
 android {
   namespace = "com.trm.sightline.feature.places"
-  compileSdk { version = release(36) { minorApiLevel = 1 } }
+  compileSdk { version = release(37) {} }
 
   defaultConfig {
     minSdk = libs.versions.minSdk.get().toInt()

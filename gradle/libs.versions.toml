@@ -1,6 +1,6 @@
 [versions]
 minSdk = "24"
-targetSdk = "36"
+targetSdk = "37"
 
 activityCompose = "1.13.0"
 agp = "9.2.1"
