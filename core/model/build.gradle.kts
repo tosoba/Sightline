@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
   id("java-library")
   alias(libs.plugins.kotlin.jvm)
@@ -11,4 +13,4 @@ java {
   targetCompatibility = JavaVersion.VERSION_11
 }
 
-kotlin { compilerOptions { jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11 } }
+kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_11 } }
