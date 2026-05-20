@@ -7,6 +7,7 @@ import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalResources
@@ -14,7 +15,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.trm.sightline.core.model.Place
-import java.io.BufferedReader
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonPrimitive
 import org.maplibre.compose.camera.CameraState
 import org.maplibre.compose.expressions.dsl.asNumber
@@ -36,11 +37,13 @@ import org.maplibre.compose.sources.GeoJsonData
 import org.maplibre.compose.sources.GeoJsonOptions
 import org.maplibre.compose.sources.rememberGeoJsonSource
 import org.maplibre.compose.style.BaseStyle
+import org.maplibre.compose.util.ClickResult
 import org.maplibre.spatialk.geojson.BoundingBox
 import org.maplibre.spatialk.geojson.Feature
 import org.maplibre.spatialk.geojson.FeatureCollection
 import org.maplibre.spatialk.geojson.Point
 import org.maplibre.spatialk.geojson.Position
+import java.io.BufferedReader
 
 @Composable
 fun MapPreview(
@@ -50,6 +53,8 @@ fun MapPreview(
   modifier: Modifier = Modifier,
   currentLocation: Location? = null,
 ) {
+  val scope = rememberCoroutineScope()
+
   MaplibreMap(
     modifier = modifier,
     baseStyle =
@@ -123,6 +128,19 @@ fun MapPreview(
             50 to const(32.dp),
             100 to const(48.dp),
           ),
+        onClick = { features ->
+          features.firstOrNull(placesSource::isCluster)?.let {
+            scope.launch {
+              cameraState.animateTo(
+                cameraState.position.copy(
+                  target = (it.geometry as Point).coordinates,
+                  zoom = placesSource.getClusterExpansionZoom(it),
+                )
+              )
+            }
+            ClickResult.Consume
+          } ?: ClickResult.Pass
+        },
       )
 
       SymbolLayer(
