@@ -18,6 +18,7 @@ import com.trm.sightline.core.ar.math.Vector2
 import com.trm.sightline.core.ar.math.Vector3
 import com.trm.sightline.core.ar.model.ARMarker
 import com.trm.sightline.core.ar.orientation.Orientation
+import com.trm.sightline.core.ar.orientation.pitchWithinLimit
 import kotlinx.parcelize.Parcelize
 import kotlin.math.abs
 import kotlin.math.pow
@@ -96,7 +97,7 @@ class ARView : View {
     super.onDraw(canvas)
     val povLocation = this.povLocation ?: return
     preDraw(povLocation)
-    markers.forEach { marker -> calculateMarkerScreenPosition(marker) }
+    markers.forEach(::calculateMarkerScreenPosition)
     markerRenderer.draw(markers.filter { it.distance < maxRange }, canvas)
   }
 
@@ -140,6 +141,8 @@ class ARView : View {
 
   @SuppressLint("ClickableViewAccessibility")
   override fun onTouchEvent(event: MotionEvent): Boolean {
+    if (!orientation.pitchWithinLimit) return super.onTouchEvent(event)
+
     val markerPressed =
       onMarkerPressed?.let { listener ->
         if (event.action != MotionEvent.ACTION_DOWN) return@let false

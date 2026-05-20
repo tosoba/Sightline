@@ -26,6 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -43,6 +44,7 @@ import com.trm.sightline.core.ar.model.ARMarker
 import com.trm.sightline.core.ar.model.RoundedRectF
 import com.trm.sightline.core.ar.orientation.Orientation
 import com.trm.sightline.core.ar.orientation.OrientationManager
+import com.trm.sightline.core.ar.orientation.pitchWithinLimit
 import com.trm.sightline.core.ar.util.phoneRotation
 import com.trm.sightline.core.ar.view.ARMarkerRenderer
 import com.trm.sightline.core.ar.view.ARView
@@ -95,26 +97,16 @@ fun CameraPreview(
         )
 
         val arView = remember { ARView(context) }
-        AndroidView(
-          modifier = Modifier.fillMaxSize(),
-          factory = { arView },
-          update = { view ->
-            view.povLocation = location
-            view.markers = places.map(::ARMarker)
-            view.markerRenderer.disabled = !enabled
-            view.onTouch = onCameraPreviewTouch
-          },
-        )
 
+        var pitchWithinLimit by remember { mutableStateOf(true) }
         val orientationManager = remember {
           OrientationManager().apply {
             axisMode = OrientationManager.Mode.AR
             onOrientationChangedListener =
               object : OrientationManager.OnOrientationChangedListener {
                 override fun onOrientationChanged(orientation: Orientation) {
-                  if (!orientation.pitchWithinLimit) return
                   arView.orientation = orientation
-                  arView.phoneRotation = context.phoneRotation
+                  pitchWithinLimit = orientation.pitchWithinLimit
                 }
               }
           }
@@ -123,6 +115,18 @@ fun CameraPreview(
           orientationManager.startSensor(context)
           onStopOrDispose { orientationManager.stopSensor() }
         }
+
+        AndroidView(
+          modifier = Modifier.fillMaxSize(),
+          factory = { arView },
+          update = { view ->
+            view.povLocation = location
+            view.markers = places.map(::ARMarker)
+            view.markerRenderer.disabled = !enabled || !pitchWithinLimit
+            view.onTouch = onCameraPreviewTouch
+            view.phoneRotation = context.phoneRotation
+          },
+        )
 
         val openGLRenderer = rememberOpenGLRenderer(targetPreview, viewStub.value)
 
@@ -140,9 +144,10 @@ fun CameraPreview(
             PreviewView.StreamState.IDLE
           )
         val contrastingColor = MaterialTheme.colorScheme.surfaceContainer
-        LaunchedEffect(blurred, streamState) {
+        val previewBlurred = blurred || !pitchWithinLimit
+        LaunchedEffect(previewBlurred, streamState) {
           if (streamState == PreviewView.StreamState.STREAMING) {
-            openGLRenderer.setBlurEnabled(enabled = blurred, animated = true)
+            openGLRenderer.setBlurEnabled(enabled = previewBlurred, animated = true)
             openGLRenderer.setContrastingColor(
               red = contrastingColor.red.toInt(),
               green = contrastingColor.green.toInt(),
@@ -190,8 +195,3 @@ suspend fun Context.initCameraPreview(
     .bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, preview)
   return preview
 }
-
-private val Orientation.pitchWithinLimit: Boolean
-  get() = pitch in -PITCH_LIMIT_RADIANS..PITCH_LIMIT_RADIANS
-
-private const val PITCH_LIMIT_RADIANS = Math.PI / 3
