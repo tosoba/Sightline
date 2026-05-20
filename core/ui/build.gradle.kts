@@ -42,6 +42,12 @@ dependencies {
   implementation(libs.androidx.compose.ui.tooling.preview)
 
   implementation(libs.kotlinx.serialization.json)
-  api(libs.maplibre.compose)
+
+  debugApi(libs.maplibre.compose.get().toString()) {
+    exclude(group = "org.maplibre.gl", module = "android-sdk")
+  }
+  releaseApi(libs.maplibre.compose)
+  debugApi(libs.maplibre.android.opengl)
+
   implementation(libs.material)
 }

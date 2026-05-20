@@ -35,7 +35,6 @@ dependencies {
 
   implementation(libs.androidx.core.ktx)
   implementation(libs.androidx.appcompat)
-  implementation(libs.material)
 
   implementation(libs.androidx.activity.compose)
   implementation(platform(libs.androidx.compose.bom))
@@ -46,7 +45,13 @@ dependencies {
   implementation(libs.androidx.compose.material.icons.extended)
   implementation(libs.androidx.compose.material3)
 
-  implementation(libs.maplibre.compose)
+  debugImplementation(libs.maplibre.compose.get().toString()) {
+    exclude(group = "org.maplibre.gl", module = "android-sdk")
+  }
+  releaseImplementation(libs.maplibre.compose)
+  debugImplementation(libs.maplibre.android.opengl)
+
+  implementation(libs.material)
 
   implementation(libs.timber)
 }
