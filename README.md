@@ -31,6 +31,7 @@
 - [Jetpack Compose](https://developer.android.com/compose) - declarative UI toolkit
 - [Navigation 3](https://developer.android.com/guide/navigation/navigation3) - screen flows definition, backstack management
 - [CameraX](https://developer.android.com/jetpack/androidx/releases/camera) - camera preview for augmented reality
+- [OpenGL ES 3.0 / JNI](https://developer.android.com/guide/topics/graphics/opengl) - high-performance camera texture rendering with Gaussian blur and color overlay effects via native C++
 - [MapLibre Compose](https://github.com/maplibre/maplibre-compose) - map rendering
 - [Hilt](https://dagger.dev/hilt/) - dependency injection
 - [Retrofit](https://square.github.io/retrofit/) - network requests (Overpass & Photon APIs)
