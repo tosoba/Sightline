@@ -24,10 +24,6 @@ import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
 import com.trm.sightline.core.model.PlaceSearchRadius
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.util.concurrent.atomic.AtomicLong
-import javax.inject.Inject
-import kotlin.coroutines.cancellation.CancellationException
-import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
@@ -52,6 +48,11 @@ import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
 import timber.log.Timber
+import java.util.concurrent.atomic.AtomicLong
+import javax.inject.Inject
+import kotlin.coroutines.cancellation.CancellationException
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @HiltViewModel
@@ -216,7 +217,7 @@ constructor(
           }
 
           val remaining = DEBOUNCE_MS - (System.currentTimeMillis() - lastSentTime.get())
-          if (remaining > 0) delay(remaining)
+          if (remaining > 0) delay(remaining.milliseconds)
           lastSentTime.set(System.currentTimeMillis())
 
           val location =
@@ -224,7 +225,7 @@ constructor(
               ?: return@transformLatest
           try {
             places[category] =
-              withTimeout(REQUEST_TIMEOUT_MS) {
+              withTimeout(REQUEST_TIMEOUT_MS.milliseconds) {
                 LoadingState.Loaded(
                   placesRepository
                     .fetchPlaces(
@@ -259,7 +260,7 @@ constructor(
     clearErrorMessageJob?.cancel()
     _errorMessage.value = error.messageResource()
     clearErrorMessageJob = viewModelScope.launch {
-      delay(4000)
+      delay(4000.milliseconds)
       _errorMessage.value = null
     }
   }
