@@ -45,6 +45,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.transformLatest
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
 import timber.log.Timber
@@ -107,13 +108,12 @@ constructor(
     private set
 
   private val _userLocationAddress = MutableStateFlow<LoadingState<String>>(LoadingState.Loaded(""))
-
   val userLocationAddress: StateFlow<LoadingState<String>> = _userLocationAddress.asStateFlow()
+
   var customLocation: Location? by mutableStateOf(null)
     private set
 
   private val _customLocationAddress = MutableStateFlow("")
-
   val customLocationAddress: StateFlow<String> = _customLocationAddress.asStateFlow()
   val customLocationSearchResults: StateFlow<LoadingState<List<CustomLocation>>> =
     customLocationAddress
@@ -123,7 +123,7 @@ constructor(
         if (query.trim().length < 3) {
           emit(LoadingState.Loaded(emptyList()))
         } else {
-          emit(LoadingState.Loading)
+          emit(LoadingState.Loading())
 
           try {
             emit(LoadingState.Loaded(addressRepository.search(query = query, limit = 100)))
@@ -182,7 +182,7 @@ constructor(
       .flatMapLatest { enabled -> if (enabled) application.locationUpdatesFlow() else emptyFlow() }
       .transformLatest { location ->
         userLocation = location
-        _userLocationAddress.value = LoadingState.Loading
+        _userLocationAddress.update { LoadingState.Loading(it.data) }
 
         delay(1.seconds)
 
@@ -197,7 +197,7 @@ constructor(
           if (ex is CancellationException) throw ex
           Timber.e(ex)
           handleRequestError(ex.toRequestError())
-          _userLocationAddress.value = LoadingState.Loaded("")
+          _userLocationAddress.update { LoadingState.Loaded(it.data.orEmpty()) }
         }
 
         emit(Unit)
@@ -267,7 +267,7 @@ constructor(
 
   fun onTogglePlaceCategory(category: PlaceCategory) {
     val isActive = !places.containsKey(category)
-    if (isActive) places[category] = LoadingState.Loading else places.remove(category)
+    if (isActive) places[category] = LoadingState.Loading() else places.remove(category)
     viewModelScope.launch { placeCategoryToggles.emit(category to isActive) }
   }
 
