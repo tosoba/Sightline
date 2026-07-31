@@ -25,7 +25,6 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -41,12 +40,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.dropUnlessResumed
-import com.trm.sightline.core.common.R as commonR
 import com.trm.sightline.core.model.LoadingState
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
+import com.trm.sightline.core.common.R as commonR
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 internal fun SharedTransitionScope.PlaceCategoryItem(
   category: PlaceCategory,
@@ -102,14 +100,13 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
     PlacesLayout.Grid -> {
       val interactionSource = remember(::MutableInteractionSource)
       val isPressed by interactionSource.collectIsPressedAsState()
-      val shapes = ToggleButtonDefaults.shapes()
 
       Card(
         shape =
           when {
-            isPressed -> shapes.pressedShape
-            selected -> shapes.checkedShape
-            else -> shapes.shape
+            isPressed -> ToggleButtonDefaults.pressedShape
+            selected -> ToggleButtonDefaults.checkedShape
+            else -> ToggleButtonDefaults.shape
           },
         colors =
           CardDefaults.cardColors(
@@ -127,9 +124,7 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
         enabled = loadingState is LoadingState.Loaded<List<Place>>,
       ) {
         Row(
-          modifier = Modifier
-            .fillMaxWidth()
-            .height(IntrinsicSize.Min),
+          modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
           verticalAlignment = Alignment.CenterVertically,
         ) {
           ToggleButton(
@@ -137,11 +132,9 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
             onCheckedChange = { onClick(category) },
             enabled = selected || enabled,
             colors = buttonColors,
-            shapes = shapes,
             interactionSource = interactionSource,
             modifier =
-              Modifier
-                .sharedBounds(
+              Modifier.sharedBounds(
                   sharedContentState = rememberSharedContentState(key = "icon-${category.name}"),
                   animatedVisibilityScope = animatedVisibilityScope,
                 )
@@ -164,8 +157,7 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
               color = MaterialTheme.colorScheme.onSurface,
               maxLines = 1,
               modifier =
-                Modifier
-                  .sharedElement(
+                Modifier.sharedElement(
                     sharedContentState = rememberSharedContentState(key = "title-${category.name}"),
                     animatedVisibilityScope = animatedVisibilityScope,
                   )
@@ -181,8 +173,7 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     modifier =
-                      Modifier
-                        .sharedElement(
+                      Modifier.sharedElement(
                           sharedContentState =
                             rememberSharedContentState(key = "count-${category.name}"),
                           animatedVisibilityScope = animatedVisibilityScope,

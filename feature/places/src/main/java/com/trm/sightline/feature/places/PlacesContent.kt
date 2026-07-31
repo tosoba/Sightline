@@ -173,7 +173,6 @@ fun SharedTransitionScope.PlacesContent(
           customLocationSearchResults is LoadingState.Loaded -> {
             items(customLocationSearchResults.data) { result ->
               ListItem(
-                headlineContent = { Text(text = result.address) },
                 leadingContent = {
                   Icon(imageVector = Icons.Default.Place, contentDescription = null)
                 },
@@ -186,7 +185,9 @@ fun SharedTransitionScope.PlacesContent(
                     focusManager.clearFocus()
                     onCustomLocationSearchResultClick(result)
                   },
-              )
+              ) {
+                Text(text = result.address)
+              }
             }
           }
           customLocationSearchResults is LoadingState.Loading -> {

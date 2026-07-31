@@ -38,7 +38,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
@@ -66,7 +65,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.currentStateAsState
 import com.trm.sightline.core.ar.util.sideSheetWidthDp
-import com.trm.sightline.core.common.R as commonR
 import com.trm.sightline.core.common.util.formattedAddress
 import com.trm.sightline.core.common.util.formattedDistance
 import com.trm.sightline.core.common.util.rememberBottomSheetScaffoldStateForScreenHeight
@@ -75,7 +73,6 @@ import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
 import com.trm.sightline.core.ui.MapCameraAnimateToBoundingBoxEffect
 import com.trm.sightline.core.ui.MapPreview
-import com.trm.sightline.core.ui.R as uiR
 import com.trm.sightline.core.ui.icon
 import com.trm.sightline.core.ui.rememberBottomSheetExpandedProgress
 import com.trm.sightline.core.ui.rememberMapPlacesBoundingBox
@@ -83,6 +80,8 @@ import kotlinx.coroutines.launch
 import org.maplibre.compose.camera.CameraPosition
 import org.maplibre.compose.camera.rememberCameraState
 import org.maplibre.spatialk.geojson.Position
+import com.trm.sightline.core.common.R as commonR
+import com.trm.sightline.core.ui.R as uiR
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -252,7 +251,6 @@ fun SharedTransitionScope.PlaceCategoryScreen(
   }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun SharedTransitionScope.PlaceCategoryHeader(
   category: PlaceCategory,
@@ -263,7 +261,7 @@ private fun SharedTransitionScope.PlaceCategoryHeader(
   Column(modifier = modifier.fillMaxWidth().padding(16.dp), horizontalAlignment = Alignment.Start) {
     Row(verticalAlignment = Alignment.CenterVertically) {
       Surface(
-        shape = ToggleButtonDefaults.shapes().checkedShape,
+        shape = ToggleButtonDefaults.checkedShape,
         color = MaterialTheme.colorScheme.surfaceContainerHighest,
         modifier =
           Modifier.size(72.dp)

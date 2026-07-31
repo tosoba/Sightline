@@ -18,7 +18,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButtonMenu
 import androidx.compose.material3.FloatingActionButtonMenuItem
 import androidx.compose.material3.Icon
@@ -51,7 +51,6 @@ import com.trm.sightline.core.ar.util.collapsedBottomSheetDragHandleHeightDp
 import com.trm.sightline.core.common.util.formattedDistance
 import com.trm.sightline.core.model.PlaceSearchRadius
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun BoxScope.MainPagerToolbar(
   visible: Boolean,
@@ -124,7 +123,7 @@ private fun MainPagerToolbarItem(icon: ImageVector, isSelected: Boolean, onClick
   }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun MainPagerPlaceSearchRadiusMenu(
   searchRadius: PlaceSearchRadius,

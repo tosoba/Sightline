@@ -4,7 +4,7 @@ import androidx.compose.material3.BottomSheetScaffoldState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.rememberBottomSheetScaffoldState
-import androidx.compose.material3.rememberStandardBottomSheetState
+import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.key
@@ -16,9 +16,14 @@ fun rememberBottomSheetScaffoldStateForScreenHeight(
 ): BottomSheetScaffoldState {
   val sheetState =
     key(isCompactHeight) {
-      rememberStandardBottomSheetState(
+      rememberBottomSheetState(
         initialValue = if (isCompactHeight) SheetValue.Hidden else SheetValue.PartiallyExpanded,
-        skipHiddenState = !isCompactHeight,
+        enabledValues =
+          if (isCompactHeight) {
+            setOf(SheetValue.Hidden, SheetValue.PartiallyExpanded, SheetValue.Expanded)
+          } else {
+            setOf(SheetValue.PartiallyExpanded, SheetValue.Expanded)
+          },
       )
     }
   val scaffoldState = rememberBottomSheetScaffoldState(sheetState)
