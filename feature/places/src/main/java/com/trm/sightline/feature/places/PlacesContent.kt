@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -19,6 +18,8 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.GpsFixed
@@ -26,7 +27,7 @@ import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExpandedDockedSearchBar
 import androidx.compose.material3.FilledTonalIconToggleButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -36,15 +37,16 @@ import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.SearchBarDefaults
+import androidx.compose.material3.SearchBarValue
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberSearchBarState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -54,8 +56,8 @@ import com.trm.sightline.core.model.LoadingState
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
 import com.trm.sightline.core.ui.icon
+import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SharedTransitionScope.PlacesContent(
   places: Map<PlaceCategory, LoadingState<List<Place>>>,
@@ -75,79 +77,112 @@ fun SharedTransitionScope.PlacesContent(
   onCategoryClick: (PlaceCategory, List<Place>) -> Unit,
 ) {
   val focusManager = LocalFocusManager.current
-  var isFocused by remember { mutableStateOf(false) }
+  val searchBarState = rememberSearchBarState()
+  val scope = rememberCoroutineScope()
+  val expanded = searchBarState.targetValue == SearchBarValue.Expanded
+  val textFieldState =
+    rememberTextFieldState((locationAddress as? LoadingState.Loaded)?.data.orEmpty())
+
+  LaunchedEffect(locationAddress) {
+    if (
+      locationAddress is LoadingState.Loaded &&
+        textFieldState.text.toString() != locationAddress.data
+    ) {
+      textFieldState.setTextAndPlaceCursorAtEnd(locationAddress.data)
+    }
+  }
+
+  LaunchedEffect(textFieldState, locationAddress) {
+    snapshotFlow { textFieldState.text.toString() }
+      .collect { query ->
+        if (locationAddress !is LoadingState.Loaded || locationAddress.data != query) {
+          onCustomLocationAddressChange(query)
+        }
+      }
+  }
+
+  LaunchedEffect(userLocationEnabled) {
+    if (userLocationEnabled && expanded) {
+      searchBarState.animateToCollapsed()
+    }
+  }
+  LaunchedEffect(expanded) { onSearchFocusChange(expanded) }
 
   Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-    val expanded = isFocused && !userLocationEnabled
-    SearchBar(
-      expanded = expanded,
-      onExpandedChange = {},
-      modifier = Modifier.fillMaxWidth(),
-      colors =
-        SearchBarDefaults.colors().run {
-          copy(containerColor = containerColor.copy(alpha = alpha))
-        },
-      windowInsets = WindowInsets(),
-      inputField = {
-        SearchBarDefaults.InputField(
-          query = if (locationAddress is LoadingState.Loaded) locationAddress.data else "",
-          onQueryChange = onCustomLocationAddressChange,
-          onSearch = {},
-          expanded = expanded,
-          enabled = !userLocationEnabled,
-          onExpandedChange = {},
-          placeholder = {
-            Text(
-              stringResource(
-                when {
-                  !userLocationEnabled -> R.string.enter_location_placeholder
-                  !placeCategoriesEnabled -> R.string.loading_location
-                  locationAddress is LoadingState.Loading -> R.string.loading_location_address
-                  else -> R.string.location_address_not_found
-                }
-              )
+    val searchBarColors =
+      SearchBarDefaults.colors().run {
+        copy(containerColor = containerColor.copy(alpha = alpha))
+      }
+    val inputField: @Composable () -> Unit = {
+      SearchBarDefaults.InputField(
+        textFieldState = textFieldState,
+        searchBarState = searchBarState,
+        onSearch = {},
+        enabled = !userLocationEnabled,
+        placeholder = {
+          Text(
+            stringResource(
+              when {
+                !userLocationEnabled -> R.string.enter_location_placeholder
+                !placeCategoriesEnabled -> R.string.loading_location
+                locationAddress is LoadingState.Loading -> R.string.loading_location_address
+                else -> R.string.location_address_not_found
+              }
             )
-          },
-          modifier =
-            Modifier.onFocusChanged {
-              isFocused = it.isFocused
-              onSearchFocusChange(it.isFocused)
-            },
-          leadingIcon = {
-            when {
-              locationAddress is LoadingState.Loading ||
-                (userLocationEnabled && !placeCategoriesEnabled) -> {
-                CircularProgressIndicator(modifier = Modifier.size(24.dp))
-              }
-              userLocationEnabled && locationAddress is LoadingState.Loaded -> {
-                Icon(imageVector = Icons.Default.GpsFixed, contentDescription = null)
-              }
-              isFocused -> {
-                IconButton(onClick = focusManager::clearFocus) {
-                  Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.back_content_description),
-                  )
+          )
+        },
+        leadingIcon = {
+          when {
+            locationAddress is LoadingState.Loading ||
+              (userLocationEnabled && !placeCategoriesEnabled) -> {
+              CircularProgressIndicator(modifier = Modifier.size(24.dp))
+            }
+            userLocationEnabled && locationAddress is LoadingState.Loaded -> {
+              Icon(imageVector = Icons.Default.GpsFixed, contentDescription = null)
+            }
+            expanded -> {
+              IconButton(
+                onClick = {
+                  focusManager.clearFocus()
+                  scope.launch { searchBarState.animateToCollapsed() }
                 }
-              }
-              else -> {
-                Icon(imageVector = Icons.Default.Search, contentDescription = null)
+              ) {
+                Icon(
+                  imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                  contentDescription = stringResource(R.string.back_content_description),
+                )
               }
             }
-          },
-          trailingIcon = {
-            FilledTonalIconToggleButton(
-              checked = userLocationEnabled,
-              onCheckedChange = onToggleUserLocationEnabled,
-            ) {
-              Icon(
-                imageVector = Icons.Default.MyLocation,
-                contentDescription = stringResource(R.string.my_location_content_description),
-              )
+            else -> {
+              Icon(imageVector = Icons.Default.Search, contentDescription = null)
             }
-          },
-        )
-      },
+          }
+        },
+        trailingIcon = {
+          FilledTonalIconToggleButton(
+            checked = userLocationEnabled,
+            onCheckedChange = onToggleUserLocationEnabled,
+          ) {
+            Icon(
+              imageVector = Icons.Default.MyLocation,
+              contentDescription = stringResource(R.string.my_location_content_description),
+            )
+          }
+        },
+      )
+    }
+
+    SearchBar(
+      state = searchBarState,
+      inputField = inputField,
+      modifier = Modifier.fillMaxWidth(),
+      colors = searchBarColors,
+    )
+
+    ExpandedDockedSearchBar(
+      state = searchBarState,
+      inputField = inputField,
+      colors = searchBarColors,
     ) {
       LazyColumn {
         when {
@@ -183,6 +218,7 @@ fun SharedTransitionScope.PlacesContent(
                 modifier =
                   Modifier.animateItem().clickable {
                     focusManager.clearFocus()
+                    scope.launch { searchBarState.animateToCollapsed() }
                     onCustomLocationSearchResultClick(result)
                   },
               ) {
