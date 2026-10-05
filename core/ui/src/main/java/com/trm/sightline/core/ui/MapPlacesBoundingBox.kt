@@ -4,8 +4,10 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.ui.unit.LayoutDirection
 import com.trm.sightline.core.model.Place
-import org.maplibre.compose.camera.CameraState
+import org.maplibre.compose.map.MapState
+import org.maplibre.compose.util.DpPadding
 import org.maplibre.spatialk.geojson.BoundingBox
 
 @Composable
@@ -34,15 +36,26 @@ fun rememberMapPlacesBoundingBox(
     )
   }
 
+fun PaddingValues.toCameraPadding(): DpPadding =
+  DpPadding(
+    left = calculateLeftPadding(LayoutDirection.Ltr),
+    top = calculateTopPadding(),
+    right = calculateRightPadding(LayoutDirection.Ltr),
+    bottom = calculateBottomPadding(),
+  )
+
 @Composable
 fun MapCameraAnimateToBoundingBoxEffect(
   boundingBox: BoundingBox?,
-  cameraState: CameraState,
+  mapState: MapState,
   padding: PaddingValues,
 ) {
   LaunchedEffect(boundingBox, padding) {
     if (boundingBox != null) {
-      cameraState.animateTo(boundingBox = boundingBox, padding = padding)
+      mapState.animateCameraToBounds(
+        boundingBox = boundingBox,
+        cameraPadding = padding.toCameraPadding(),
+      )
     }
   }
 }

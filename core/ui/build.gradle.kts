@@ -43,11 +43,8 @@ dependencies {
 
   implementation(libs.kotlinx.serialization.json)
 
-  debugApi(libs.maplibre.compose.get().toString()) {
-    exclude(group = "org.maplibre.gl", module = "android-sdk")
-  }
-  releaseApi(libs.maplibre.compose)
-  debugApi(libs.maplibre.android.opengl)
+  api(libs.maplibre.compose)
+  runtimeOnly(libs.maplibre.compose.runtime.vulkan.android)
 
   implementation(libs.material)
 }

@@ -45,11 +45,8 @@ dependencies {
   implementation(libs.androidx.compose.material.icons.extended)
   implementation(libs.androidx.compose.material3)
 
-  debugImplementation(libs.maplibre.compose.get().toString()) {
-    exclude(group = "org.maplibre.gl", module = "android-sdk")
-  }
-  releaseImplementation(libs.maplibre.compose)
-  debugImplementation(libs.maplibre.android.opengl)
+  implementation(libs.maplibre.compose)
+  runtimeOnly(libs.maplibre.compose.runtime.vulkan.android)
 
   implementation(libs.material)
 

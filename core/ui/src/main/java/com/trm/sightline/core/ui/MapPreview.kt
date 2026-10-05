@@ -6,8 +6,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalResources
@@ -15,9 +18,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.trm.sightline.core.model.Place
-import kotlinx.coroutines.launch
+import java.io.BufferedReader
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import org.maplibre.compose.camera.CameraState
+import org.maplibre.compose.camera.CameraPosition
+import org.maplibre.compose.camera.CameraUpdate
 import org.maplibre.compose.expressions.dsl.asNumber
 import org.maplibre.compose.expressions.dsl.asString
 import org.maplibre.compose.expressions.dsl.const
@@ -27,36 +32,68 @@ import org.maplibre.compose.expressions.dsl.image
 import org.maplibre.compose.expressions.dsl.not
 import org.maplibre.compose.expressions.dsl.plus
 import org.maplibre.compose.expressions.dsl.step
+import org.maplibre.compose.interaction.ClickResult
+import org.maplibre.compose.interaction.MapInteractions
 import org.maplibre.compose.layers.CircleLayer
 import org.maplibre.compose.layers.SymbolLayer
-import org.maplibre.compose.map.GestureOptions
-import org.maplibre.compose.map.MapOptions
+import org.maplibre.compose.map.MapState
 import org.maplibre.compose.map.MaplibreMap
-import org.maplibre.compose.map.OrnamentOptions
+import org.maplibre.compose.map.rememberMapState
+import org.maplibre.compose.overlay.MapOverlay
+import org.maplibre.compose.overlay.include
 import org.maplibre.compose.sources.GeoJsonData
 import org.maplibre.compose.sources.GeoJsonOptions
+import org.maplibre.compose.sources.GeoJsonSourceHandle
 import org.maplibre.compose.sources.rememberGeoJsonSource
 import org.maplibre.compose.style.BaseStyle
-import org.maplibre.compose.util.ClickResult
-import org.maplibre.spatialk.geojson.BoundingBox
 import org.maplibre.spatialk.geojson.Feature
 import org.maplibre.spatialk.geojson.FeatureCollection
+import org.maplibre.spatialk.geojson.Geometry
 import org.maplibre.spatialk.geojson.Point
 import org.maplibre.spatialk.geojson.Position
-import java.io.BufferedReader
 
 @Composable
-fun MapPreview(
-  cameraState: CameraState,
-  placesBoundingBox: BoundingBox?,
+fun rememberMapPlaceState(
   places: List<Place>,
-  modifier: Modifier = Modifier,
-  currentLocation: Location? = null,
-) {
-  val scope = rememberCoroutineScope()
+  currentLocation: Location?,
+  initialCameraPosition: CameraPosition = CameraPosition(),
+): MapState {
+  var clickedCluster by remember { mutableStateOf<Feature<Geometry, JsonObject?>?>(null) }
+  val mapState =
+    rememberPlacesMapState(
+      places = places,
+      currentLocation = currentLocation,
+      initialCameraPosition = initialCameraPosition,
+      onClusterClick = { clickedCluster = it },
+    )
 
-  MaplibreMap(
-    modifier = modifier,
+  LaunchedEffect(clickedCluster) {
+    clickedCluster
+      ?.let {
+        val handle = mapState.style.sources.filterIsInstance<GeoJsonSourceHandle>().first()
+        CameraUpdate(
+          target = (it.geometry as Point).coordinates,
+          zoom = handle.getClusterExpansionZoom(it),
+        )
+      }
+      ?.let {
+        mapState.animateCamera(it)
+        clickedCluster = null
+      }
+  }
+
+  return mapState
+}
+
+@Composable
+private fun rememberPlacesMapState(
+  places: List<Place>,
+  currentLocation: Location?,
+  initialCameraPosition: CameraPosition,
+  onClusterClick: (Feature<Geometry, JsonObject?>) -> Unit,
+): MapState =
+  rememberMapState(
+    initialCameraPosition = initialCameraPosition,
     baseStyle =
       BaseStyle.Json(
         LocalResources.current
@@ -64,13 +101,6 @@ fun MapPreview(
           .bufferedReader()
           .use(BufferedReader::readText)
       ),
-    options =
-      MapOptions(
-        gestureOptions = GestureOptions.RotationLocked,
-        ornamentOptions = OrnamentOptions.AllDisabled,
-      ),
-    cameraState = cameraState,
-    boundingBox = placesBoundingBox,
   ) {
     if (places.isNotEmpty()) {
       val placesSource =
@@ -130,14 +160,7 @@ fun MapPreview(
           ),
         onClick = { features ->
           features.firstOrNull(placesSource::isCluster)?.let {
-            scope.launch {
-              cameraState.animateTo(
-                cameraState.position.copy(
-                  target = (it.geometry as Point).coordinates,
-                  zoom = placesSource.getClusterExpansionZoom(it),
-                )
-              )
-            }
+            onClusterClick(it)
             ClickResult.Consume
           } ?: ClickResult.Pass
         },
@@ -211,4 +234,16 @@ fun MapPreview(
       )
     }
   }
+
+@Composable
+fun MapPreview(
+  mapState: MapState,
+  modifier: Modifier = Modifier,
+) {
+  MaplibreMap(
+    modifier = modifier,
+    state = mapState,
+    interactions = MapInteractions { camera { rotate { enabled = false } } },
+    overlay = { include(MapOverlay.None) },
+  )
 }

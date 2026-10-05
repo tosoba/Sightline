@@ -30,12 +30,14 @@ import com.trm.sightline.core.model.MapCameraPosition
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.ui.MapCameraAnimateToBoundingBoxEffect
 import com.trm.sightline.core.ui.MapPreview
+import com.trm.sightline.core.ui.rememberMapPlaceState
 import com.trm.sightline.core.ui.rememberMapPlacesBoundingBox
+import com.trm.sightline.core.ui.toCameraPadding
+import kotlin.math.abs
 import kotlinx.coroutines.launch
 import org.maplibre.compose.camera.CameraPosition
-import org.maplibre.compose.camera.rememberCameraState
+import org.maplibre.compose.camera.CameraUpdate
 import org.maplibre.spatialk.geojson.Position
-import kotlin.math.abs
 
 @Composable
 fun MapScreen(
@@ -49,7 +51,12 @@ fun MapScreen(
   val scope = rememberCoroutineScope()
 
   val placesBoundingBox = rememberMapPlacesBoundingBox(places = places, percentageIncrease = 0.1)
-  val cameraState = rememberCameraState(firstPosition = CameraPosition(padding = padding))
+  val mapState =
+    rememberMapPlaceState(
+      places = places,
+      currentLocation = currentLocation,
+      initialCameraPosition = CameraPosition(padding = padding.toCameraPadding()),
+    )
   var initialPositionRestored by rememberSaveable { mutableStateOf(false) }
 
   val placesCenter =
@@ -59,17 +66,17 @@ fun MapScreen(
       }
     }
   val showResetToPlacesBoundingBoxButton =
-    remember(cameraState.position.target, placesCenter) {
+    remember(mapState.cameraPosition.target, placesCenter) {
       placesCenter != null &&
-        cameraState.position.target.isAwayFrom(
+        mapState.cameraPosition.target.isAwayFrom(
           latitude = placesCenter.latitude,
           longitude = placesCenter.longitude,
         )
     }
   val showResetToCurrentLocationButton =
-    remember(cameraState.position.target, currentLocation) {
+    remember(mapState.cameraPosition.target, currentLocation) {
       currentLocation != null &&
-        cameraState.position.target.isAwayFrom(
+        mapState.cameraPosition.target.isAwayFrom(
           latitude = currentLocation.latitude,
           longitude = currentLocation.longitude,
         )
@@ -77,21 +84,21 @@ fun MapScreen(
 
   MapCameraAnimateToBoundingBoxEffect(
     boundingBox = placesBoundingBox,
-    cameraState = cameraState,
+    mapState = mapState,
     padding = padding,
   )
 
   if (placesBoundingBox == null && !initialPositionRestored) {
     LaunchedEffect(lastMapPosition, padding) {
       if (lastMapPosition != null) {
-        cameraState.animateTo(
-          CameraPosition(
+        mapState.animateCamera(
+          CameraUpdate(
             target =
               Position(longitude = lastMapPosition.longitude, latitude = lastMapPosition.latitude),
             zoom = lastMapPosition.zoom,
             bearing = lastMapPosition.bearing,
             tilt = lastMapPosition.tilt,
-            padding = padding,
+            padding = padding.toCameraPadding(),
           )
         )
         initialPositionRestored = true
@@ -101,7 +108,7 @@ fun MapScreen(
 
   LifecycleResumeEffect(Unit) {
     onPauseOrDispose {
-      with(cameraState.position) {
+      with(mapState.cameraPosition) {
         onPause(
           MapCameraPosition(
             latitude = target.latitude,
@@ -117,11 +124,8 @@ fun MapScreen(
 
   Box(modifier = modifier) {
     MapPreview(
-      cameraState = cameraState,
-      placesBoundingBox = placesBoundingBox,
-      places = places,
+      mapState = mapState,
       modifier = Modifier.fillMaxSize(),
-      currentLocation = currentLocation,
     )
 
     Column(
@@ -135,13 +139,13 @@ fun MapScreen(
           onClick = {
             currentLocation?.let {
               scope.launch {
-                cameraState.animateTo(
-                  CameraPosition(
+                mapState.animateCamera(
+                  CameraUpdate(
                     target = Position(longitude = it.longitude, latitude = it.latitude),
-                    zoom = cameraState.position.zoom,
-                    bearing = cameraState.position.bearing,
-                    tilt = cameraState.position.tilt,
-                    padding = padding,
+                    zoom = mapState.cameraPosition.zoom,
+                    bearing = mapState.cameraPosition.bearing,
+                    tilt = mapState.cameraPosition.tilt,
+                    padding = padding.toCameraPadding(),
                   )
                 )
               }
@@ -157,7 +161,10 @@ fun MapScreen(
           onClick = {
             if (placesBoundingBox != null) {
               scope.launch {
-                cameraState.animateTo(boundingBox = placesBoundingBox, padding = padding)
+                mapState.animateCameraToBounds(
+                  boundingBox = placesBoundingBox,
+                  cameraPadding = padding.toCameraPadding(),
+                )
               }
             }
           }

@@ -65,6 +65,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.currentStateAsState
 import com.trm.sightline.core.ar.util.sideSheetWidthDp
+import com.trm.sightline.core.common.R as commonR
 import com.trm.sightline.core.common.util.formattedAddress
 import com.trm.sightline.core.common.util.formattedDistance
 import com.trm.sightline.core.common.util.rememberBottomSheetScaffoldStateForScreenHeight
@@ -73,15 +74,15 @@ import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
 import com.trm.sightline.core.ui.MapCameraAnimateToBoundingBoxEffect
 import com.trm.sightline.core.ui.MapPreview
+import com.trm.sightline.core.ui.R as uiR
 import com.trm.sightline.core.ui.icon
 import com.trm.sightline.core.ui.rememberBottomSheetExpandedProgress
+import com.trm.sightline.core.ui.rememberMapPlaceState
 import com.trm.sightline.core.ui.rememberMapPlacesBoundingBox
+import com.trm.sightline.core.ui.toCameraPadding
 import kotlinx.coroutines.launch
-import org.maplibre.compose.camera.CameraPosition
-import org.maplibre.compose.camera.rememberCameraState
+import org.maplibre.compose.camera.CameraUpdate
 import org.maplibre.spatialk.geojson.Position
-import com.trm.sightline.core.common.R as commonR
-import com.trm.sightline.core.ui.R as uiR
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -104,7 +105,7 @@ fun SharedTransitionScope.PlaceCategoryScreen(
 
   val mapPlacesBoundingBox =
     rememberMapPlacesBoundingBox(places = route.places, percentageIncrease = 0.1)
-  val mapCameraState = rememberCameraState()
+  val mapState = rememberMapPlaceState(places = route.places, currentLocation = location)
 
   @Composable
   fun sheetContent(peekHeight: Dp, onPlaceItemClick: (Place) -> Unit) {
@@ -157,13 +158,13 @@ fun SharedTransitionScope.PlaceCategoryScreen(
       )
 
     suspend fun animateToPlace(place: Place) {
-      mapCameraState.animateTo(
-        CameraPosition(
+      mapState.animateCamera(
+        CameraUpdate(
           target = Position(longitude = place.longitude, latitude = place.latitude),
-          bearing = mapCameraState.position.bearing,
-          padding = mapPadding,
-          tilt = mapCameraState.position.tilt,
-          zoom = mapCameraState.position.zoom,
+          bearing = mapState.cameraPosition.bearing,
+          padding = mapPadding.toCameraPadding(),
+          tilt = mapState.cameraPosition.tilt,
+          zoom = mapState.cameraPosition.zoom,
         )
       )
     }
@@ -205,16 +206,13 @@ fun SharedTransitionScope.PlaceCategoryScreen(
         ) {
           MapCameraAnimateToBoundingBoxEffect(
             boundingBox = mapPlacesBoundingBox,
-            cameraState = mapCameraState,
+            mapState = mapState,
             padding = mapPadding,
           )
 
           MapPreview(
-            cameraState = mapCameraState,
-            placesBoundingBox = mapPlacesBoundingBox,
-            places = route.places,
+            mapState = mapState,
             modifier = Modifier.fillMaxSize(),
-            currentLocation = location,
           )
         }
 

@@ -16,13 +16,12 @@ gson = "2.14.0"
 hilt = "2.60.1"
 hiltAndroidx = "1.4.0"
 junit = "4.13.2"
-kotlin = "2.4.10"
+kotlin = "2.4.20"
 kotlinxSerialization = "1.11.0"
 ksp = "2.3.12"
 lifecycleRuntimeKtx = "2.11.0"
 mapbox = "7.10.0"
 mapLibreCompose = "0.19.0"
-mapLibreOpenGL = "13.6.1-pre0"
 material = "1.14.0"
 material3 = "1.5.0-alpha29"
 moshi = "1.15.2"
@@ -71,7 +70,7 @@ kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "ko
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
 mapbox-geojson = { group = "com.mapbox.mapboxsdk", name = "mapbox-sdk-geojson", version.ref = "mapbox" }
 maplibre-compose = { module = "org.maplibre.compose:maplibre-compose", version.ref = "mapLibreCompose" }
-maplibre-android-opengl = { module = "org.maplibre.gl:android-sdk-opengl", version.ref = "mapLibreOpenGL" }
+maplibre-compose-runtime-vulkan-android = { module = "org.maplibre.compose:maplibre-compose-runtime-vulkan-android", version.ref = "mapLibreCompose" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 moshi = { group = "com.squareup.moshi", name = "moshi", version.ref = "moshi" }
 moshi-adapters = { group = "com.squareup.moshi", name = "moshi-adapters", version.ref = "moshi" }
