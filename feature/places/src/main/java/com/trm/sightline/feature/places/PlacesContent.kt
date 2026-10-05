@@ -115,6 +115,7 @@ fun SharedTransitionScope.PlacesContent(
       }
     val inputField: @Composable () -> Unit = {
       SearchBarDefaults.InputField(
+        modifier = Modifier.fillMaxWidth(),
         textFieldState = textFieldState,
         searchBarState = searchBarState,
         onSearch = {},
@@ -182,7 +183,6 @@ fun SharedTransitionScope.PlacesContent(
     ExpandedDockedSearchBar(
       state = searchBarState,
       inputField = inputField,
-      colors = searchBarColors,
     ) {
       LazyColumn {
         when {
