@@ -1,6 +1,7 @@
 package com.trm.sightline.feature.places
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.clickable
@@ -27,7 +28,7 @@ import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExpandedDockedSearchBar
+import androidx.compose.material3.ExpandedFullScreenSearchBar
 import androidx.compose.material3.FilledTonalIconToggleButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -160,14 +161,16 @@ fun SharedTransitionScope.PlacesContent(
           }
         },
         trailingIcon = {
-          FilledTonalIconToggleButton(
-            checked = userLocationEnabled,
-            onCheckedChange = onToggleUserLocationEnabled,
-          ) {
-            Icon(
-              imageVector = Icons.Default.MyLocation,
-              contentDescription = stringResource(R.string.my_location_content_description),
-            )
+          AnimatedVisibility(visible = !expanded) {
+            FilledTonalIconToggleButton(
+              checked = userLocationEnabled,
+              onCheckedChange = onToggleUserLocationEnabled,
+            ) {
+              Icon(
+                imageVector = Icons.Default.MyLocation,
+                contentDescription = stringResource(R.string.my_location_content_description),
+              )
+            }
           }
         },
       )
@@ -180,7 +183,7 @@ fun SharedTransitionScope.PlacesContent(
       colors = searchBarColors,
     )
 
-    ExpandedDockedSearchBar(
+    ExpandedFullScreenSearchBar(
       state = searchBarState,
       inputField = inputField,
     ) {
