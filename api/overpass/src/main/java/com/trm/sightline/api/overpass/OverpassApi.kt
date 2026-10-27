@@ -9,17 +9,19 @@ import java.util.Date
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
-import retrofit2.http.GET
+import retrofit2.http.Field
+import retrofit2.http.FormUrlEncoded
 import retrofit2.http.Headers
-import retrofit2.http.Query
+import retrofit2.http.POST
 
 interface OverpassApi {
   @Headers("Accept: application/json", "User-Agent: SightlineApp/1.0 ($EMAIL)")
-  @GET("/api/interpreter")
-  suspend fun ask(@Query("data") data: String): OverpassResponse
+  @FormUrlEncoded
+  @POST("/api/interpreter")
+  suspend fun ask(@Field("data") data: String): OverpassResponse
 
   companion object {
-    private const val BASE_URL = "https://overpass-api.de"
+    private const val BASE_URL = "https://overpass-api.de/"
     private const val EMAIL = "therealmerengue@proton.me"
 
     internal fun create(client: OkHttpClient = OkHttpClient()): OverpassApi =
