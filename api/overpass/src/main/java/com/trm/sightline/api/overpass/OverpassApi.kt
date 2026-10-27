@@ -15,14 +15,13 @@ import retrofit2.http.Headers
 import retrofit2.http.POST
 
 interface OverpassApi {
-  @Headers("Accept: application/json", "User-Agent: SightlineApp/1.0 ($EMAIL)")
+  @Headers("Accept: application/json", "User-Agent: SightlineApp/1.0 (${BuildConfig.OVERPASS_EMAIL})")
   @FormUrlEncoded
   @POST("/api/interpreter")
   suspend fun ask(@Field("data") data: String): OverpassResponse
 
   companion object {
     private const val BASE_URL = "https://overpass-api.de/"
-    private const val EMAIL = "therealmerengue@proton.me"
 
     internal fun create(client: OkHttpClient = OkHttpClient()): OverpassApi =
       Retrofit.Builder()
