@@ -6,11 +6,12 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import java.io.File
+import javax.inject.Singleton
+import kotlin.time.Duration.Companion.seconds
 import okhttp3.Cache
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
-import java.io.File
-import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -22,7 +23,8 @@ object NetworkModule {
 
   @Provides
   @Singleton
-  fun provideOkHttpClient(cache: Cache): OkHttpClient = OkHttpClient.Builder().cache(cache).build()
+  fun provideOkHttpClient(cache: Cache): OkHttpClient =
+    OkHttpClient.Builder().readTimeout(40.seconds).writeTimeout(30.seconds).cache(cache).build()
 
   @Provides
   @Singleton

@@ -12,7 +12,7 @@ public class Settings implements Convertible<Settings.Builder> {
   private static final String OUTPUT_FORMAT = "[out:json]";
   private static final long MAXSIZE_LIMIT = 1073741824;
   private static final long MAXSIZE_DEFAULT = 10485760; // ~ 10 MB
-  private static final int TIMEOUT_DEFAULT = 10; // 10 seconds
+  private static final int TIMEOUT_DEFAULT = 30; // 30 seconds
 
   private final double[] coordinates;
   private final int timeout;

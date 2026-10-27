@@ -24,9 +24,15 @@ import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
 import com.trm.sightline.core.model.PlaceSearchRadius
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.util.concurrent.atomic.AtomicLong
+import javax.inject.Inject
+import kotlin.coroutines.cancellation.CancellationException
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -49,11 +55,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
 import timber.log.Timber
-import java.util.concurrent.atomic.AtomicLong
-import javax.inject.Inject
-import kotlin.coroutines.cancellation.CancellationException
-import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @HiltViewModel
@@ -220,9 +221,11 @@ constructor(
           if (remaining > 0) delay(remaining.milliseconds)
           lastSentTime.set(System.currentTimeMillis())
 
-          val location =
-            (if (userLocationEnabled.value) userLocation else customLocation)
-              ?: return@transformLatest
+          val location = (if (userLocationEnabled.value) userLocation else customLocation)
+          if (location == null) {
+            places.remove(category)
+            return@transformLatest
+          }
           try {
             places[category] =
               withTimeout(REQUEST_TIMEOUT_MS.milliseconds) {
@@ -237,8 +240,13 @@ constructor(
                     .sortedBy { location.distanceTo(it.location) }
                 )
               }
+          } catch (ex: TimeoutCancellationException) {
+            Timber.e(ex)
+            places.remove(category)
+            handleRequestError(RequestError.IO)
+          } catch (ex: CancellationException) {
+            throw ex
           } catch (ex: Exception) {
-            if (ex is CancellationException) throw ex
             Timber.e(ex)
             places.remove(category)
             handleRequestError(ex.toRequestError())
@@ -294,6 +302,6 @@ constructor(
 
   companion object {
     private const val DEBOUNCE_MS = 1_000L
-    private const val REQUEST_TIMEOUT_MS = 15_000L
+    private const val REQUEST_TIMEOUT_MS = 35_000L
   }
 }
