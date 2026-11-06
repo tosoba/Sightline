@@ -160,10 +160,10 @@ fun SharedTransitionScope.PlaceCategoryScreen(
     suspend fun animateToPlace(place: Place) {
       mapState.animateCamera(
         CameraUpdate(
-          target = Position(longitude = place.longitude, latitude = place.latitude),
+          center = Position(longitude = place.longitude, latitude = place.latitude),
           bearing = mapState.cameraPosition.bearing,
           padding = mapPadding.toCameraPadding(),
-          tilt = mapState.cameraPosition.tilt,
+          pitch = mapState.cameraPosition.pitch,
           zoom = mapState.cameraPosition.zoom,
         )
       )

@@ -72,7 +72,7 @@ fun rememberMapPlaceState(
       ?.let {
         val handle = mapState.style.sources.filterIsInstance<GeoJsonSourceHandle>().first()
         CameraUpdate(
-          target = (it.geometry as Point).coordinates,
+          center = (it.geometry as Point).coordinates,
           zoom = handle.getClusterExpansionZoom(it),
         )
       }
@@ -119,12 +119,12 @@ private fun rememberPlacesMapState(
                 )
               )
             },
-          options =
+          from =
             remember {
-              GeoJsonOptions(
-                cluster = true,
-                clusterRadius = 32,
-                clusterMaxZoom = 16,
+              GeoJsonOptions {
+                cluster = true
+                clusterRadius = 32
+                clusterMaxZoom = 16
                 clusterProperties =
                   mapOf(
                     "total_range" to
@@ -134,8 +134,8 @@ private fun rememberPlacesMapState(
                           feature.accumulated().asNumber() +
                             feature["total_range"].convertToNumber(),
                       )
-                  ),
-              )
+                  )
+              }
             },
         )
 

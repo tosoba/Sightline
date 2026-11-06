@@ -5,5 +5,5 @@ data class MapCameraPosition(
   val longitude: Double,
   val zoom: Double,
   val bearing: Double,
-  val tilt: Double,
+  val pitch: Double,
 )

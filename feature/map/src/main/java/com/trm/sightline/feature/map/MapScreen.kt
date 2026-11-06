@@ -35,6 +35,7 @@ import com.trm.sightline.core.ui.rememberMapPlacesBoundingBox
 import com.trm.sightline.core.ui.toCameraPadding
 import kotlin.math.abs
 import kotlinx.coroutines.launch
+import org.maplibre.compose.camera.CameraFit
 import org.maplibre.compose.camera.CameraPosition
 import org.maplibre.compose.camera.CameraUpdate
 import org.maplibre.spatialk.geojson.Position
@@ -66,17 +67,17 @@ fun MapScreen(
       }
     }
   val showResetToPlacesBoundingBoxButton =
-    remember(mapState.cameraPosition.target, placesCenter) {
+    remember(mapState.cameraPosition.center, placesCenter) {
       placesCenter != null &&
-        mapState.cameraPosition.target.isAwayFrom(
+        mapState.cameraPosition.center.isAwayFrom(
           latitude = placesCenter.latitude,
           longitude = placesCenter.longitude,
         )
     }
   val showResetToCurrentLocationButton =
-    remember(mapState.cameraPosition.target, currentLocation) {
+    remember(mapState.cameraPosition.center, currentLocation) {
       currentLocation != null &&
-        mapState.cameraPosition.target.isAwayFrom(
+        mapState.cameraPosition.center.isAwayFrom(
           latitude = currentLocation.latitude,
           longitude = currentLocation.longitude,
         )
@@ -93,11 +94,11 @@ fun MapScreen(
       if (lastMapPosition != null) {
         mapState.animateCamera(
           CameraUpdate(
-            target =
+            center =
               Position(longitude = lastMapPosition.longitude, latitude = lastMapPosition.latitude),
             zoom = lastMapPosition.zoom,
             bearing = lastMapPosition.bearing,
-            tilt = lastMapPosition.tilt,
+            pitch = lastMapPosition.pitch,
             padding = padding.toCameraPadding(),
           )
         )
@@ -111,11 +112,11 @@ fun MapScreen(
       with(mapState.cameraPosition) {
         onPause(
           MapCameraPosition(
-            latitude = target.latitude,
-            longitude = target.longitude,
+            latitude = center.latitude,
+            longitude = center.longitude,
             zoom = zoom,
             bearing = bearing,
-            tilt = tilt,
+            pitch = pitch,
           )
         )
       }
@@ -141,10 +142,10 @@ fun MapScreen(
               scope.launch {
                 mapState.animateCamera(
                   CameraUpdate(
-                    target = Position(longitude = it.longitude, latitude = it.latitude),
+                    center = Position(longitude = it.longitude, latitude = it.latitude),
                     zoom = mapState.cameraPosition.zoom,
                     bearing = mapState.cameraPosition.bearing,
-                    tilt = mapState.cameraPosition.tilt,
+                    pitch = mapState.cameraPosition.pitch,
                     padding = padding.toCameraPadding(),
                   )
                 )
@@ -163,7 +164,7 @@ fun MapScreen(
               scope.launch {
                 mapState.animateCameraToBounds(
                   boundingBox = placesBoundingBox,
-                  cameraPadding = padding.toCameraPadding(),
+                  fit = CameraFit(cameraPadding = padding.toCameraPadding()),
                 )
               }
             }

@@ -6,6 +6,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.LayoutDirection
 import com.trm.sightline.core.model.Place
+import org.maplibre.compose.camera.CameraFit
 import org.maplibre.compose.map.MapState
 import org.maplibre.compose.util.DpPadding
 import org.maplibre.spatialk.geojson.BoundingBox
@@ -54,7 +55,7 @@ fun MapCameraAnimateToBoundingBoxEffect(
     if (boundingBox != null) {
       mapState.animateCameraToBounds(
         boundingBox = boundingBox,
-        cameraPadding = padding.toCameraPadding(),
+        fit = CameraFit(cameraPadding = padding.toCameraPadding()),
       )
     }
   }

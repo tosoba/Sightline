@@ -50,7 +50,7 @@ class UserPreferencesLocalRepository(private val userPreferencesStore: DataStore
             longitude = lastMapLng,
             zoom = lastMapZoom,
             bearing = lastMapBearing,
-            tilt = lastMapTilt,
+            pitch = lastMapTilt,
           )
         } else {
           null
@@ -84,7 +84,7 @@ class UserPreferencesLocalRepository(private val userPreferencesStore: DataStore
         .setLastMapLng(position.longitude)
         .setLastMapZoom(position.zoom)
         .setLastMapBearing(position.bearing)
-        .setLastMapTilt(position.tilt)
+        .setLastMapTilt(position.pitch)
         .build()
     }
   }
