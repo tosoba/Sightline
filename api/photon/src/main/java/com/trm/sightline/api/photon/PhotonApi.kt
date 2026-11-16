@@ -25,14 +25,19 @@ interface PhotonApi {
     @Query("lon") lon: Double,
     @Query("limit") limit: Int? = null,
     @Query("lang") lang: String? = null,
+    @Query("radius") radius: Double? = null,
+    @Query("osm_tag") osmTag: List<String>? = null,
   ): FeatureCollection
 
   companion object {
     private const val BASE_URL = "https://photon.komoot.io/"
 
-    internal fun create(client: OkHttpClient = OkHttpClient()): PhotonApi =
+    internal fun create(
+      client: OkHttpClient = OkHttpClient(),
+      baseUrl: String = BASE_URL,
+    ): PhotonApi =
       Retrofit.Builder()
-        .baseUrl(BASE_URL)
+        .baseUrl(baseUrl)
         .client(client)
         .addConverterFactory(
           object : Converter.Factory() {
