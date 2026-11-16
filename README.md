@@ -31,14 +31,6 @@
 ## Setup
 After cloning the repository, open (or create) `local.properties` in the project root - Android Studio generates it with your `sdk.dir` entry, and it is not checked into version control.
 
-The Overpass API server requires requests to identify the application they originate from, so the app sends a `User-Agent` header containing a contact email. The email is read from `local.properties` and injected into the build, so add the following to that file before building:
-
-```
-overpass.email=your.email@example.com
-```
-
-The build logs a warning if it is missing.
-
 ## Used technologies
 - [Jetpack Compose](https://developer.android.com/compose) - declarative UI toolkit
 - [Navigation 3](https://developer.android.com/guide/navigation/navigation3) - screen flows definition, backstack management
@@ -46,8 +38,7 @@ The build logs a warning if it is missing.
 - [OpenGL ES 3.0 / JNI](https://developer.android.com/guide/topics/graphics/opengl) - high-performance camera texture rendering with Gaussian blur and color overlay effects via native C++
 - [MapLibre Compose](https://github.com/maplibre/maplibre-compose) - map rendering
 - [Hilt](https://dagger.dev/hilt/) - dependency injection
-- [Retrofit](https://square.github.io/retrofit/) - network requests (Overpass & Photon APIs)
-- [Moshi](https://github.com/square/moshi) - JSON serialization/deserialization
+- [Retrofit](https://square.github.io/retrofit/) - network requests (Photon API)
 - [Datastore](https://developer.android.com/jetpack/androidx/releases/datastore) - user preference storage (with Protobuf)
 - [Coroutines](https://kotlinlang.org/docs/coroutines-guide.html) - asynchronous/concurrent programming
 - [Play Services Location](https://developers.google.com/android/reference/com/google/android/gms/location/package-summary) - user location tracking

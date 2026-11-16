@@ -29,7 +29,6 @@ android {
 }
 
 dependencies {
-  implementation(project(":api:overpass"))
   implementation(project(":api:photon"))
   implementation(project(":core:datastore"))
   implementation(project(":core:domain"))
@@ -43,4 +42,6 @@ dependencies {
   ksp(libs.hilt.compiler)
 
   implementation(libs.protobuf.kotlin.lite)
+
+  testImplementation(libs.junit)
 }

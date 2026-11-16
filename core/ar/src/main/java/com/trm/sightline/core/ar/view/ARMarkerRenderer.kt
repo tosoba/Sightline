@@ -34,7 +34,6 @@ import com.trm.sightline.core.ar.util.sideSheetWidthDp
 import com.trm.sightline.core.ar.util.spToPx
 import com.trm.sightline.core.ar.util.statusBarTopInsetPx
 import com.trm.sightline.core.common.util.roundToDecimalPlaces
-import com.trm.sightline.core.common.util.tourismOrLeisure
 import com.trm.sightline.core.model.PlaceCategory
 import com.trm.sightline.core.ui.R
 import com.trm.sightline.core.ui.icon
@@ -120,7 +119,7 @@ class ARMarkerRenderer(private val context: Context) {
   private var maxPage: Int = 0
 
   private var firstFrame: Boolean = true
-  private var lastDrawnMarkerIds = HashSet<Long>()
+  private var lastDrawnMarkerIds = HashSet<String>()
 
   private val _markersPagingState = MutableStateFlow(MarkersPagingState(currentPage, maxPage))
   val markersPagingState: StateFlow<MarkersPagingState> = _markersPagingState.asStateFlow()
@@ -147,7 +146,7 @@ class ARMarkerRenderer(private val context: Context) {
       BakedIcon(viewportWidth = vector.viewportWidth, paths = vector.bakeToAndroidPaths())
     }
 
-  private val pagedMarkers = HashMap<Long, PagedMarker>()
+  private val pagedMarkers = HashMap<String, PagedMarker>()
 
   private var lastCanvasWidth: Int = 0
   private var lastCanvasHeight: Int = 0
@@ -156,7 +155,7 @@ class ARMarkerRenderer(private val context: Context) {
 
   // ── Paints ─────────────────────────────────────────────────────────────────
 
-  // Primary text: joined "Place Name · tourism type"
+  // Primary text: place name
   private val titleTextPaint: TextPaint by
     lazy(LazyThreadSafetyMode.NONE) {
       TextPaint().apply {
@@ -298,7 +297,7 @@ class ARMarkerRenderer(private val context: Context) {
     }
 
     val drawnRectFs = mutableListOf<RoundedRectF>()
-    val renderedMarkerIds = HashSet<Long>()
+    val renderedMarkerIds = HashSet<String>()
     var maxPageThisFrame = 0
     var currentPageAfterScreenRotation = Int.MAX_VALUE
 
@@ -362,15 +361,14 @@ class ARMarkerRenderer(private val context: Context) {
    * Draws a [PlaceListItem]-style layout:
    * ```
    * ┌──────────────────────────────────────────────┐
-   * │  ┌──────────┐  Place Name · restaurant       │
+   * │  ┌──────────┐  Place Name                    │
    * │  │  [icon]  │  350 m                         │
    * │  └──────────┘                                │
    * └──────────────────────────────────────────────┘
    * ```
    *
    * Left box: category [ImageVector] icon rendered from pre-baked [android.graphics.Path]s. Right
-   * column: name joined with tourism/leisure type (highest priority, up to 2 lines), then distance
-   * (shown when vertical space permits).
+   * column: name (up to 2 lines), then distance (shown when vertical space permits).
    */
   private fun Canvas.drawMarkerContent(marker: ARMarker, rectF: RectF) {
     val cornerRadiusPx = context.dpToPx(MARKER_RECT_F_CORNER_RADIUS_DP)
@@ -415,11 +413,7 @@ class ARMarkerRenderer(private val context: Context) {
     val nameLineH = markerTitleTextSizePx * LINE_HEIGHT_MULTIPLIER
     val distLineH = markerDistanceTextSizePx * LINE_HEIGHT_MULTIPLIER
 
-    // Name joined with tourism/leisure — e.g. "Le Bistro · restaurant"
-    val displayName = buildString {
-      append(marker.place.name)
-      marker.place.tourismOrLeisure?.let { append(" · $it") }
-    }
+    val displayName = marker.place.name
 
     // Allow 2 name lines if text wraps and the height budget allows it.
     val nameWraps = titleTextPaint.measureText(displayName) > textWidth
@@ -783,12 +777,12 @@ class ARMarkerRenderer(private val context: Context) {
 
   internal fun onSaveInstanceState(): Bundle =
     Bundle().apply {
-      putLongArray(SavedStateKeys.LAST_DRAWN_MARKER_IDS_BITS.name, lastDrawnMarkerIds.toLongArray())
+      putStringArray(SavedStateKeys.LAST_DRAWN_MARKER_IDS.name, lastDrawnMarkerIds.toTypedArray())
     }
 
   internal fun onRestoreInstanceState(bundle: Bundle?) {
     lastDrawnMarkerIds =
-      bundle?.getLongArray(SavedStateKeys.LAST_DRAWN_MARKER_IDS_BITS.name)?.toHashSet() ?: return
+      bundle?.getStringArray(SavedStateKeys.LAST_DRAWN_MARKER_IDS.name)?.toHashSet() ?: return
   }
 
   @MainThread
@@ -836,7 +830,7 @@ class ARMarkerRenderer(private val context: Context) {
   private data class BakedIcon(val viewportWidth: Float, val paths: List<Path>)
 
   private enum class SavedStateKeys {
-    LAST_DRAWN_MARKER_IDS_BITS
+    LAST_DRAWN_MARKER_IDS
   }
 
   companion object {

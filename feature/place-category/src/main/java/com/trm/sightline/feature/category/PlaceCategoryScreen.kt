@@ -66,10 +66,8 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.currentStateAsState
 import com.trm.sightline.core.ar.util.sideSheetWidthDp
 import com.trm.sightline.core.common.R as commonR
-import com.trm.sightline.core.common.util.formattedAddress
 import com.trm.sightline.core.common.util.formattedDistance
 import com.trm.sightline.core.common.util.rememberBottomSheetScaffoldStateForScreenHeight
-import com.trm.sightline.core.common.util.tourismOrLeisure
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
 import com.trm.sightline.core.ui.MapCameraAnimateToBoundingBoxEffect
@@ -332,28 +330,13 @@ private fun PlaceListItem(place: Place, location: Location?, onClick: () -> Unit
     Spacer(modifier = Modifier.width(16.dp))
 
     Column(modifier = Modifier.weight(1f)) {
-      val displayName =
-        remember(place) {
-          buildString {
-            append(place.name)
-            place.tourismOrLeisure?.let { append(" · $it") }
-          }
-        }
       Text(
-        text = displayName,
+        text = place.name,
         style = MaterialTheme.typography.titleMedium,
         color = MaterialTheme.colorScheme.onSurface,
         maxLines = 2,
         overflow = TextOverflow.Ellipsis,
       )
-
-      place.formattedAddress?.let {
-        Text(
-          text = it,
-          style = MaterialTheme.typography.bodySmall,
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-      }
 
       if (location != null) {
         Text(

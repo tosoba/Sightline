@@ -36,7 +36,6 @@ android {
 }
 
 dependencies {
-  implementation(project(":api:overpass"))
   implementation(project(":core:ar"))
   implementation(project(":core:common"))
   implementation(project(":core:data"))

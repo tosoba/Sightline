@@ -27,8 +27,6 @@ rootProject.name = "Sightline"
 
 include(":app")
 
-include(":api:overpass")
-
 include(":api:photon")
 
 include(":core:ar")

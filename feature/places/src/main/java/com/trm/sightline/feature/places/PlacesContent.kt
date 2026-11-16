@@ -296,9 +296,9 @@ fun SharedTransitionScope.PlacesContent(
 private val PlaceCategory.showInRowLayout: Boolean
   get() =
     when (this) {
-      PlaceCategory.Attractions,
-      PlaceCategory.Food,
+      PlaceCategory.SightsLandmarks,
+      PlaceCategory.FoodDrink,
       PlaceCategory.Accommodation,
-      PlaceCategory.Stores -> true
+      PlaceCategory.Shopping -> true
       else -> false
     }
