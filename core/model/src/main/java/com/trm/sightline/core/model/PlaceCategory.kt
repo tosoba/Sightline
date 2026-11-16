@@ -17,8 +17,4 @@ enum class PlaceCategory {
   MoneyBanking,
   Health,
   Practical;
-
-  val label: String
-    get() =
-      name.replace("(?<=.)(?=[A-Z])".toRegex(), " ").lowercase().replaceFirstChar { it.uppercase() }
 }

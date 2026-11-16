@@ -1,5 +1,6 @@
 package com.trm.sightline.core.ui
 
+import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.DirectionsBus
@@ -33,4 +34,23 @@ val PlaceCategory.icon: ImageVector
       PlaceCategory.MoneyBanking -> Icons.Default.AccountBalance
       PlaceCategory.Health -> Icons.Default.LocalHospital
       PlaceCategory.Practical -> Icons.Default.Wc
+    }
+
+@get:StringRes
+val PlaceCategory.labelRes: Int
+  get() =
+    when (this) {
+      PlaceCategory.SightsLandmarks -> R.string.place_category_sights_landmarks
+      PlaceCategory.ArtsCulture -> R.string.place_category_arts_culture
+      PlaceCategory.FoodDrink -> R.string.place_category_food_drink
+      PlaceCategory.Nightlife -> R.string.place_category_nightlife
+      PlaceCategory.Shopping -> R.string.place_category_shopping
+      PlaceCategory.NatureOutdoors -> R.string.place_category_nature_outdoors
+      PlaceCategory.Library -> R.string.place_category_library
+      PlaceCategory.Accommodation -> R.string.place_category_accommodation
+      PlaceCategory.GettingAround -> R.string.place_category_getting_around
+      PlaceCategory.RoadTrip -> R.string.place_category_road_trip
+      PlaceCategory.MoneyBanking -> R.string.place_category_money_banking
+      PlaceCategory.Health -> R.string.place_category_health
+      PlaceCategory.Practical -> R.string.place_category_practical
     }

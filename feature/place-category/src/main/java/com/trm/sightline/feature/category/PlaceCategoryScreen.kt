@@ -74,6 +74,7 @@ import com.trm.sightline.core.ui.MapCameraAnimateToBoundingBoxEffect
 import com.trm.sightline.core.ui.MapPreview
 import com.trm.sightline.core.ui.R as uiR
 import com.trm.sightline.core.ui.icon
+import com.trm.sightline.core.ui.labelRes
 import com.trm.sightline.core.ui.rememberBottomSheetExpandedProgress
 import com.trm.sightline.core.ui.rememberMapPlaceState
 import com.trm.sightline.core.ui.rememberMapPlacesBoundingBox
@@ -280,7 +281,7 @@ private fun SharedTransitionScope.PlaceCategoryHeader(
 
       Column {
         Text(
-          text = category.label,
+          text = stringResource(category.labelRes),
           style = MaterialTheme.typography.headlineSmall,
           color = MaterialTheme.colorScheme.onSurface,
           modifier =

@@ -44,6 +44,7 @@ import com.trm.sightline.core.common.R as commonR
 import com.trm.sightline.core.model.LoadingState
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
+import com.trm.sightline.core.ui.labelRes
 
 @Composable
 internal fun SharedTransitionScope.PlaceCategoryItem(
@@ -89,7 +90,7 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
           Spacer(modifier = Modifier.height(4.dp))
 
           Text(
-            text = category.label,
+            text = stringResource(category.labelRes),
             style = MaterialTheme.typography.labelSmall,
             maxLines = 1,
             modifier = Modifier.basicMarquee(iterations = Int.MAX_VALUE),
@@ -152,7 +153,7 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
 
           Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
             Text(
-              text = category.label,
+              text = stringResource(category.labelRes),
               style = MaterialTheme.typography.titleMedium,
               color = MaterialTheme.colorScheme.onSurface,
               maxLines = 1,
