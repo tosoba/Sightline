@@ -10,7 +10,6 @@
     <ol>
         <li><a href="#screenshots">Screenshots</a></li>
         <li><a href="#features">Features</a></li>
-        <li><a href="#setup">Setup</a></li>
         <li><a href="#used-technologies">Used technologies</a></li>
     </ol>
 </details>
@@ -27,9 +26,6 @@
 - User **location tracking**
 - Automatic **address lookup** (geocoding)
 - Manual address entry
-
-## Setup
-After cloning the repository, open (or create) `local.properties` in the project root - Android Studio generates it with your `sdk.dir` entry, and it is not checked into version control.
 
 ## Used technologies
 - [Jetpack Compose](https://developer.android.com/compose) - declarative UI toolkit
