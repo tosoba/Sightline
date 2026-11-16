@@ -290,6 +290,15 @@ fun SharedTransitionScope.PlacesContent(
         }
       }
     }
+
+    Spacer(modifier = Modifier.height(16.dp))
+
+    Text(
+      text = stringResource(R.string.openstreetmap_attribution),
+      style = MaterialTheme.typography.bodySmall,
+      color = MaterialTheme.colorScheme.onSurfaceVariant,
+      textAlign = TextAlign.Center,
+    )
   }
 }
 

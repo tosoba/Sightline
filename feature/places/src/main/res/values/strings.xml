@@ -8,4 +8,5 @@
     <string name="my_location_content_description">My location</string>
     <string name="start_typing_to_search">Start typing to search for a location.</string>
     <string name="query_too_short">Your query must be at least 3 characters long.</string>
+    <string name="openstreetmap_attribution" translatable="false">Data (c) OpenStreetMap contributors - ODbL</string>
 </resources>
