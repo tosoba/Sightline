@@ -1,18 +1,18 @@
 package com.trm.sightline.api.photon
 
-import dagger.Module
-import dagger.Provides
-import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.BindingContainer
+import dev.zacsweers.metro.ContributesTo
+import dev.zacsweers.metro.Provides
+import dev.zacsweers.metro.SingleIn
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
-import javax.inject.Singleton
 
-@Module
-@InstallIn(SingletonComponent::class)
+@ContributesTo(AppScope::class)
+@BindingContainer
 object PhotonApiModule {
   @Provides
-  @Singleton
+  @SingleIn(AppScope::class)
   fun providePhotonApi(
     client: OkHttpClient,
     loggingInterceptor: HttpLoggingInterceptor,

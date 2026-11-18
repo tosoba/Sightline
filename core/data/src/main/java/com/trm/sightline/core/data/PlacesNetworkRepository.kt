@@ -4,8 +4,11 @@ import com.trm.sightline.api.photon.PhotonApi
 import com.trm.sightline.core.domain.PlacesRepository
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
-import javax.inject.Inject
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.ContributesBinding
+import dev.zacsweers.metro.Inject
 
+@ContributesBinding(AppScope::class)
 class PlacesNetworkRepository @Inject constructor(private val photonApi: PhotonApi) :
   PlacesRepository {
   override suspend fun fetchPlaces(

@@ -10,8 +10,8 @@ dependencies {
   api(project(":core:domain"))
   api(project(":core:model"))
 
-  implementation(libs.androidx.datastore)
-  implementation(libs.protobuf.kotlin.lite)
+  api(libs.androidx.datastore)
+  api(libs.protobuf.kotlin.lite)
 
   implementation(libs.kotlinx.coroutines.core)
 }

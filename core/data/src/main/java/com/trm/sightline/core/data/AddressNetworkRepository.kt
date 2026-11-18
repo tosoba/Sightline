@@ -3,8 +3,11 @@ package com.trm.sightline.core.data
 import com.trm.sightline.api.photon.PhotonApi
 import com.trm.sightline.core.domain.AddressRepository
 import com.trm.sightline.core.model.CustomLocation
-import javax.inject.Inject
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.ContributesBinding
+import dev.zacsweers.metro.Inject
 
+@ContributesBinding(AppScope::class)
 class AddressNetworkRepository @Inject constructor(private val photonApi: PhotonApi) :
   AddressRepository {
   override suspend fun getAddress(latitude: Double, longitude: Double): String? {
