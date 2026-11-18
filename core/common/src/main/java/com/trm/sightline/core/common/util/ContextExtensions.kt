@@ -1,64 +1,23 @@
 package com.trm.sightline.core.common.util
 
-import android.annotation.SuppressLint
-import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.content.IntentSender
-import android.location.Location
-import android.location.LocationManager
 import android.net.Uri
-import android.os.Looper
 import android.provider.Settings
 import androidx.activity.result.IntentSenderRequest
-import androidx.core.location.LocationManagerCompat
 import com.google.android.gms.common.api.ResolvableApiException
-import com.google.android.gms.location.LocationCallback
-import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.location.LocationResult
-import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.LocationSettingsRequest
-import com.google.android.gms.location.Priority
-import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.suspendCancellableCoroutine
+import com.google.android.gms.location.LocationServices
+import com.trm.sightline.core.common.location.locationRequest
 import kotlin.coroutines.resume
+import kotlinx.coroutines.suspendCancellableCoroutine
 
 fun Context.startAppSettingsActivity() {
   startActivity(
     Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
       .setData(Uri.fromParts("package", packageName, null))
   )
-}
-
-fun Context.locationUpdatesFlow(): Flow<Location> = callbackFlow {
-  val client = LocationServices.getFusedLocationProviderClient(this@locationUpdatesFlow)
-  val callback =
-    object : LocationCallback() {
-      override fun onLocationResult(result: LocationResult) {
-        result.lastLocation?.let(::trySend)
-      }
-    }
-  @SuppressLint("MissingPermission")
-  client.requestLocationUpdates(locationRequest(), callback, Looper.getMainLooper())
-  awaitClose { client.removeLocationUpdates(callback) }
-}
-
-fun Context.locationEnabledFlow(): Flow<Boolean> = callbackFlow {
-  val locationManager = getSystemService(LocationManager::class.java)
-  trySend(LocationManagerCompat.isLocationEnabled(locationManager))
-  val receiver =
-    object : BroadcastReceiver() {
-      override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action == LocationManager.PROVIDERS_CHANGED_ACTION) {
-          trySend(LocationManagerCompat.isLocationEnabled(locationManager))
-        }
-      }
-    }
-  registerReceiver(receiver, IntentFilter(LocationManager.PROVIDERS_CHANGED_ACTION))
-  awaitClose { unregisterReceiver(receiver) }
 }
 
 suspend fun Context.checkLocationSettings(): CheckLocationSettingsResult =
@@ -93,10 +52,3 @@ sealed interface CheckLocationSettingsResult {
 
   data object DisabledNonResolvable : CheckLocationSettingsResult
 }
-
-private fun locationRequest(): LocationRequest =
-  LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, LOCATION_UPDATE_INTERVAL_MS)
-    .setMinUpdateDistanceMeters(10f)
-    .build()
-
-private const val LOCATION_UPDATE_INTERVAL_MS = 10_000L

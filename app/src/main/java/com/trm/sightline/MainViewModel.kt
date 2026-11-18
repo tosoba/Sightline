@@ -11,9 +11,8 @@ import androidx.lifecycle.viewModelScope
 import com.trm.sightline.core.common.RequestError
 import com.trm.sightline.core.common.messageResource
 import com.trm.sightline.core.common.toRequestError
+import com.trm.sightline.core.common.location.LocationProvider
 import com.trm.sightline.core.common.util.location
-import com.trm.sightline.core.common.util.locationEnabledFlow
-import com.trm.sightline.core.common.util.locationUpdatesFlow
 import com.trm.sightline.core.domain.AddressRepository
 import com.trm.sightline.core.domain.PlacesRepository
 import com.trm.sightline.core.domain.UserPreferencesRepository
@@ -67,6 +66,7 @@ import timber.log.Timber
 class MainViewModel
 constructor(
   private val application: Application,
+  private val locationProvider: LocationProvider,
   private val placesRepository: PlacesRepository,
   private val addressRepository: AddressRepository,
   private val userPreferencesRepository: UserPreferencesRepository,
@@ -171,7 +171,7 @@ constructor(
   }
 
   private fun handleUserLocation() {
-    combine(application.locationEnabledFlow(), userLocationEnabled) {
+    combine(locationProvider.isLocationEnabled(), userLocationEnabled) {
         isLocationEnabled,
         userLocationEnabled ->
         !isLocationEnabled && userLocationEnabled
@@ -181,17 +181,9 @@ constructor(
       .launchIn(viewModelScope)
 
     userLocationEnabled
-      .flatMapLatest { enabled -> if (enabled) application.locationUpdatesFlow() else emptyFlow() }
+      .flatMapLatest { enabled -> if (enabled) locationProvider.locationUpdates() else emptyFlow() }
       .transformLatest { location ->
-        userLocation =
-          GeoLocation(
-            latitude = location.latitude,
-            longitude = location.longitude,
-            altitude = location.altitude,
-            horizontalAccuracyMeters =
-              if (location.hasAccuracy()) location.accuracy.toDouble() else null,
-            timestampMillis = location.time,
-          )
+        userLocation = location
         _userLocationAddress.update { LoadingState.Loading(it.data) }
 
         delay(1.seconds)
