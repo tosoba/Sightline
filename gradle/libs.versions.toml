@@ -24,7 +24,6 @@ mapbox = "7.10.0"
 mapLibreCompose = "0.20.0"
 material = "1.14.0"
 material3 = "1.5.0-rc01"
-moshi = "1.15.2"
 nav3 = "1.2.1"
 okhttp = "5.5.1"
 playServicesLocation = "21.4.0"
@@ -72,8 +71,6 @@ mapbox-geojson = { group = "com.mapbox.mapboxsdk", name = "mapbox-sdk-geojson", 
 maplibre-compose = { module = "org.maplibre.compose:maplibre-compose", version.ref = "mapLibreCompose" }
 maplibre-compose-runtime-vulkan-android = { module = "org.maplibre.compose:maplibre-compose-runtime-vulkan-android", version.ref = "mapLibreCompose" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
-moshi = { group = "com.squareup.moshi", name = "moshi", version.ref = "moshi" }
-moshi-adapters = { group = "com.squareup.moshi", name = "moshi-adapters", version.ref = "moshi" }
 mockwebserver = { group = "com.squareup.okhttp3", name = "mockwebserver", version.ref = "okhttp" }
 okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
 okhttp-logging-interceptor = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }
@@ -81,7 +78,6 @@ play-services-location = { group = "com.google.android.gms", name = "play-servic
 protobuf-kotlin-lite = { group = "com.google.protobuf", name = "protobuf-kotlin-lite", version.ref = "protobuf" }
 protobuf-protoc = { group = "com.google.protobuf", name = "protoc", version.ref = "protobuf" }
 retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
-retrofit-converter-moshi = { group = "com.squareup.retrofit2", name = "converter-moshi", version.ref = "retrofit" }
 retrofit-converter-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofit" }
 timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
 
