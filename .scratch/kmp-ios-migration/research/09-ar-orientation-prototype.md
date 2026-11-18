@@ -202,6 +202,26 @@ The remapping lives in `Sources/OrientationRemapping.swift` and is the copy-past
 
 Build check: `xcodebuild` against an iOS simulator destination (compiles; no camera/magnetometer at runtime).
 
+## Renderer pitfalls for ticket 24
+
+The prototype's first renderer pass hit two related Metal debug-validation asserts, in order.
+
+1. `missing Sampler binding at index 0 for smp[0]`.
+   The fragment shader's texture and sampler were bound only when the latest camera texture existed,
+   while `drawPrimitives` ran unconditionally.
+   Fix by drawing only when the texture exists.
+
+2. `Command encoder released without endEncoding`.
+   The first attempt to fix (1) created the render command encoder before checking the texture, so on
+   the texture-missing path the encoder was deallocated without `endEncoding()`.
+   Fix by checking the texture exists *before* creating the encoder, so the encoder is never created
+   when there is nothing to draw.
+
+When ticket 24 ports this, check the camera texture first and return before creating the encoder or
+command buffer when it is missing.
+Both asserts fire on real devices too (for the first frame or two before the camera delivers), not
+just the simulator, so handle them explicitly rather than leaning on the camera arriving quickly.
+
 ## Reference for ticket 24
 
 Commit this note and the prototype under message `Add AR orientation remapping prototype and finding`.

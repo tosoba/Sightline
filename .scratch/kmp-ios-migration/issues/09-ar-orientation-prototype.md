@@ -26,3 +26,23 @@ let roll    = atan2(-m.m23, m.m33)   // -> getOrientation values[2]
 ```
 
 These feed the unchanged shared `Math3D.getCamRotation` (`camRot.x = -pitch`, `camRot.y = azimuth + PI`, `screenRot = -roll`). The matrix form is recommended over the ZXY Euler form (which hits gimbal lock at the upright-portrait pose). On-device verification (camera + magnetometer) is the remaining human step. Referenced from ticket 24.
+
+### 2026-11-18 - simulator run and renderer fix
+
+Ran the prototype on the iOS 27.0 simulator (iPhone 18 Pro) to sanity-check it beyond compile.
+
+Two Metal debug-validation asserts surfaced, both on the path where no camera frame is available yet
+(the simulator's virtual camera never delivers a frame, so `latestTexture` stays nil):
+
+1. `missing Sampler binding at index 0 for smp[0]` - the fragment shader's texture and sampler were
+   bound only when the texture existed while `drawPrimitives` ran unconditionally.
+2. `Command encoder released without endEncoding` - the first fix created the render encoder before
+   checking the texture, leaking an un-ended encoder on the texture-missing path.
+
+Both are fixed by checking the camera texture exists and returning before creating the encoder or
+command buffer.
+See "Renderer pitfalls for ticket 24" in `.scratch/kmp-ios-migration/research/09-ar-orientation-prototype.md`.
+
+Pixel analysis of the rendered simulator frame confirms the projection math at the identity pose:
+the N marker lands at exact screen center and E/S/W are culled as behind the camera (`rotZ <= 0`).
+The remapping itself and live camera alignment still require a real device with a magnetometer.
