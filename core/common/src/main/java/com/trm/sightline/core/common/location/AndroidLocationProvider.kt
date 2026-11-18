@@ -14,14 +14,13 @@ import androidx.core.location.LocationManagerCompat
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
-import com.google.android.gms.location.LocationSettingsRequest
+import com.trm.sightline.core.common.util.CheckLocationSettingsResult
+import com.trm.sightline.core.common.util.checkLocationSettings
 import com.trm.sightline.core.model.GeoLocation
-import kotlin.coroutines.resume
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.suspendCancellableCoroutine
 
 class AndroidLocationProvider(private val context: Context) : LocationProvider {
   override fun locationUpdates(): Flow<GeoLocation> = callbackFlow {
@@ -78,12 +77,9 @@ class AndroidLocationProvider(private val context: Context) : LocationProvider {
     }
 
   override suspend fun checkLocationSettings(): LocationSettingsState =
-    suspendCancellableCoroutine { continuation ->
-      LocationServices.getSettingsClient(context)
-        .checkLocationSettings(
-          LocationSettingsRequest.Builder().addLocationRequest(locationRequest()).build()
-        )
-        .addOnSuccessListener { continuation.resume(LocationSettingsState.Enabled) }
-        .addOnFailureListener { continuation.resume(LocationSettingsState.Disabled) }
+    when (context.checkLocationSettings()) {
+      CheckLocationSettingsResult.Enabled -> LocationSettingsState.Enabled
+      is CheckLocationSettingsResult.DisabledResolvable,
+      CheckLocationSettingsResult.DisabledNonResolvable -> LocationSettingsState.Disabled
     }
 }

@@ -1,5 +1,6 @@
 package com.trm.sightline.core.ar.model
 
+import com.trm.sightline.core.common.util.location
 import com.trm.sightline.core.model.GeoLocation
 import com.trm.sightline.core.model.Place
 import java.util.Objects
@@ -11,7 +12,7 @@ class ARMarker(val place: Place) {
   var isDrawn = true
 
   val location: GeoLocation
-    get() = GeoLocation(latitude = place.latitude, longitude = place.longitude)
+    get() = place.location
 
   override fun equals(other: Any?): Boolean =
     this === other || (other is ARMarker && other.place == place)
