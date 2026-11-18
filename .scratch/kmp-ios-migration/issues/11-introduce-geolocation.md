@@ -6,9 +6,15 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] `GeoLocation` (lat/lng/altitude/accuracy/timestamp plus haversine `distanceTo`/`bearingTo`) exists in `core:model`.
-- [ ] Shared-facing code (marker projection, feature screens) uses `GeoLocation`; no `android.location.Location` leaks into shared-facing APIs.
-- [ ] Haversine `distanceTo`/`bearingTo` have unit tests.
-- [ ] Android compiles, tests pass, and location-dependent behavior is unchanged.
+- [x] `GeoLocation` (lat/lng/altitude/accuracy/timestamp plus haversine `distanceTo`/`bearingTo`) exists in `core:model`.
+- [x] Shared-facing code (marker projection, feature screens) uses `GeoLocation`; no `android.location.Location` leaks into shared-facing APIs.
+- [x] Haversine `distanceTo`/`bearingTo` have unit tests.
+- [x] Android compiles, tests pass, and location-dependent behavior is unchanged.
+
+## Comments
+
+Added `GeoLocation` in `core:model` (haversine `distanceTo` in meters, initial-bearing `bearingTo` in degrees) with 6 JUnit4 tests. Replaced `android.location.Location` across `PlaceExtensions`, `MainViewModel`, the feature screens, `MapPreview`, and `core:ar` (`ARMarker`, `Math3D`, `ARView`, `ARMarkerRenderer`). The only remaining `android.location.Location` usage is `core:common/util/ContextExtensions.kt`, left for ticket 12. `Math3D` keeps `android.view.Surface` rotation constants (ticket 14).
+
+Verified `./gradlew :app:assembleDebug test` green. Commit `d0e76d1`, merged as `90887ae`.
