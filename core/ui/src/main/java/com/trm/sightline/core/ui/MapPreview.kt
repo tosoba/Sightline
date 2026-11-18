@@ -1,6 +1,5 @@
 package com.trm.sightline.core.ui
 
-import android.location.Location
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MyLocation
@@ -17,6 +16,7 @@ import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import com.trm.sightline.core.model.GeoLocation
 import com.trm.sightline.core.model.Place
 import java.io.BufferedReader
 import kotlinx.serialization.json.JsonObject
@@ -55,7 +55,7 @@ import org.maplibre.spatialk.geojson.Position
 @Composable
 fun rememberMapPlaceState(
   places: List<Place>,
-  currentLocation: Location?,
+  currentLocation: GeoLocation?,
   initialCameraPosition: CameraPosition = CameraPosition(),
 ): MapState {
   var clickedCluster by remember { mutableStateOf<Feature<Geometry, JsonObject?>?>(null) }
@@ -88,7 +88,7 @@ fun rememberMapPlaceState(
 @Composable
 private fun rememberPlacesMapState(
   places: List<Place>,
-  currentLocation: Location?,
+  currentLocation: GeoLocation?,
   initialCameraPosition: CameraPosition,
   onClusterClick: (Feature<Geometry, JsonObject?>) -> Unit,
 ): MapState =

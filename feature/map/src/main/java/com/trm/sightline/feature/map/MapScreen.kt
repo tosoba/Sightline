@@ -1,6 +1,5 @@
 package com.trm.sightline.feature.map
 
-import android.location.Location
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
+import com.trm.sightline.core.model.GeoLocation
 import com.trm.sightline.core.model.MapCameraPosition
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.ui.MapCameraAnimateToBoundingBoxEffect
@@ -42,7 +42,7 @@ import org.maplibre.spatialk.geojson.Position
 
 @Composable
 fun MapScreen(
-  currentLocation: Location?,
+  currentLocation: GeoLocation?,
   places: List<Place>,
   padding: PaddingValues,
   lastMapPosition: MapCameraPosition?,

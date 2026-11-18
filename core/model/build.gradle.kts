@@ -6,7 +6,10 @@ plugins {
   alias(libs.plugins.kotlin.serialization)
 }
 
-dependencies { implementation(libs.kotlinx.serialization.json) }
+dependencies {
+  implementation(libs.kotlinx.serialization.json)
+  testImplementation(libs.junit)
+}
 
 java {
   sourceCompatibility = JavaVersion.VERSION_11

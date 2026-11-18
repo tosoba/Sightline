@@ -8,7 +8,6 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RectF
 import android.graphics.Typeface
-import android.location.Location
 import android.os.Bundle
 import android.text.TextPaint
 import android.text.TextUtils
@@ -34,6 +33,7 @@ import com.trm.sightline.core.ar.util.sideSheetWidthDp
 import com.trm.sightline.core.ar.util.spToPx
 import com.trm.sightline.core.ar.util.statusBarTopInsetPx
 import com.trm.sightline.core.common.util.roundToDecimalPlaces
+import com.trm.sightline.core.model.GeoLocation
 import com.trm.sightline.core.model.PlaceCategory
 import com.trm.sightline.core.ui.R
 import com.trm.sightline.core.ui.icon
@@ -97,7 +97,7 @@ class ARMarkerRenderer(private val context: Context) {
     overlapGuardPx = markerWidthPx * MARKER_OVERLAP_GUARD_FRACTION
   }
 
-  var povLocation: Location? = null
+  var povLocation: GeoLocation? = null
     @MainThread
     set(value) {
       val previous = field
@@ -242,7 +242,7 @@ class ARMarkerRenderer(private val context: Context) {
       )
 
   private fun reassignSlots(
-    povLocation: Location,
+    povLocation: GeoLocation,
     canvasWidth: Int = lastCanvasWidth,
     canvasHeight: Int = lastCanvasHeight,
   ) {

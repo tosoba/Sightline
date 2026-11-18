@@ -1,6 +1,5 @@
 package com.trm.sightline.composable
 
-import android.location.Location
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -25,6 +24,7 @@ import com.trm.sightline.core.ar.model.RoundedRectF
 import com.trm.sightline.core.ar.util.collapsedBottomSheetContentHeightDp
 import com.trm.sightline.core.ar.util.collapsedBottomSheetDragHandleHeightDp
 import com.trm.sightline.core.ar.util.sideSheetWidthDp
+import com.trm.sightline.core.model.GeoLocation
 import com.trm.sightline.core.model.MapCameraPosition
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.feature.camera.CameraPreviewPagePicker
@@ -34,7 +34,7 @@ import com.trm.sightline.feature.map.MapScreen
 @Composable
 fun MainPager(
   pagerState: PagerState,
-  location: Location?,
+  location: GeoLocation?,
   places: List<Place>,
   lastMapPosition: MapCameraPosition?,
   isCompactHeight: Boolean,

@@ -1,11 +1,7 @@
 package com.trm.sightline.core.common.util
 
-import android.location.Location
+import com.trm.sightline.core.model.GeoLocation
 import com.trm.sightline.core.model.Place
 
-val Place.location: Location
-  get() =
-    Location("").also {
-      it.latitude = latitude
-      it.longitude = longitude
-    }
+val Place.location: GeoLocation
+  get() = GeoLocation(latitude = latitude, longitude = longitude)

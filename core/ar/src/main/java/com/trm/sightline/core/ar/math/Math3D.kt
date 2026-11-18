@@ -1,8 +1,8 @@
 package com.trm.sightline.core.ar.math
 
-import android.location.Location
 import android.view.Surface
 import com.trm.sightline.core.ar.orientation.Orientation
+import com.trm.sightline.core.model.GeoLocation
 import kotlin.math.cos
 
 internal object Math3D {
@@ -58,7 +58,7 @@ internal object Math3D {
    * @param inLocation Input parameter. A location where the point is currently located.
    * @param outPos A position object with same values.
    */
-  fun convertLocationToPosition(inLocation: Location, outPos: Vector3) {
+  fun convertLocationToPosition(inLocation: GeoLocation, outPos: Vector3) {
     outPos.z = inLocation.latitude
     outPos.x = inLocation.longitude
     outPos.y = inLocation.altitude

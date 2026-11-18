@@ -1,6 +1,5 @@
 package com.trm.sightline.feature.camera
 
-import android.location.Location
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.PaddingValues
@@ -11,13 +10,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.trm.sightline.core.ar.model.RoundedRectF
 import com.trm.sightline.core.ar.view.ARMarkerRenderer
+import com.trm.sightline.core.model.GeoLocation
 import com.trm.sightline.core.model.Place
 
 @Composable
 fun CameraScreen(
   previewEnabled: Boolean,
   previewBlurred: Boolean,
-  location: Location?,
+  location: GeoLocation?,
   places: List<Place>,
   blurredRectFs: List<RoundedRectF>,
   padding: PaddingValues,

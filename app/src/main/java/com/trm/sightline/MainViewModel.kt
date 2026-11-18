@@ -1,7 +1,6 @@
 package com.trm.sightline
 
 import android.app.Application
-import android.location.Location
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -18,6 +17,7 @@ import com.trm.sightline.core.domain.AddressRepository
 import com.trm.sightline.core.domain.PlacesRepository
 import com.trm.sightline.core.domain.UserPreferencesRepository
 import com.trm.sightline.core.model.CustomLocation
+import com.trm.sightline.core.model.GeoLocation
 import com.trm.sightline.core.model.LoadingState
 import com.trm.sightline.core.model.MapCameraPosition
 import com.trm.sightline.core.model.Place
@@ -105,13 +105,13 @@ constructor(
         initialValue = PlaceSearchRadius.OneKilometer,
       )
 
-  var userLocation: Location? by mutableStateOf(null)
+  var userLocation: GeoLocation? by mutableStateOf(null)
     private set
 
   private val _userLocationAddress = MutableStateFlow<LoadingState<String>>(LoadingState.Loaded(""))
   val userLocationAddress: StateFlow<LoadingState<String>> = _userLocationAddress.asStateFlow()
 
-  var customLocation: Location? by mutableStateOf(null)
+  var customLocation: GeoLocation? by mutableStateOf(null)
     private set
 
   private val _customLocationAddress = MutableStateFlow("")
@@ -159,11 +159,7 @@ constructor(
       .getCustomLocation()
       .filterNotNull()
       .onEach {
-        customLocation =
-          Location("").apply {
-            latitude = it.latitude
-            longitude = it.longitude
-          }
+        customLocation = GeoLocation(latitude = it.latitude, longitude = it.longitude)
         _customLocationAddress.value = it.address
       }
       .launchIn(viewModelScope)
@@ -182,7 +178,15 @@ constructor(
     userLocationEnabled
       .flatMapLatest { enabled -> if (enabled) application.locationUpdatesFlow() else emptyFlow() }
       .transformLatest { location ->
-        userLocation = location
+        userLocation =
+          GeoLocation(
+            latitude = location.latitude,
+            longitude = location.longitude,
+            altitude = location.altitude,
+            horizontalAccuracyMeters =
+              if (location.hasAccuracy()) location.accuracy.toDouble() else null,
+            timestampMillis = location.time,
+          )
         _userLocationAddress.update { LoadingState.Loading(it.data) }
 
         delay(1.seconds)
