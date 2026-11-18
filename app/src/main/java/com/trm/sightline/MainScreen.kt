@@ -4,7 +4,6 @@ import android.Manifest
 import android.app.Activity
 import android.content.Intent
 import android.graphics.RectF
-import android.location.Location
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -76,6 +75,7 @@ import com.trm.sightline.core.common.util.checkLocationSettings
 import com.trm.sightline.core.common.util.rememberBottomSheetScaffoldStateForScreenHeight
 import com.trm.sightline.core.common.util.startAppSettingsActivity
 import com.trm.sightline.core.model.CustomLocation
+import com.trm.sightline.core.model.GeoLocation
 import com.trm.sightline.core.model.LoadingState
 import com.trm.sightline.core.model.MapCameraPosition
 import com.trm.sightline.core.model.Place
@@ -93,10 +93,10 @@ fun SharedTransitionScope.MainScreen(
   isCompactHeight: Boolean,
   places: Map<PlaceCategory, LoadingState<List<Place>>>,
   allPlaces: List<Place>,
-  currentLocation: Location?,
-  userLocation: Location?,
+  currentLocation: GeoLocation?,
+  userLocation: GeoLocation?,
   userLocationAddress: LoadingState<String>,
-  customLocation: Location?,
+  customLocation: GeoLocation?,
   customLocationAddress: String,
   customLocationSearchResults: LoadingState<List<CustomLocation>>,
   isUserLocationEnabled: Boolean,

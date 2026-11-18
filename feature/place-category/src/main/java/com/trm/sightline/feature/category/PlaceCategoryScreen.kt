@@ -1,7 +1,6 @@
 package com.trm.sightline.feature.category
 
 import android.content.Intent
-import android.location.Location
 import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
@@ -67,7 +66,9 @@ import androidx.lifecycle.compose.currentStateAsState
 import com.trm.sightline.core.ar.util.sideSheetWidthDp
 import com.trm.sightline.core.common.R as commonR
 import com.trm.sightline.core.common.util.formattedDistance
+import com.trm.sightline.core.common.util.location
 import com.trm.sightline.core.common.util.rememberBottomSheetScaffoldStateForScreenHeight
+import com.trm.sightline.core.model.GeoLocation
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
 import com.trm.sightline.core.ui.MapCameraAnimateToBoundingBoxEffect
@@ -87,7 +88,7 @@ import org.maplibre.spatialk.geojson.Position
 @Composable
 fun SharedTransitionScope.PlaceCategoryScreen(
   route: PlaceCategoryRoute,
-  location: Location?,
+  location: GeoLocation?,
   isCompactHeight: Boolean,
   animatedVisibilityScope: AnimatedVisibilityScope,
   onBack: () -> Unit,
@@ -306,7 +307,7 @@ private fun SharedTransitionScope.PlaceCategoryHeader(
 }
 
 @Composable
-private fun PlaceListItem(place: Place, location: Location?, onClick: () -> Unit) {
+private fun PlaceListItem(place: Place, location: GeoLocation?, onClick: () -> Unit) {
   Row(
     modifier =
       Modifier.fillMaxWidth()
@@ -343,14 +344,7 @@ private fun PlaceListItem(place: Place, location: Location?, onClick: () -> Unit
         Text(
           text =
             remember(place, location) {
-              location
-                .distanceTo(
-                  Location("").apply {
-                    latitude = place.latitude
-                    longitude = place.longitude
-                  }
-                )
-                .formattedDistance()
+              location.distanceTo(place.location).formattedDistance()
             },
           style = MaterialTheme.typography.labelLarge,
           color = MaterialTheme.colorScheme.onSurfaceVariant,

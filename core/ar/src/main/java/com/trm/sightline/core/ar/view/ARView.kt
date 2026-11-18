@@ -3,7 +3,6 @@ package com.trm.sightline.core.ar.view
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
-import android.location.Location
 import android.os.Bundle
 import android.os.Parcelable
 import android.util.AttributeSet
@@ -19,13 +18,14 @@ import com.trm.sightline.core.ar.math.Vector3
 import com.trm.sightline.core.ar.model.ARMarker
 import com.trm.sightline.core.ar.orientation.Orientation
 import com.trm.sightline.core.ar.orientation.pitchWithinLimit
+import com.trm.sightline.core.model.GeoLocation
 import kotlinx.parcelize.Parcelize
 import kotlin.math.abs
 import kotlin.math.pow
 import kotlin.math.sqrt
 
 class ARView : View {
-  var povLocation: Location? = null
+  var povLocation: GeoLocation? = null
     @MainThread
     set(value) {
       field = value
@@ -101,7 +101,7 @@ class ARView : View {
     markerRenderer.draw(markers.filter { it.distance < maxRange }, canvas)
   }
 
-  private fun preDraw(location: Location) {
+  private fun preDraw(location: GeoLocation) {
     // For the moment we set a square as ratio. Size is arithmetic mean of width and height
     screenRatio.y = ((width + height).toFloat() / 2).toDouble()
     screenRatio.x = ((width + height).toFloat() / 2).toDouble()
@@ -170,7 +170,7 @@ class ARView : View {
         sqrt((marker.x - x).toDouble().pow(2.0) + (marker.y - y).toDouble().pow(2.0))
       }
 
-  private fun calculateDistancesBetween(location: Location, markers: List<ARMarker>) {
+  private fun calculateDistancesBetween(location: GeoLocation, markers: List<ARMarker>) {
     markers.forEach { marker -> marker.distance = marker.location.distanceTo(location) }
   }
 

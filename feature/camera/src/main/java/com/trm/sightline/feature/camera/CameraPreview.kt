@@ -1,7 +1,6 @@
 package com.trm.sightline.feature.camera
 
 import android.content.Context
-import android.location.Location
 import android.view.ViewStub
 import android.widget.FrameLayout
 import androidx.camera.core.CameraSelector
@@ -48,6 +47,7 @@ import com.trm.sightline.core.ar.orientation.pitchWithinLimit
 import com.trm.sightline.core.ar.util.phoneRotation
 import com.trm.sightline.core.ar.view.ARMarkerRenderer
 import com.trm.sightline.core.ar.view.ARView
+import com.trm.sightline.core.model.GeoLocation
 import com.trm.sightline.core.model.Place
 import timber.log.Timber
 
@@ -55,7 +55,7 @@ import timber.log.Timber
 fun CameraPreview(
   enabled: Boolean,
   blurred: Boolean,
-  location: Location?,
+  location: GeoLocation?,
   places: List<Place>,
   blurredRectFs: List<RoundedRectF>,
   padding: PaddingValues,
