@@ -1,7 +1,6 @@
 plugins {
   alias(libs.plugins.android.library)
-  alias(libs.plugins.hilt)
-  alias(libs.plugins.ksp)
+  alias(libs.plugins.metro)
 }
 
 android {
@@ -29,17 +28,14 @@ android {
 }
 
 dependencies {
-  implementation(project(":api:photon"))
-  implementation(project(":core:datastore"))
-  implementation(project(":core:domain"))
+  api(project(":api:photon"))
+  api(project(":core:datastore"))
+  api(project(":core:domain"))
 
-  implementation(libs.androidx.datastore)
+  api(libs.androidx.datastore)
   implementation(libs.androidx.datastore.preferences)
 
   implementation(libs.kotlinx.coroutines.core)
-
-  implementation(libs.hilt.android)
-  ksp(libs.hilt.compiler)
 
   implementation(libs.protobuf.kotlin.lite)
 

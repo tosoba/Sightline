@@ -1,7 +1,6 @@
 plugins {
   alias(libs.plugins.android.library)
-  alias(libs.plugins.hilt)
-  alias(libs.plugins.ksp)
+  alias(libs.plugins.metro)
 }
 
 android {
@@ -33,15 +32,12 @@ dependencies {
 
   implementation(libs.kotlinx.coroutines.core)
 
-  implementation(libs.hilt.android)
-  ksp(libs.hilt.compiler)
-
   implementation(libs.gson)
   api(libs.mapbox.geojson)
 
-  implementation(libs.okhttp)
-  implementation(libs.okhttp.logging.interceptor)
-  implementation(libs.retrofit)
+  api(libs.okhttp)
+  api(libs.okhttp.logging.interceptor)
+  api(libs.retrofit)
   implementation(libs.retrofit.converter.gson)
 
   testImplementation(libs.junit)

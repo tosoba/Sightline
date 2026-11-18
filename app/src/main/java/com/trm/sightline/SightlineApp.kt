@@ -1,6 +1,14 @@
 package com.trm.sightline
 
 import android.app.Application
-import dagger.hilt.android.HiltAndroidApp
+import dev.zacsweers.metro.createGraphFactory
 
-@HiltAndroidApp class SightlineApp : Application()
+class SightlineApp : Application() {
+  lateinit var appGraph: AppGraph
+    private set
+
+  override fun onCreate() {
+    super.onCreate()
+    appGraph = createGraphFactory<AppGraph.Factory>().create(this)
+  }
+}

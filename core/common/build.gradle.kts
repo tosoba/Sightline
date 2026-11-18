@@ -1,8 +1,7 @@
 plugins {
   alias(libs.plugins.android.library)
   alias(libs.plugins.kotlin.compose)
-  alias(libs.plugins.hilt)
-  alias(libs.plugins.ksp)
+  alias(libs.plugins.metro)
 }
 
 android {
@@ -40,11 +39,8 @@ dependencies {
   implementation(libs.kotlinx.coroutines.core)
   implementation(libs.kotlinx.coroutines.play.services)
 
-  implementation(libs.hilt.android)
-  ksp(libs.hilt.compiler)
-
   implementation(libs.play.services.location)
-  implementation(libs.okhttp)
-  implementation(libs.okhttp.logging.interceptor)
+  api(libs.okhttp)
+  api(libs.okhttp.logging.interceptor)
   implementation(libs.retrofit)
 }
