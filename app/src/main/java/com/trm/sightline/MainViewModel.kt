@@ -1,17 +1,15 @@
 package com.trm.sightline
 
-import android.app.Application
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.trm.sightline.core.common.RequestError
+import com.trm.sightline.core.common.location.LocationProvider
 import com.trm.sightline.core.common.messageResource
 import com.trm.sightline.core.common.toRequestError
-import com.trm.sightline.core.common.location.LocationProvider
 import com.trm.sightline.core.common.util.location
 import com.trm.sightline.core.domain.AddressRepository
 import com.trm.sightline.core.domain.PlacesRepository
@@ -63,14 +61,12 @@ import timber.log.Timber
 @ContributesIntoMap(AppScope::class, binding = binding<ViewModel>())
 @ViewModelKey
 @Inject
-class MainViewModel
-constructor(
-  private val application: Application,
+class MainViewModel(
   private val locationProvider: LocationProvider,
   private val placesRepository: PlacesRepository,
   private val addressRepository: AddressRepository,
   private val userPreferencesRepository: UserPreferencesRepository,
-) : AndroidViewModel(application) {
+) : ViewModel() {
   val places = mutableStateMapOf<PlaceCategory, LoadingState<List<Place>>>()
 
   val allPlaces: List<Place>
@@ -193,7 +189,7 @@ constructor(
             LoadingState.Loaded(
               addressRepository
                 .getAddress(latitude = location.latitude, longitude = location.longitude)
-                .orEmpty()
+                .orEmpty(),
             )
         } catch (ex: Exception) {
           if (ex is CancellationException) throw ex
@@ -238,7 +234,7 @@ constructor(
                       longitude = location.longitude,
                       radiusMeters = searchRadius.value.meters.toFloat(),
                     )
-                    .sortedBy { location.distanceTo(it.location) }
+                    .sortedBy { location.distanceTo(it.location) },
                 )
               }
           } catch (ex: TimeoutCancellationException) {
