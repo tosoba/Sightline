@@ -50,3 +50,5 @@ include(":feature:map")
 include(":feature:places")
 
 include(":feature:place-category")
+
+include(":shared")
