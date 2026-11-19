@@ -7,7 +7,7 @@ struct SightlineApp: App {
 
     var body: some Scene {
         WindowGroup {
-            NearbyPlacesView(shared: shared)
+            MainScreen(shared: shared)
         }
     }
 }

@@ -1,65 +1,11 @@
 import Shared
 import SwiftUI
 
-extension PlaceCategory {
-    var title: String {
-        switch self {
-        case .sightsLandmarks: "Sights"
-        case .artsCulture: "Arts & culture"
-        case .foodDrink: "Food & drink"
-        case .nightlife: "Nightlife"
-        case .shopping: "Shopping"
-        case .natureOutdoors: "Nature & outdoors"
-        case .library: "Library"
-        case .accommodation: "Accommodation"
-        case .gettingAround: "Getting around"
-        case .roadTrip: "Road trip"
-        case .moneyBanking: "Money & banking"
-        case .health: "Health"
-        case .practical: "Practical"
-        }
-    }
-}
-
 struct NearbyPlacesView: View {
-    @State private var model: NearbyPlacesModel
-
-    init(shared: SightlineShared) {
-        _model = State(initialValue: NearbyPlacesModel(shared: shared))
-    }
+    let model: NearbyPlacesModel
 
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                categoryPicker
-                Divider()
-                content
-            }
-            .navigationTitle("Nearby places")
-        }
-        .task {
-            await withTaskGroup(of: Void.self) { group in
-                group.addTask { await model.observeAuthorization() }
-                group.addTask { await model.observeLocation() }
-            }
-        }
-    }
-
-    private var categoryPicker: some View {
-        Picker(
-            "Category",
-            selection: Binding(
-                get: { model.selectedCategory },
-                set: { model.select($0) }
-            )
-        ) {
-            ForEach(PlaceCategory.allCases, id: \.self) { category in
-                Text(category.title).tag(category)
-            }
-        }
-        .pickerStyle(.menu)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
+        content
     }
 
     @ViewBuilder
