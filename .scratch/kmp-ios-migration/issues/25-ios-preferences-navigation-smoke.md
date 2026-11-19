@@ -6,7 +6,7 @@
 
 **Blocked by:** 22, 23, 24
 
-**Status:** ready-for-agent
+**Status:** claimed
 
 - [ ] Preferences persist across launches via the shared `UserPreferencesLocalRepository` and `OkioStorage`.
 - [ ] The category screen pushes and pops with standard back navigation carrying `category` and `places`.
