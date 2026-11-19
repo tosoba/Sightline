@@ -41,7 +41,6 @@ kotlin {
       implementation(libs.ktor.client.okhttp)
       implementation(libs.ktor.client.logging)
       implementation(libs.okhttp)
-      implementation(libs.okhttp.logging.interceptor)
     }
 
     iosMain.dependencies {

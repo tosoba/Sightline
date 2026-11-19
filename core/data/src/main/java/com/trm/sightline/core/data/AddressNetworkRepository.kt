@@ -12,15 +12,14 @@ class AddressNetworkRepository @Inject constructor(private val photonApi: Photon
   AddressRepository {
   override suspend fun getAddress(latitude: Double, longitude: Double): String? {
     val feature =
-      photonApi.reverse(lat = latitude, lon = longitude).features()?.firstOrNull() ?: return null
+      photonApi.reverse(lat = latitude, lon = longitude).features.firstOrNull() ?: return null
     return FeatureMapper.toAddress(feature)
   }
 
   override suspend fun search(query: String, limit: Int): List<CustomLocation> =
     photonApi
       .search(query = query, limit = limit)
-      .features()
-      ?.mapNotNull(FeatureMapper::toCustomLocation)
-      ?.distinctBy(CustomLocation::address)
-      .orEmpty()
+      .features
+      .mapNotNull(FeatureMapper::toCustomLocation)
+      .distinctBy(CustomLocation::address)
 }

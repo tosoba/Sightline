@@ -1,46 +1,38 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
-  alias(libs.plugins.android.library)
+  alias(libs.plugins.kotlin.multiplatform)
+  alias(libs.plugins.android.kmp.library)
+  alias(libs.plugins.kotlin.serialization)
   alias(libs.plugins.metro)
 }
 
-android {
-  namespace = "com.trm.sightline.api.photon"
-  compileSdk { version = release(37) {} }
-
-  defaultConfig {
+kotlin {
+  android {
+    namespace = "com.trm.sightline.api.photon"
+    compileSdk = 37
     minSdk = libs.versions.minSdk.get().toInt()
-    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+    compilerOptions { jvmTarget.set(JvmTarget.JVM_11) }
+
+    withHostTest {}
   }
 
-  buildFeatures { buildConfig = true }
+  iosArm64()
+  iosSimulatorArm64()
 
-  buildTypes {
-    release {
-      isMinifyEnabled = false
-      proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+  sourceSets {
+    commonMain.dependencies {
+      api(libs.kotlinx.serialization.json)
+      api(libs.ktor.client.core)
+    }
+
+    commonTest.dependencies {
+      implementation(kotlin("test"))
+      implementation(libs.kotlinx.coroutines.test)
+      implementation(libs.ktor.client.content.negotiation)
+      implementation(libs.ktor.client.mock)
+      implementation(libs.ktor.serialization.kotlinx.json)
     }
   }
-
-  compileOptions {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
-  }
-}
-
-dependencies {
-  implementation(project(":core:common"))
-
-  implementation(libs.kotlinx.coroutines.core)
-
-  implementation(libs.gson)
-  api(libs.mapbox.geojson)
-
-  api(libs.okhttp)
-  api(libs.okhttp.logging.interceptor)
-  api(libs.retrofit)
-  implementation(libs.retrofit.converter.gson)
-
-  testImplementation(libs.junit)
-  testImplementation(libs.kotlinx.coroutines.test)
-  testImplementation(libs.mockwebserver)
 }

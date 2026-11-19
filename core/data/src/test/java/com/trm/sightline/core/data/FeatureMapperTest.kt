@@ -1,17 +1,20 @@
 package com.trm.sightline.core.data
 
-import com.mapbox.geojson.Feature
+import com.trm.sightline.api.photon.Feature
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
+import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
 class FeatureMapperTest {
+  private val json = Json { ignoreUnknownKeys = true }
+
   @Test
   fun `maps a photon feature to a place with a type-prefixed id`() {
     val feature =
-      Feature.fromJson(
+      feature(
         """
         {
           "type": "Feature",
@@ -38,7 +41,7 @@ class FeatureMapperTest {
   @Test
   fun `trims a whitespace-padded name`() {
     val feature =
-      Feature.fromJson(
+      feature(
         """
         {
           "type": "Feature",
@@ -54,7 +57,7 @@ class FeatureMapperTest {
   @Test
   fun `returns null for a feature with a blank name`() {
     val feature =
-      Feature.fromJson(
+      feature(
         """
         {
           "type": "Feature",
@@ -70,7 +73,7 @@ class FeatureMapperTest {
   @Test
   fun `returns null for a feature without a point geometry`() {
     val feature =
-      Feature.fromJson(
+      feature(
         """
         {
           "type": "Feature",
@@ -86,7 +89,7 @@ class FeatureMapperTest {
   @Test
   fun `returns null for a feature missing its osm identity`() {
     val feature =
-      Feature.fromJson(
+      feature(
         """
         {
           "type": "Feature",
@@ -98,4 +101,6 @@ class FeatureMapperTest {
 
     assertNull(FeatureMapper.toPlace(feature, PlaceCategory.Shopping))
   }
+
+  private fun feature(json: String): Feature = this.json.decodeFromString(json)
 }

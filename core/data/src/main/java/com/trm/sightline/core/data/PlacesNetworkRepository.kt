@@ -25,10 +25,9 @@ class PlacesNetworkRepository @Inject constructor(private val photonApi: PhotonA
         osmTag = category.osmTags,
         limit = LIMIT,
       )
-      .features()
-      ?.mapNotNull { FeatureMapper.toPlace(it, category) }
-      ?.distinctBy(Place::id)
-      .orEmpty()
+      .features
+      .mapNotNull { FeatureMapper.toPlace(it, category) }
+      .distinctBy(Place::id)
 }
 
 internal fun metresToKilometres(radiusMeters: Float): Double = radiusMeters / METRES_PER_KILOMETRE

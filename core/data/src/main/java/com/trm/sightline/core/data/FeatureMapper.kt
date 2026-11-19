@@ -1,19 +1,24 @@
 package com.trm.sightline.core.data
 
-import com.mapbox.geojson.Feature
-import com.mapbox.geojson.Point
+import com.trm.sightline.api.photon.Feature
 import com.trm.sightline.core.model.CustomLocation
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
+import kotlin.time.Clock
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.doubleOrNull
+import kotlinx.serialization.json.longOrNull
 
 internal object FeatureMapper {
   fun toAddress(feature: Feature): String? =
     listOfNotNull(
-        feature.getStringProperty("name"),
-        feature.getStringProperty("district"),
-        feature.getStringProperty("locality"),
-        feature.getStringProperty("city"),
-        feature.getStringProperty("country"),
+        feature.stringProperty("name"),
+        feature.stringProperty("district"),
+        feature.stringProperty("locality"),
+        feature.stringProperty("city"),
+        feature.stringProperty("country"),
       )
       .filter(String::isNotBlank)
       .takeUnless(List<String>::isEmpty)
@@ -21,27 +26,46 @@ internal object FeatureMapper {
 
   fun toCustomLocation(feature: Feature): CustomLocation? {
     val address = toAddress(feature) ?: return null
-    val point = feature.geometry() as? Point ?: return null
+    val point = feature.point() ?: return null
     return CustomLocation(
-      latitude = point.latitude(),
-      longitude = point.longitude(),
+      latitude = point.latitude,
+      longitude = point.longitude,
       address = address,
-      timestamp = System.currentTimeMillis(),
+      timestamp = Clock.System.now().toEpochMilliseconds(),
     )
   }
 
   fun toPlace(feature: Feature, category: PlaceCategory): Place? {
-    val name = feature.getStringProperty("name")?.trim()
+    val name = feature.stringProperty("name")?.trim()
     if (name.isNullOrBlank()) return null
-    val osmType = feature.getStringProperty("osm_type") ?: return null
-    val osmId = feature.getNumberProperty("osm_id") ?: return null
-    val point = feature.geometry() as? Point ?: return null
+    val osmType = feature.stringProperty("osm_type") ?: return null
+    val osmId = feature.longProperty("osm_id") ?: return null
+    val point = feature.point() ?: return null
     return Place(
-      id = "$osmType:${osmId.toLong()}",
+      id = "$osmType:$osmId",
       name = name,
-      latitude = point.latitude(),
-      longitude = point.longitude(),
+      latitude = point.latitude,
+      longitude = point.longitude,
       category = category,
     )
   }
+
+  private fun Feature.stringProperty(key: String): String? =
+    (properties[key] as? JsonPrimitive)?.contentOrNull
+
+  private fun Feature.longProperty(key: String): Long? =
+    (properties[key] as? JsonPrimitive)?.longOrNull
+
+  private fun Feature.point(): Coordinates? {
+    val geometry = geometry ?: return null
+    if (geometry.type != POINT_TYPE) return null
+    val coordinates = geometry.coordinates as? JsonArray ?: return null
+    val longitude = (coordinates.getOrNull(0) as? JsonPrimitive)?.doubleOrNull ?: return null
+    val latitude = (coordinates.getOrNull(1) as? JsonPrimitive)?.doubleOrNull ?: return null
+    return Coordinates(latitude = latitude, longitude = longitude)
+  }
+
+  private data class Coordinates(val latitude: Double, val longitude: Double)
+
+  private const val POINT_TYPE = "Point"
 }
