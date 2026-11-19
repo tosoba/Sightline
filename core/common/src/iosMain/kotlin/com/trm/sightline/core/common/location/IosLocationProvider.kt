@@ -43,20 +43,7 @@ class IosLocationProvider : LocationProvider {
     MutableStateFlow(locationManager.authorizationStatus.toLocationAuthorization())
 
   // CLLocationManager.delegate is weak; the provider must own the delegate for callbacks to arrive.
-  private val delegate =
-    object : NSObject(), CLLocationManagerDelegateProtocol {
-      override fun locationManager(
-        manager: CLLocationManager,
-        didUpdateLocations: List<*>,
-      ) {
-        val location = didUpdateLocations.lastOrNull() as? CLLocation ?: return
-        updates.tryEmit(location.toGeoLocation())
-      }
-
-      override fun locationManagerDidChangeAuthorization(manager: CLLocationManager) {
-        authorization.value = manager.authorizationStatus.toLocationAuthorization()
-      }
-    }
+  private val delegate = LocationDelegate(updates, authorization)
 
   init {
     locationManager.delegate = delegate
@@ -92,33 +79,56 @@ class IosLocationProvider : LocationProvider {
       LocationSettingsState.Disabled
     }
 
-  private fun CLLocation.toGeoLocation(): GeoLocation {
-    val (latitude, longitude) = coordinate.useContents { latitude to longitude }
-    return GeoLocation(
-      latitude = latitude,
-      longitude = longitude,
-      altitude = altitude,
-      horizontalAccuracyMeters = horizontalAccuracy.takeIf { it >= 0 },
-      timestampMillis = (timestamp.timeIntervalSince1970 * MILLIS_PER_SECOND).toLong(),
-    )
-  }
-
-  private fun CLAuthorizationStatus.toLocationAuthorization(): LocationAuthorization =
-    when (this) {
-      kCLAuthorizationStatusNotDetermined -> LocationAuthorization.NotDetermined
-      kCLAuthorizationStatusRestricted -> LocationAuthorization.Restricted
-      kCLAuthorizationStatusDenied -> LocationAuthorization.Denied
-      kCLAuthorizationStatusAuthorizedWhenInUse,
-      kCLAuthorizationStatusAuthorizedAlways -> LocationAuthorization.Granted
-      else -> LocationAuthorization.NotDetermined
-    }
-
   private companion object {
     const val DISTANCE_FILTER_METERS = 10.0
-    const val MILLIS_PER_SECOND = 1_000.0
     val UPDATE_THROTTLE = 10.seconds
   }
 }
+
+private const val MILLIS_PER_SECOND = 1_000.0
+
+/**
+ * Owns no reference to the provider, so the provider holding the delegate cannot retain it back.
+ */
+@OptIn(ExperimentalForeignApi::class)
+private class LocationDelegate(
+  private val updates: MutableSharedFlow<GeoLocation>,
+  private val authorization: MutableStateFlow<LocationAuthorization>,
+) : NSObject(), CLLocationManagerDelegateProtocol {
+  override fun locationManager(
+    manager: CLLocationManager,
+    didUpdateLocations: List<*>,
+  ) {
+    val location = didUpdateLocations.lastOrNull() as? CLLocation ?: return
+    updates.tryEmit(location.toGeoLocation())
+  }
+
+  override fun locationManagerDidChangeAuthorization(manager: CLLocationManager) {
+    authorization.value = manager.authorizationStatus.toLocationAuthorization()
+  }
+}
+
+@OptIn(ExperimentalForeignApi::class)
+private fun CLLocation.toGeoLocation(): GeoLocation {
+  val (latitude, longitude) = coordinate.useContents { latitude to longitude }
+  return GeoLocation(
+    latitude = latitude,
+    longitude = longitude,
+    altitude = altitude,
+    horizontalAccuracyMeters = horizontalAccuracy.takeIf { it >= 0 },
+    timestampMillis = (timestamp.timeIntervalSince1970 * MILLIS_PER_SECOND).toLong(),
+  )
+}
+
+private fun CLAuthorizationStatus.toLocationAuthorization(): LocationAuthorization =
+  when (this) {
+    kCLAuthorizationStatusNotDetermined -> LocationAuthorization.NotDetermined
+    kCLAuthorizationStatusRestricted -> LocationAuthorization.Restricted
+    kCLAuthorizationStatusDenied -> LocationAuthorization.Denied
+    kCLAuthorizationStatusAuthorizedWhenInUse,
+    kCLAuthorizationStatusAuthorizedAlways -> LocationAuthorization.Granted
+    else -> LocationAuthorization.NotDetermined
+  }
 
 private fun <T> Flow<T>.throttleFirst(period: Duration): Flow<T> = flow {
   var nextEmission = TimeSource.Monotonic.markNow()
