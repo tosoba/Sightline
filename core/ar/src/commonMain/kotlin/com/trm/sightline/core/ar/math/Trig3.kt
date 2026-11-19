@@ -3,7 +3,7 @@ package com.trm.sightline.core.ar.math
 import kotlin.math.cos
 import kotlin.math.sin
 
-internal class Trig3 {
+class Trig3 {
   var xSin = 0.0
     private set
 

@@ -1,69 +1,57 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
+
 plugins {
-  alias(libs.plugins.android.library)
+  alias(libs.plugins.kotlin.multiplatform)
+  alias(libs.plugins.android.kmp.library)
   alias(libs.plugins.kotlin.compose)
   id("kotlin-parcelize")
 }
 
-android {
-  namespace = "com.trm.sightline.core.ar"
-  compileSdk { version = release(37) {} }
-
-  defaultConfig {
+kotlin {
+  android {
+    namespace = "com.trm.sightline.core.ar"
+    compileSdk = 37
     minSdk = libs.versions.minSdk.get().toInt()
 
-    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    compilerOptions { jvmTarget.set(JvmTarget.JVM_11) }
 
-    externalNativeBuild {
-      cmake {
-        cppFlags("-std=c++17")
-        arguments("-DCMAKE_VERBOSE_MAKEFILE=ON")
-      }
+    withHostTest {}
+
+    androidResources { enable = true }
+  }
+
+  iosArm64()
+  iosSimulatorArm64()
+
+  sourceSets {
+    commonMain.dependencies {
+      api(project(":core:model"))
+    }
+
+    commonTest.dependencies { implementation(kotlin("test")) }
+
+    androidMain.dependencies {
+      implementation(project(":core:ar-native"))
+      implementation(project(":core:common"))
+      implementation(project(":core:ui"))
+
+      implementation(libs.androidx.core.ktx)
+
+      implementation(project.dependencies.platform(libs.androidx.compose.bom))
+      implementation(libs.androidx.compose.ui)
+      implementation(libs.androidx.compose.ui.graphics)
+
+      implementation(libs.androidx.camera.camera2)
+      implementation(libs.androidx.camera.lifecycle)
+      implementation(libs.androidx.camera.view)
+      implementation(libs.androidx.concurrent.futures.ktx)
+
+      implementation(libs.kotlinx.coroutines.core)
+
+      implementation(libs.timber)
     }
   }
-
-  buildTypes {
-    release {
-      isMinifyEnabled = false
-      proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-    }
-  }
-
-  externalNativeBuild {
-    cmake {
-      path = File("src/main/cpp/CMakeLists.txt")
-      version = "4.1.2"
-    }
-  }
-
-  compileOptions {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
-  }
-
-  buildFeatures { compose = true }
 }
 
-dependencies {
-  implementation(project(":core:common"))
-  implementation(project(":core:model"))
-  implementation(project(":core:ui"))
-
-  implementation(libs.androidx.core.ktx)
-  implementation(libs.androidx.appcompat)
-  implementation(libs.material)
-
-  implementation(platform(libs.androidx.compose.bom))
-  implementation(libs.androidx.compose.ui)
-  implementation(libs.androidx.compose.ui.graphics)
-
-  implementation(libs.androidx.camera.camera2)
-  implementation(libs.androidx.camera.lifecycle)
-  implementation(libs.androidx.camera.view)
-  implementation(libs.androidx.concurrent.futures.ktx)
-
-  implementation(libs.kotlinx.coroutines.core)
-
-  implementation(libs.timber)
-
-  testImplementation(kotlin("test-junit"))
-}
+composeCompiler { targetKotlinPlatforms.set(setOf(KotlinPlatformType.androidJvm)) }

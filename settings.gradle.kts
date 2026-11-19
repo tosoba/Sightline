@@ -31,6 +31,8 @@ include(":api:photon")
 
 include(":core:ar")
 
+include(":core:ar-native")
+
 include(":core:common")
 
 include(":core:model")
