@@ -9,7 +9,7 @@ final class NearbyPlacesModel {
     private static let logger = Logger(subsystem: "com.trm.sightline", category: "places")
 
     private let shared: SightlineShared
-    private var currentLocation: GeoLocation?
+    private(set) var currentLocation: GeoLocation?
 
     var selectedCategory: PlaceCategory = .sightsLandmarks
     private(set) var places: [Place] = []

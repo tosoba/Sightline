@@ -32,6 +32,7 @@ kotlin {
 
       export(project(":core:model"))
       export(project(":core:common"))
+      export(project(":core:ar"))
 
       xcframework.add(this)
     }
@@ -41,6 +42,7 @@ kotlin {
     commonMain.dependencies {
       api(project(":core:common"))
       api(project(":core:model"))
+      api(project(":core:ar"))
 
       api(project(":core:data"))
       api(project(":core:domain"))

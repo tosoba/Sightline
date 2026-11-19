@@ -9,13 +9,21 @@
 /* Begin PBXBuildFile section */
 		170BECB998A5F87CD8139741 /* NearbyPlacesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F9AE50F2B47D799F3203A3C /* NearbyPlacesView.swift */; };
 		1C81D6F669B7BB6D2FFCCEB3 /* MapLibre in Frameworks */ = {isa = PBXBuildFile; productRef = B26BDE9F5B50F285C10A6766 /* MapLibre */; };
+		26550A10558E67C2592D81C1 /* ARCameraMotion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52004BAF5A6A7CD040C9644A /* ARCameraMotion.swift */; };
+		318B7A34F36B639F09A0C8D3 /* ARCameraSyntheticFeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05A6FDE80D4F009784110F0D /* ARCameraSyntheticFeed.swift */; };
+		34B8A5325FA474110F6566AD /* ARCameraRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18A3A0B7164A80BB642ECA6C /* ARCameraRenderer.swift */; };
 		34E35379848E919FD0600664 /* PlaceCategoryTitle.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5D18FDB4739848F99AC3737 /* PlaceCategoryTitle.swift */; };
+		3696B764EA42261BF9B2B6B5 /* ARCameraShaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = 858566E65BCB9127E10B6580 /* ARCameraShaders.metal */; };
 		3AECDADE4D165A4D4A4E8F93 /* SightlineApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0B8CB6AC9CE9D17AF4DFA1B /* SightlineApp.swift */; };
 		45228537D1FB75C2794D02E6 /* MapPageUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C0BE0BD2C453896E01CBEBB /* MapPageUITests.swift */; };
 		496C9FEC4B353DE50AA10ADC /* MainScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E4CA9E699DDB96F8B8D04BF /* MainScreen.swift */; };
+		5A9B4F58E0455E26653776D1 /* ARCameraOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3D89A6AF9DD24F20C627DD8 /* ARCameraOverlay.swift */; };
 		6AD776884F44D9355F045FE0 /* light_style.json in Resources */ = {isa = PBXBuildFile; fileRef = F954F8A9CC4247902BFD7B5A /* light_style.json */; };
 		7AC8305FF41ED484BF8B4C31 /* dark_style.json in Resources */ = {isa = PBXBuildFile; fileRef = 7E89613391F5E3CE7C3B793B /* dark_style.json */; };
+		7EE8D75A6AD779D1DEE89DCD /* ARCameraModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8A77545BAA043D35B5F6B4F /* ARCameraModel.swift */; };
+		81D14EF0A3E009D87CB7787D /* ARCameraScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BB2E5A3F4E9E142A1C2CA65 /* ARCameraScreen.swift */; };
 		940905A6CF514EA14B1C4647 /* MapLibreMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F197093DA6B407F8BCCDF0F6 /* MapLibreMapView.swift */; };
+		98E3B4B4EF460CBC53BC71FF /* ARCameraCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3D483AFA425ECB609380159 /* ARCameraCapture.swift */; };
 		DA13F1CEE97C74F908A08790 /* MapScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C60CB2DA6FF7C01D784C063 /* MapScreen.swift */; };
 		E2CF276D1A2EC5BC1F2008F5 /* NearbyPlacesModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D07A51E4E9017DC595E1DC10 /* NearbyPlacesModel.swift */; };
 /* End PBXBuildFile section */
@@ -31,16 +39,24 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		05A6FDE80D4F009784110F0D /* ARCameraSyntheticFeed.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARCameraSyntheticFeed.swift; sourceTree = "<group>"; };
+		18A3A0B7164A80BB642ECA6C /* ARCameraRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARCameraRenderer.swift; sourceTree = "<group>"; };
 		1F9AE50F2B47D799F3203A3C /* NearbyPlacesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearbyPlacesView.swift; sourceTree = "<group>"; };
 		323906AFB18147ABEDEBDB38 /* iosAppUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = iosAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		52004BAF5A6A7CD040C9644A /* ARCameraMotion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARCameraMotion.swift; sourceTree = "<group>"; };
 		6C0BE0BD2C453896E01CBEBB /* MapPageUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapPageUITests.swift; sourceTree = "<group>"; };
+		7BB2E5A3F4E9E142A1C2CA65 /* ARCameraScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARCameraScreen.swift; sourceTree = "<group>"; };
 		7C60CB2DA6FF7C01D784C063 /* MapScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapScreen.swift; sourceTree = "<group>"; };
 		7E89613391F5E3CE7C3B793B /* dark_style.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = dark_style.json; sourceTree = "<group>"; };
+		858566E65BCB9127E10B6580 /* ARCameraShaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = ARCameraShaders.metal; sourceTree = "<group>"; };
 		86038AE1032E284E79B32AD6 /* iosApp.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = iosApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9E4CA9E699DDB96F8B8D04BF /* MainScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainScreen.swift; sourceTree = "<group>"; };
+		A8A77545BAA043D35B5F6B4F /* ARCameraModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARCameraModel.swift; sourceTree = "<group>"; };
 		D07A51E4E9017DC595E1DC10 /* NearbyPlacesModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearbyPlacesModel.swift; sourceTree = "<group>"; };
 		D0B8CB6AC9CE9D17AF4DFA1B /* SightlineApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SightlineApp.swift; sourceTree = "<group>"; };
+		E3D89A6AF9DD24F20C627DD8 /* ARCameraOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARCameraOverlay.swift; sourceTree = "<group>"; };
 		F197093DA6B407F8BCCDF0F6 /* MapLibreMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapLibreMapView.swift; sourceTree = "<group>"; };
+		F3D483AFA425ECB609380159 /* ARCameraCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARCameraCapture.swift; sourceTree = "<group>"; };
 		F5D18FDB4739848F99AC3737 /* PlaceCategoryTitle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceCategoryTitle.swift; sourceTree = "<group>"; };
 		F954F8A9CC4247902BFD7B5A /* light_style.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = light_style.json; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -88,6 +104,14 @@
 		B53BB82DD7780F3657A03A11 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				F3D483AFA425ECB609380159 /* ARCameraCapture.swift */,
+				A8A77545BAA043D35B5F6B4F /* ARCameraModel.swift */,
+				52004BAF5A6A7CD040C9644A /* ARCameraMotion.swift */,
+				E3D89A6AF9DD24F20C627DD8 /* ARCameraOverlay.swift */,
+				18A3A0B7164A80BB642ECA6C /* ARCameraRenderer.swift */,
+				7BB2E5A3F4E9E142A1C2CA65 /* ARCameraScreen.swift */,
+				858566E65BCB9127E10B6580 /* ARCameraShaders.metal */,
+				05A6FDE80D4F009784110F0D /* ARCameraSyntheticFeed.swift */,
 				9E4CA9E699DDB96F8B8D04BF /* MainScreen.swift */,
 				F197093DA6B407F8BCCDF0F6 /* MapLibreMapView.swift */,
 				7C60CB2DA6FF7C01D784C063 /* MapScreen.swift */,
@@ -233,6 +257,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				98E3B4B4EF460CBC53BC71FF /* ARCameraCapture.swift in Sources */,
+				7EE8D75A6AD779D1DEE89DCD /* ARCameraModel.swift in Sources */,
+				26550A10558E67C2592D81C1 /* ARCameraMotion.swift in Sources */,
+				5A9B4F58E0455E26653776D1 /* ARCameraOverlay.swift in Sources */,
+				34B8A5325FA474110F6566AD /* ARCameraRenderer.swift in Sources */,
+				81D14EF0A3E009D87CB7787D /* ARCameraScreen.swift in Sources */,
+				3696B764EA42261BF9B2B6B5 /* ARCameraShaders.metal in Sources */,
+				318B7A34F36B639F09A0C8D3 /* ARCameraSyntheticFeed.swift in Sources */,
 				496C9FEC4B353DE50AA10ADC /* MainScreen.swift in Sources */,
 				940905A6CF514EA14B1C4647 /* MapLibreMapView.swift in Sources */,
 				DA13F1CEE97C74F908A08790 /* MapScreen.swift in Sources */,
@@ -435,6 +467,18 @@
 					Shared,
 					"-framework",
 					CoreLocation,
+					"-framework",
+					AVFoundation,
+					"-framework",
+					CoreVideo,
+					"-framework",
+					CoreMotion,
+					"-framework",
+					CoreMedia,
+					"-framework",
+					Metal,
+					"-framework",
+					MetalKit,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.trm.sightline;
 				PRODUCT_NAME = Sightline;
@@ -468,6 +512,18 @@
 					Shared,
 					"-framework",
 					CoreLocation,
+					"-framework",
+					AVFoundation,
+					"-framework",
+					CoreVideo,
+					"-framework",
+					CoreMotion,
+					"-framework",
+					CoreMedia,
+					"-framework",
+					Metal,
+					"-framework",
+					MetalKit,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.trm.sightline;
 				PRODUCT_NAME = Sightline;

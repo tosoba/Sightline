@@ -40,6 +40,18 @@ targets:
           - Shared
           - -framework
           - CoreLocation
+          - -framework
+          - AVFoundation
+          - -framework
+          - CoreVideo
+          - -framework
+          - CoreMotion
+          - -framework
+          - CoreMedia
+          - -framework
+          - Metal
+          - -framework
+          - MetalKit
     preBuildScripts:
       - name: Build Shared framework
         basedOnDependencyAnalysis: false
