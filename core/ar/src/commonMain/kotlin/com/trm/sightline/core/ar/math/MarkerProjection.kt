@@ -4,7 +4,7 @@ import com.trm.sightline.core.ar.orientation.Orientation
 import com.trm.sightline.core.model.GeoLocation
 
 /** Screen position of a marker plus the flags the overlay renderer needs to draw it. */
-internal data class ProjectedMarker(
+data class ProjectedMarker(
   val screenX: Float,
   val screenY: Float,
   /** The marker projects inside the horizontal bounds, so it can be painted. */
@@ -17,7 +17,7 @@ internal data class ProjectedMarker(
  * Maps geographic points to screen pixels for the current viewport, camera pose and screen
  * rotation. Pure geometry: the caller owns the viewport size and the sensor-derived [Orientation].
  */
-internal class MarkerProjection {
+class MarkerProjection {
   private val camPos = Vector3()
   private val camTrig = Trig3()
   private val camRot = Vector3()

@@ -7,13 +7,13 @@ import kotlin.math.atan
 import kotlin.math.cos
 
 /** Screen-space slot a marker was assigned to. */
-internal data class MarkerSlot(val bearing: Float, val y: Float, val page: Int)
+data class MarkerSlot(val bearing: Float, val y: Float, val page: Int)
 
 /** Marker input for slot assignment: identity plus the values the layout depends on. */
-internal data class MarkerSlotTarget(val id: String, val location: GeoLocation, val distance: Float)
+data class MarkerSlotTarget(val id: String, val location: GeoLocation, val distance: Float)
 
 /** Pixel geometry of the marker overlay, computed by the platform renderer. */
-internal data class MarkerSlotGeometry(
+data class MarkerSlotGeometry(
   val markerWidthPx: Float,
   val markerHeightPx: Float,
   val overlapGuardPx: Float,
@@ -26,7 +26,7 @@ internal data class MarkerSlotGeometry(
  * Assigns every marker to a vertical slot so markers with overlapping bearings stack into rows and,
  * once the rows run out, into pages.
  */
-internal object MarkerSlotAssignment {
+object MarkerSlotAssignment {
   fun assign(
     povLocation: GeoLocation,
     targets: List<MarkerSlotTarget>,
