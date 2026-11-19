@@ -34,5 +34,14 @@ google-services.json
 # Android Profiling
 *.hprof
 
+# Kotlin Multiplatform local build state
+.kotlin/
+
+# Xcode generated artifacts
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xcframework
+
 # OS generated files
 .DS_Store
