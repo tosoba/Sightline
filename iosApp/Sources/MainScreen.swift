@@ -25,16 +25,19 @@ enum MainPage: String, CaseIterable, Identifiable {
 struct MainScreen: View {
     @State private var model: NearbyPlacesModel
     @State private var page: MainPage = ARCameraLaunchOptions.current.requestedPage ?? .camera
+    @State private var path: [CategoryRoute] = []
+    @State private var showsPreferences = false
 
     init(shared: SightlineShared) {
         _model = State(initialValue: NearbyPlacesModel(shared: shared))
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             VStack(spacing: 0) {
-                toolbar
+                header
                 Divider()
+                locationStatus
                 TabView(selection: $page) {
                     ARCameraScreen(nearbyModel: model, isActive: page == .camera)
                         .tag(MainPage.camera)
@@ -44,31 +47,33 @@ struct MainScreen: View {
                 .tabViewStyle(.page(indexDisplayMode: .never))
             }
             .navigationTitle("Nearby places")
+            .navigationDestination(for: CategoryRoute.self) { route in
+                CategoryPlacesScreen(route: route)
+            }
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showsPreferences = true
+                    } label: {
+                        Label("Preferences", systemImage: "gearshape")
+                    }
+                }
+            }
+            .sheet(isPresented: $showsPreferences) {
+                PreferencesView(model: model)
+            }
             .task {
                 await withTaskGroup(of: Void.self) { group in
                     group.addTask { await model.observeAuthorization() }
-                    group.addTask { await model.observeLocation() }
+                    group.addTask { await model.observePreferences() }
                 }
             }
         }
     }
 
-    private var toolbar: some View {
-        HStack(spacing: 16) {
-            Picker(
-                "Category",
-                selection: Binding(
-                    get: { model.selectedCategory },
-                    set: { model.select($0) }
-                )
-            ) {
-                ForEach(PlaceCategory.allCases, id: \.self) { category in
-                    Text(category.title).tag(category)
-                }
-            }
-            .pickerStyle(.menu)
-
-            Spacer(minLength: 0)
+    private var header: some View {
+        VStack(spacing: 10) {
+            categoryRow
 
             Picker("Page", selection: $page) {
                 ForEach(MainPage.allCases) { page in
@@ -78,7 +83,58 @@ struct MainScreen: View {
             .pickerStyle(.segmented)
             .fixedSize()
         }
-        .padding(.horizontal)
         .padding(.vertical, 8)
+    }
+
+    private var categoryRow: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(PlaceCategory.allCases, id: \.self) { category in
+                    Button {
+                        open(category)
+                    } label: {
+                        Text(category.title)
+                            .font(.subheadline.weight(.medium))
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .foregroundStyle(
+                                category == model.selectedCategory ? Color.accentColor : .primary
+                            )
+                            .background(
+                                category == model.selectedCategory
+                                    ? Color.accentColor.opacity(0.16)
+                                    : Color.secondary.opacity(0.12),
+                                in: Capsule()
+                            )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal)
+        }
+    }
+
+    @ViewBuilder
+    private var locationStatus: some View {
+        if model.isLocationDenied {
+            LocationAccessBanner(
+                message: "Location access is off. Enable it in Settings to see nearby places.",
+                actionTitle: "Settings",
+                action: AppSettings.open
+            )
+        } else if !model.userLocationEnabled {
+            LocationAccessBanner(
+                message: "Location is off.",
+                actionTitle: "Turn on",
+                action: { model.setUserLocationEnabled(true) }
+            )
+        }
+    }
+
+    private func open(_ category: PlaceCategory) {
+        Task {
+            await model.select(category)
+            path.append(CategoryRoute(category: category, places: model.places))
+        }
     }
 }

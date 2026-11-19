@@ -32,7 +32,26 @@ xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp \
   -destination 'platform=iOS Simulator,name=iPhone 17' test
 ```
 
-The UI test taps the Map page and keeps a screenshot attachment in the result bundle.
+The UI tests cover the full smoke pass: the camera page, the map with places, the category push and back,
+the location fix, and preferences surviving a relaunch.
+They reset and answer the system location prompt themselves, because reinstalling the app resets a simulator grant.
+Pre-granting and fixing the location still helps scripted runs:
+
+```sh
+xcrun simctl privacy booted grant location com.trm.sightline
+xcrun simctl location booted set 50.0614,19.9366   # Krakow
+```
+
+`-mapDebug` shows the persisted camera under the map (`lat,lon,zoom,bearing,pitch`); the smoke test uses it to
+assert that a changed camera survives a relaunch.
+
+## Preferences
+
+The gear button opens a preferences sheet backed by the shared `PreferencesFacade`: search radius and the
+user-location toggle.
+Values, including the last map camera, are stored in the shared DataStore file at
+`<app container>/Library/Application Support/Sightline/user_preferences.json`, the same path the Kotlin
+`OkioStorage` writes on iOS.
 
 ## Run on a simulator
 
