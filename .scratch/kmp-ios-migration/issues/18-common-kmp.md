@@ -29,3 +29,4 @@ Decisions taken while converting:
 - `api:photon` still runs on Retrofit, so its `OkHttpClient`/`HttpLoggingInterceptor` bindings live on in a `LegacyNetworkModule` in `androidMain` until ticket 19; both clients share the same cache instance.
 
 Verified `:app:assembleDebug`, `test`, `:core:common:compileAndroidMain`, and `:core:common:compileKotlinIosSimulatorArm64` green.
+Host tests cover the `IOException` to `RequestError.IO` mapping, which is what Ktor reports for a dropped connection, and the `formattedDistance`/`roundToDecimalPlaces` output that `core:ar` and the UI depend on.

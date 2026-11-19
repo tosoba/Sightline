@@ -24,5 +24,5 @@ Because the protobuf runtime was dropped, the legacy message is decoded by a sma
 
 `UserPreferencesLocalRepository` keeps its `Flow`/`updateData` semantics with `copy()`/null checks; the custom location timestamp is still stamped at write time.
 
-Tests: JSON round trip, defaults, unknown-key tolerance, and corruption mapping in `commonTest`; legacy wire decoding in `androidHostTest`.
+Tests: JSON round trip, defaults, unknown-key tolerance, and corruption mapping in `commonTest`; legacy wire decoding in `androidHostTest`; and an end-to-end `FileStorage` store test that persists through the JSON store and runs the `.pb` migration on first read.
 Verified `:app:assembleDebug`, `test`, `:core:datastore:testAndroidHostTest`, and `:core:datastore:compileKotlinIosSimulatorArm64` green.
