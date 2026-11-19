@@ -7,8 +7,10 @@ The `shared` Gradle module builds a static `Shared.xcframework`; this app consum
 ## Layout
 
 - `project.yml` - XcodeGen manifest; `iosApp.xcodeproj` is generated from it and committed.
-- `Sources/` - SwiftUI app, view model, and category titles.
+- `Sources/` - SwiftUI app, root pager, MapLibre map wrapper, and view model.
+- `Resources/` - MapLibre `light_style.json` and `dark_style.json`, copied from `core/ui/src/main/res/raw` by `./gradlew :syncIosMapStyles`.
 - `Support/Info.plist` - app plist with `NSLocationWhenInUseUsageDescription`.
+- `UITests/` - UI test that switches to the Map page and captures a screenshot.
 
 ## Build
 
@@ -19,8 +21,18 @@ xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp \
 ```
 
 The `Build Shared framework` run script phase invokes
-`./gradlew :shared:embedAndSignAppleFrameworkForXcode` and needs `ENABLE_USER_SCRIPT_SANDBOXING: NO`.
+`./gradlew :syncIosMapStyles :shared:embedAndSignAppleFrameworkForXcode` and needs `ENABLE_USER_SCRIPT_SANDBOXING: NO`.
 The static framework is found through `shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)`.
+MapLibre Native is resolved through SPM (`exactVersion: 7.0.0`) and embedded as a dynamic framework.
+
+## Tests
+
+```sh
+xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp \
+  -destination 'platform=iOS Simulator,name=iPhone 17' test
+```
+
+The UI test taps the Map page and keeps a screenshot attachment in the result bundle.
 
 ## Run on a simulator
 

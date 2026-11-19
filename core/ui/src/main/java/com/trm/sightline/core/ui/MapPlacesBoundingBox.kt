@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.LayoutDirection
+import com.trm.sightline.core.model.GeoBounds
 import com.trm.sightline.core.model.Place
 import org.maplibre.compose.camera.CameraFit
 import org.maplibre.compose.map.MapState
@@ -17,25 +18,11 @@ fun rememberMapPlacesBoundingBox(
   percentageIncrease: Double = 0.0,
 ): BoundingBox? =
   remember(places, percentageIncrease) {
-    if (places.isEmpty()) return@remember null
-
-    val minLat = places.minOf(Place::latitude)
-    val maxLat = places.maxOf(Place::latitude)
-    val minLon = places.minOf(Place::longitude)
-    val maxLon = places.maxOf(Place::longitude)
-
-    val latDelta = maxLat - minLat
-    val lonDelta = maxLon - minLon
-
-    val paddingFactor = percentageIncrease / 2.0
-
-    BoundingBox(
-      west = minLon - lonDelta * paddingFactor,
-      south = minLat - latDelta * paddingFactor,
-      east = maxLon + lonDelta * paddingFactor,
-      north = maxLat + latDelta * paddingFactor,
-    )
+    GeoBounds.paddedAround(places, percentageIncrease)?.toBoundingBox()
   }
+
+private fun GeoBounds.toBoundingBox(): BoundingBox =
+  BoundingBox(west = west, south = south, east = east, north = north)
 
 fun PaddingValues.toCameraPadding(): DpPadding =
   DpPadding(
