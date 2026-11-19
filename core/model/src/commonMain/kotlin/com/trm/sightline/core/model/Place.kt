@@ -1,6 +1,5 @@
 package com.trm.sightline.core.model
 
-import java.util.Objects
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -13,5 +12,5 @@ data class Place(
 ) {
   override fun equals(other: Any?): Boolean = this === other || (other is Place && other.id == id)
 
-  override fun hashCode(): Int = Objects.hash(id)
+  override fun hashCode(): Int = id.hashCode()
 }
