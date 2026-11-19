@@ -24,6 +24,7 @@ nav3 = "1.2.1"
 okhttp = "5.5.1"
 okio = "3.18.2"
 playServicesLocation = "21.4.0"
+skie = "0.10.16"
 timber = "5.0.1"
 
 [libraries]
@@ -80,3 +81,4 @@ kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "ko
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 metro = { id = "dev.zacsweers.metro", version.ref = "metro" }
+skie = { id = "co.touchlab.skie", version.ref = "skie" }

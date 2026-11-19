@@ -7,9 +7,15 @@ import kotlin.time.TimeSource
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.useContents
 import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import platform.CoreLocation.CLAuthorizationStatus
 import platform.CoreLocation.CLLocation
 import platform.CoreLocation.CLLocationManager
@@ -27,27 +33,46 @@ import platform.darwin.NSObject
 class IosLocationProvider : LocationProvider {
   private val locationManager = CLLocationManager()
 
+  private val updates =
+    MutableSharedFlow<GeoLocation>(
+      extraBufferCapacity = 8,
+      onBufferOverflow = BufferOverflow.DROP_OLDEST,
+    )
+
+  private val authorization =
+    MutableStateFlow(locationManager.authorizationStatus.toLocationAuthorization())
+
+  init {
+    locationManager.delegate =
+      object : NSObject(), CLLocationManagerDelegateProtocol {
+        override fun locationManager(
+          manager: CLLocationManager,
+          didUpdateLocations: List<*>,
+        ) {
+          val location = didUpdateLocations.lastOrNull() as? CLLocation ?: return
+          updates.tryEmit(location.toGeoLocation())
+        }
+
+        override fun locationManagerDidChangeAuthorization(manager: CLLocationManager) {
+          authorization.value = manager.authorizationStatus.toLocationAuthorization()
+        }
+      }
+  }
+
   override fun locationUpdates(): Flow<GeoLocation> =
     callbackFlow {
-        val delegate =
-          object : NSObject(), CLLocationManagerDelegateProtocol {
-            override fun locationManager(
-              manager: CLLocationManager,
-              didUpdateLocations: List<*>,
-            ) {
-              val location = didUpdateLocations.lastOrNull() as? CLLocation ?: return
-              trySend(location.toGeoLocation())
-            }
-          }
+        val collector = updates.onEach { send(it) }.launchIn(this)
 
-        locationManager.delegate = delegate
+        if (locationManager.authorizationStatus == kCLAuthorizationStatusNotDetermined) {
+          locationManager.requestWhenInUseAuthorization()
+        }
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
         locationManager.distanceFilter = DISTANCE_FILTER_METERS
         locationManager.startUpdatingLocation()
 
         awaitClose {
+          collector.cancel()
           locationManager.stopUpdatingLocation()
-          locationManager.delegate = null
         }
       }
       .throttleFirst(UPDATE_THROTTLE)
@@ -55,8 +80,7 @@ class IosLocationProvider : LocationProvider {
   override fun isLocationEnabled(): Flow<Boolean> =
     flow { emit(CLLocationManager.locationServicesEnabled()) }
 
-  override val authorizationState: Flow<LocationAuthorization> =
-    flow { emit(locationManager.authorizationStatus.toLocationAuthorization()) }
+  override val authorizationState: Flow<LocationAuthorization> = authorization.asStateFlow()
 
   override suspend fun checkLocationSettings(): LocationSettingsState =
     if (CLLocationManager.locationServicesEnabled()) {
@@ -66,8 +90,7 @@ class IosLocationProvider : LocationProvider {
     }
 
   private fun CLLocation.toGeoLocation(): GeoLocation {
-    val (latitude, longitude) =
-      coordinate.useContents { latitude to longitude }
+    val (latitude, longitude) = coordinate.useContents { latitude to longitude }
     return GeoLocation(
       latitude = latitude,
       longitude = longitude,
