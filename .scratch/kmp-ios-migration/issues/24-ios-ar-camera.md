@@ -72,9 +72,9 @@ The multiply-divided-by-alpha normalisation (`c / c.a`) is kept; it is a no-op f
 If a device ignores that and hands back the sensor-native landscape buffer, a 90 degree UV rotation fallback kicks in and logs a warning.
 Centre-crop ("aspect fill") is a UV transform, `uv * min(surface/source) + (1 - scale)/2`, derived from the GL `calculateSurfaceTransform`; the vertex stage is a plain full-screen triangle.
 
-Holes: a stencil-only pass sets `stencil = 1` per rect inside the `udRoundBox` SDF (colour writes masked off), then a sharp full-screen camera draw with `depthStencilState` compare `.equal` fills the holes.
+Holes: a stencil-only pass sets `stencil = 1` per rect inside the `udRoundBox` SDF (colour writes masked off), then a fill draw with `depthStencilState` compare `.equal` paints the holes.
 This is the ticket's stated goal ("unblurred holes").
-Android's literal draw order paints the max-lod blur plus contrasting tint *inside* the rounded rects, which is the frosted backing visible in `screenshots/camera_*.png`; `-arHoleFill frosted` reproduces that order exactly, `sharp` is the default.
+Android's literal draw order paints the max-lod blur plus contrasting tint *inside* the rounded rects, which is the frosted backing visible in `screenshots/camera_*.png`; `frosted` reproduces that order exactly and is the default, `-arHoleFill sharp` keeps the literal unblurred holes for comparison.
 
 The drawable carries a `.stencil8` attachment via `MTKView.depthStencilPixelFormat`.
 Camera textures are wrapped with `CVMetalTextureCacheCreateTextureFromImage` and held until the `MTLCommandBuffer` completes, which keeps the zero-copy path safe.
@@ -141,23 +141,31 @@ The Android low-pass is ported exactly: `SMOOTH_FACTOR = 0.12`, `SMOOTH_THRESHOL
 The simulator has no camera and no magnetometer, so the app selects the synthetic path automatically (`ARCameraCapture.isCameraAvailable == false`) and the scripted attitude path (`CMMotionManager.isDeviceMotionAvailable == false`).
 Launch arguments:
 
+- `-arCamera` open the app on the camera page (also the pager's ordinary first page, so the flag only matters if that default changes).
 - `-arSynthetic` force the generated test-pattern texture and the fixed Krakow fixture (two places at +/-12 degrees, three markers would overlap in the narrow projection FOV).
 - `-arAttitude uprightNorth|uprightLeft|uprightRight|tilted|flat|sweep` scripted poses.
 - `-arBlur 0..1` freeze the Android 18-frame ramp at that strength (deterministic screenshots).
-- `-arHoleFill sharp|frosted` hole fill mode.
+- `-arHoleFill frosted|sharp` hole fill mode; `frosted` is the default.
 - `-arNoBlur` start sharp, `-arDebug` show the HUD (angles, viewport, rect centres, lod, GPU/CPU ms, marker count, blur toggle).
+- `-arUnavailable permission|configuration` debug stand-in for a capture failure: simulators have no camera device, so the OS cannot drive the denial or `configure()` branches there. It calls the same model handler, so the unavailable UI is verifiable without hardware.
 
 Screenshots, all in `screenshots/`, all captured on iPhone 17 / iOS 27.2:
 
+- `ios_ar_frosted_default.png` - the default path: no hole-fill flag, `frosted` fill at full blur, no HUD.
+- `ios_ar_frosted_default_hud.png` - the same frame with the HUD, whose mode label reads `frosted`.
 - `ios_ar_lod_low.png` - animated blur mid-ramp (`lod -0.00`), visible in the HUD.
 - `ios_ar_lod_high.png` - animation complete (`lod +2.00`), full-strength multi-resolution blur.
-- `ios_ar_holes.png` - clean shot of the sharp rounded-rect holes inside the heavy blur, no HUD.
+- `ios_ar_holes.png` - clean shot of the sharp rounded-rect holes inside the heavy blur, no HUD (`-arHoleFill sharp`).
 - `ios_ar_attitude_left.png` - bearing 350 degrees; both cards shift right by exactly `tan(10 deg) * (w+h)/2` (HUD reports rect centres 183 and 408 against 92/310 upright).
 - `ios_ar_attitude_right.png` - bearing 10 degrees; the mirror shift.
 - `ios_ar_tilted.png` - pitch 17, roll -8; cards rise and rotate with the projected field.
-- `ios_ar_frosted.png` - Android-literal hole fill (max-lod blur plus contrast tint inside the rounded rect), matching `screenshots/camera_*.png`.
+- `ios_ar_frosted.png` - the same frame with `-arHoleFill frosted` passed explicitly, for comparison with the pre-polish shot.
 - `ios_ar_flat.png` - pitch 90; markers are hidden by the 45 degree pitch limit and the "hold upright" hint shows.
-- `ios_ar_default.png` - the default animated sweep with a sharp hole.
+- `ios_ar_flat_hud.png` - pitch 90 with the HUD: placement metrics read `no placements`, no `nan`.
+- `ios_ar_default.png` - the default animated sweep on the frosted default.
+- `ios_ar_merge.png` - the two-marker frame recorded for the merge run, regenerated on the frosted default.
+- `ios_ar_permission_denied.png` - `-arUnavailable permission` after `simctl privacy revoke camera`: the panel, the Settings button, and real OSM places (Skarbonka, Akcesja, Walenty...) rather than the Krakow fixture over black.
+- `ios_ar_configuration_failed.png` - `-arUnavailable configuration`: the same panel with the configure() message and no Settings button.
 
 HUD frame timings while sweeping both hole styles at 402x621 points (1206x1863 drawable pixels): GPU 0.2-0.6 ms per frame, and 2.0-4.7 ms of CPU inside the `draw(in:)` call.
 The GPU figure is `MTLCommandBuffer.gpuStartTime/gpuEndTime`; the CPU figure is a `CACurrentMediaTime` bracket around the draw.
@@ -197,8 +205,8 @@ xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp \
 APP=$(ls -dt ~/Library/Developer/Xcode/DerivedData/iosApp-*/Build/Products/Debug-iphonesimulator | head -1)/Sightline.app
 xcrun simctl boot "iPhone 17"
 xcrun simctl install booted "$APP"
-SIMCTL_CHILD_MTL_DEBUG_LAYER=1 xcrun simctl launch booted com.trm.sightline \
-  -arSynthetic -arAttitude uprightNorth -arBlur 1 -arHoleFill sharp -arDebug
+xcrun simctl launch booted com.trm.sightline \
+  -arCamera -arSynthetic -arAttitude uprightNorth -arBlur 1 -arHoleFill sharp -arDebug
 xcrun simctl io booted screenshot screenshots/ios_ar_holes.png
 ```
 
@@ -208,3 +216,58 @@ Low.
 Ticket 25 can push the category screen from `MainScreen` and keep `NearbyPlacesView` as-is; the AR screen takes the shared `NearbyPlacesModel` and does not own navigation.
 Two things to preserve: `MainScreen` must keep passing `isActive: page == .camera` so capture/motion stop on the Map page, and `NearbyPlacesModel.currentLocation` must stay readable.
 The map page and its `:syncIosMapStyles` pre-build step are untouched.
+
+### Merge-review polish (branch `feature/24b-ar-polish`)
+
+Seven defects from the merge review, all fixed on the Swift side; the shared Kotlin facade and the Android app are untouched.
+
+1. Marker fill default is now `frosted`, matching the product decision and the Android GL renderer.
+   `ARHoleFillStyle` and the renderer both default to it, and `-arHoleFill sharp` remains the opt-in for the literal unblurred holes.
+   The HUD already printed the active mode, so `ios_ar_frosted_default_hud.png` shows `frosted` with no flag passed.
+   Every default-path screenshot was recaptured: `ios_ar_frosted_default.png` is new, and `ios_ar_default.png`, `ios_ar_lod_low.png`, `ios_ar_lod_high.png`, `ios_ar_attitude_left.png`, `ios_ar_attitude_right.png`, `ios_ar_tilted.png`, `ios_ar_flat.png`, `ios_ar_merge.png` and `ios_ar_frosted.png` were regenerated on the new default.
+   `ios_ar_holes.png` was regenerated with `-arHoleFill sharp` so the sharp comparison stays documented.
+
+2. Camera-permission denial no longer switches to the synthetic fixture.
+   `ARCameraCaptureFailure` (`permissionDenied`, `configurationFailed(String)`) replaces the ad-hoc reason string, and `ARCameraModel.unavailability` is a distinct state from `isSynthetic`.
+   On denial the model clears the synthetic texture, keeps `nearby.places` and the real `nearby.currentLocation`, and projects those real places; the page shows "Camera access denied" with "Enable camera access in Settings to see the live AR view." and an `Open Settings` button (`UIApplication.openSettingsURLString`).
+   Returning to the foreground re-checks `AVCaptureDevice.authorizationStatus` via `resumeAfterSettings()`, so granting access in Settings recovers without leaving the page.
+   The genuine no-camera path (simulator) still selects the synthetic feed and keeps the "Synthetic feed - no camera on this device" badge.
+
+3. `ARCameraCapture.configure()` failures are reported through the same unavailable state with their message instead of returning into a silent black page.
+   The capture queue hops back to the main actor to publish it.
+
+4. `-arCamera` is consumed: `MainScreen` seeds its pager selection from `ARCameraLaunchOptions.requestedPage`, so a scripted launch asks for the camera page explicitly.
+   The pager's ordinary first page is the camera too, so the flag only changes behaviour if that default changes; it is no longer parsed and ignored.
+
+5. `ARCameraCapture` logs its lifecycle at info/notice level: start request with camera presence and authorization status, permission request and grant/denial, session configuration failure, session starting/running/stopped, and stop request with the running flag.
+   No per-frame logging.
+   The model logs page start (synthetic vs live) and stop, so the stop-on-map-page behaviour is visible in Console: the UI test run shows `start` on launch and `stop` when Map is tapped.
+
+6. The debug HUD no longer formats placement metrics when placements are cleared.
+   `debugLayoutText` returns `vp WxH sN no placements` when the pitch limit (or a missing location) empties the list, and the orientation line prints `-` instead of any non-finite angle.
+   `ios_ar_flat_hud.png` records pitch 90 with `no placements` and no `nan`.
+
+7. The `arNoBlurFragment` corner edge mix stays, because it is used by the sharp fill pass (only the stencil-mask pass masks the colour write).
+   Android computes the mix into `color` and then returns `texColor`, so its mix is dead; the shader comment now says exactly that and explains why iOS keeps the one-pixel corner softening rather than changing the rendered output.
+
+Also fixed in passing: the `var encoder` that was never mutated in `draw(in:)` is now a `let`, clearing the only warning in the AR sources.
+
+Verification on this branch:
+
+- `xcodegen generate`: no diff.
+- `xcodebuild ... build`: `** BUILD SUCCEEDED **`, no warnings from the AR sources.
+- `xcodebuild ... test`: `MapPageUITests` passed, 1 test, 0 failures.
+- `./gradlew :app:assembleDebug test --console=plain`: `BUILD SUCCESSFUL`, 283 tasks executed (the `:app` module has no unit-test sources).
+- `./gradlew :shared:assembleSharedXCFramework :shared:iosSimulatorArm64Test --console=plain`: `BUILD SUCCESSFUL`, 27 shared tests, 0 failures.
+
+Denial-path evidence, and its limits, on the simulator:
+
+- `xcrun simctl privacy <udid> revoke camera com.trm.sightline` was applied before the denial screenshot; iOS reports `denied` afterwards.
+- A simulator has no camera device, so `ARCameraCapture.isCameraAvailable` is false and the model takes the synthetic branch before authorization is ever consulted.
+  The OS therefore cannot reach the real denial branch there.
+- `ios_ar_permission_denied.png` uses `-arUnavailable permission`, which calls the same `handle(.permissionDenied)` the capture callback calls; the screenshot shows the panel with the Settings button and real OSM places (the network fetch returned Skarbonka, Akcesja, Walenty, and others at the simulated Krakow location), not the Cloth Hall / St Mary's fixture over black.
+- `ios_ar_configuration_failed.png` does the same for `configure()`.
+- The live `AVCaptureSession` logs and the real permission prompt remain device-only, as listed above.
+
+What was deliberately left alone: `NearbyPlacesView`, the map feature, the style sync pre-build step, `project.yml`, and the shared Kotlin AR facade.
+The ticket stays `ready-for-human` because the device-only items are still open.
