@@ -18,6 +18,7 @@
 		3AECDADE4D165A4D4A4E8F93 /* SightlineApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0B8CB6AC9CE9D17AF4DFA1B /* SightlineApp.swift */; };
 		45228537D1FB75C2794D02E6 /* MapPageUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C0BE0BD2C453896E01CBEBB /* MapPageUITests.swift */; };
 		496C9FEC4B353DE50AA10ADC /* MainScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E4CA9E699DDB96F8B8D04BF /* MainScreen.swift */; };
+		4F678C7B905D65845A4BDB51 /* UITestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93DFF26DEB51A16FAA6F6F6F /* UITestSupport.swift */; };
 		5A9B4F58E0455E26653776D1 /* ARCameraOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3D89A6AF9DD24F20C627DD8 /* ARCameraOverlay.swift */; };
 		5EA692BB3210D4DB210A0690 /* PreferencesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC3720161BF4115BE5FF4375 /* PreferencesView.swift */; };
 		6AD776884F44D9355F045FE0 /* light_style.json in Resources */ = {isa = PBXBuildFile; fileRef = F954F8A9CC4247902BFD7B5A /* light_style.json */; };
@@ -56,6 +57,7 @@
 		7E89613391F5E3CE7C3B793B /* dark_style.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = dark_style.json; sourceTree = "<group>"; };
 		858566E65BCB9127E10B6580 /* ARCameraShaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = ARCameraShaders.metal; sourceTree = "<group>"; };
 		86038AE1032E284E79B32AD6 /* iosApp.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = iosApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		93DFF26DEB51A16FAA6F6F6F /* UITestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITestSupport.swift; sourceTree = "<group>"; };
 		9E4CA9E699DDB96F8B8D04BF /* MainScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainScreen.swift; sourceTree = "<group>"; };
 		A8A77545BAA043D35B5F6B4F /* ARCameraModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARCameraModel.swift; sourceTree = "<group>"; };
 		BC3720161BF4115BE5FF4375 /* PreferencesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesView.swift; sourceTree = "<group>"; };
@@ -139,6 +141,7 @@
 			children = (
 				6C0BE0BD2C453896E01CBEBB /* MapPageUITests.swift */,
 				77D34269A33BF6BF1E601530 /* SmokeUITests.swift */,
+				93DFF26DEB51A16FAA6F6F6F /* UITestSupport.swift */,
 			);
 			path = UITests;
 			sourceTree = "<group>";
@@ -263,6 +266,7 @@
 			files = (
 				45228537D1FB75C2794D02E6 /* MapPageUITests.swift in Sources */,
 				BBBBC3C12B21C55DEA565F00 /* SmokeUITests.swift in Sources */,
+				4F678C7B905D65845A4BDB51 /* UITestSupport.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

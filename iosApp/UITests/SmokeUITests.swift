@@ -3,8 +3,9 @@ import XCTest
 /// End-to-end smoke pass for the iOS app: camera page, map with places, category push/pop,
 /// a location fix, and preferences surviving a relaunch.
 ///
-/// Location must be granted and a Krakow fix set before the run, because a UI test cannot call
-/// `simctl`. See `.scratch/kmp-ios-migration/issues/25-ios-preferences-navigation-smoke.md`.
+/// Every run starts by resetting the shared preferences through `-resetPreferences`, so the
+/// pass does not depend on state left by an earlier run. A UI test cannot call `simctl`; the
+/// simulator's location scenario is part of the environment.
 final class SmokeUITests: XCTestCase {
     private enum Timeout {
         static let element: TimeInterval = 25
@@ -16,11 +17,7 @@ final class SmokeUITests: XCTestCase {
     }
 
     func testFullSmokePass() {
-        let app = XCUIApplication()
-        app.resetAuthorizationStatus(for: .location)
-        app.launchArguments = ["-arCamera", "-mapDebug"]
-        app.launch()
-        allowLocationPromptIfNeeded()
+        let app = XCUIApplication.launchedForUITest(arguments: ["-arCamera", "-mapDebug"])
 
         XCTAssertTrue(
             app.staticTexts["Synthetic feed - no camera on this device"]
@@ -29,7 +26,23 @@ final class SmokeUITests: XCTestCase {
         )
         attachScreenshot(named: "smoke-camera")
 
-        enableUserLocationAndSetRadius(in: app)
+        openPreferences(in: app)
+        XCTAssertEqual(
+            app.switches["user-location-toggle"].value as? String,
+            "0",
+            "The preferences were not reset to their defaults at launch."
+        )
+        XCTAssertTrue(
+            app.segmentedControls.buttons["1 km"].isSelected,
+            "The search radius was not reset to its default at launch."
+        )
+        setUserLocationToggle(true, in: app, answeringPrompt: { LocationPrompt.allow() })
+
+        let radius = app.segmentedControls.buttons["2 km"]
+        XCTAssertTrue(radius.waitForExistence(timeout: Timeout.element))
+        radius.tap()
+
+        app.buttons["Done"].tap()
 
         let mapButton = app.segmentedControls.buttons["Map"]
         XCTAssertTrue(mapButton.waitForExistence(timeout: Timeout.element))
@@ -76,8 +89,8 @@ final class SmokeUITests: XCTestCase {
         attachScreenshot(named: "smoke-map-panned")
 
         app.terminate()
+        app.launchArguments = ["-arCamera", "-mapDebug"]
         app.launch()
-        allowLocationPromptIfNeeded()
 
         let mapButtonAfterRelaunch = app.segmentedControls.buttons["Map"]
         XCTAssertTrue(mapButtonAfterRelaunch.waitForExistence(timeout: Timeout.element))
@@ -105,7 +118,7 @@ final class SmokeUITests: XCTestCase {
             "The search radius did not survive a relaunch."
         )
         XCTAssertEqual(
-            app.switches["Use my location"].value as? String,
+            app.switches["user-location-toggle"].value as? String,
             "1",
             "The user-location toggle did not survive a relaunch."
         )
@@ -120,18 +133,15 @@ final class SmokeUITests: XCTestCase {
     /// User story 10: a denied location permission offers the app's Settings deep link, the same
     /// affordance the camera denial uses.
     func testLocationDenialOffersSettings() {
-        let app = XCUIApplication()
-        app.resetAuthorizationStatus(for: .location)
-        app.launch()
-        denyLocationPromptIfNeeded()
+        let app = XCUIApplication.launchedForUITest()
 
         openPreferences(in: app)
-        let toggle = app.switches["Use my location"]
-        XCTAssertTrue(toggle.waitForExistence(timeout: Timeout.element))
-        if (toggle.value as? String) == "0" {
-            toggle.tap()
-            denyLocationPromptIfNeeded()
-        }
+        XCTAssertEqual(
+            app.switches["user-location-toggle"].value as? String,
+            "0",
+            "The preferences were not reset to their defaults at launch."
+        )
+        setUserLocationToggle(true, in: app, answeringPrompt: { LocationPrompt.deny() })
         app.buttons["Done"].tap()
 
         XCTAssertTrue(
@@ -141,52 +151,6 @@ final class SmokeUITests: XCTestCase {
         attachScreenshot(named: "smoke-location-denied")
     }
 
-    private func enableUserLocationAndSetRadius(in app: XCUIApplication) {
-        openPreferences(in: app)
-
-        let toggle = app.switches["Use my location"]
-        XCTAssertTrue(toggle.waitForExistence(timeout: Timeout.element))
-        if (toggle.value as? String) == "0" {
-            toggle.tap()
-            allowLocationPromptIfNeeded()
-            XCTAssertEqual(toggle.value as? String, "1", "The user-location toggle did not turn on.")
-        }
-
-        let radius = app.segmentedControls.buttons["2 km"]
-        XCTAssertTrue(radius.waitForExistence(timeout: Timeout.element))
-        radius.tap()
-
-        app.buttons["Done"].tap()
-    }
-
-    /// The app asks for when-in-use authorization when the toggle first starts the location stream.
-    /// The system prompt is owned by SpringBoard, so answer it directly instead of relying on the
-    /// test runner's automatic dismissal, which picks "Don't Allow".
-    private func allowLocationPromptIfNeeded() {
-        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
-        let alert = springboard.alerts.firstMatch
-        guard alert.waitForExistence(timeout: 5) else { return }
-
-        for title in ["Allow While Using App", "Allow Once", "Allow"] {
-            let button = alert.buttons[title]
-            if button.exists {
-                button.tap()
-                return
-            }
-        }
-    }
-
-    private func denyLocationPromptIfNeeded() {
-        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
-        let alert = springboard.alerts.firstMatch
-        guard alert.waitForExistence(timeout: 5) else { return }
-
-        let deny = alert.buttons["Don't Allow"]
-        if deny.exists {
-            deny.tap()
-        }
-    }
-
     private func openPreferences(in app: XCUIApplication) {
         let button = app.buttons["Preferences"]
         XCTAssertTrue(button.waitForExistence(timeout: Timeout.element))
@@ -194,13 +158,17 @@ final class SmokeUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Preferences"].waitForExistence(timeout: Timeout.element))
     }
 
+    /// Waits for a positive place count, not merely a value other than the empty placeholder.
     private func waitForPlaces(on map: XCUIElement) {
-        let populated = NSPredicate(format: "value != %@", "0 places")
+        let populated = NSPredicate(
+            format: "label MATCHES %@",
+            "^Nearby places map, [1-9][0-9]* places?$"
+        )
         let expectation = XCTNSPredicateExpectation(predicate: populated, object: map)
         XCTAssertEqual(
             XCTWaiter().wait(for: [expectation], timeout: Timeout.loaded),
             .completed,
-            "The map never received nearby places."
+            "The map never received nearby places; its label is \(map.label)."
         )
     }
 

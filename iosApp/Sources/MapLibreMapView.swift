@@ -7,6 +7,7 @@ import os
 struct MapLibreMapView: UIViewRepresentable {
     let places: [Place]
     let colorScheme: ColorScheme
+    let showsUserLocation: Bool
     let lastMapPosition: MapCameraPosition?
     let onCameraChanged: (MapCameraPosition) -> Void
 
@@ -17,14 +18,14 @@ struct MapLibreMapView: UIViewRepresentable {
     func makeUIView(context: Context) -> MLNMapView {
         let mapView = MLNMapView(frame: .zero)
         mapView.delegate = context.coordinator
-        mapView.showsUserLocation = true
+        // Location is opt-in: assigning true starts CoreLocation and prompts for authorization.
+        mapView.showsUserLocation = false
         mapView.isZoomEnabled = true
         mapView.isScrollEnabled = true
         mapView.isRotateEnabled = true
         mapView.isPitchEnabled = true
         mapView.accessibilityIdentifier = "nearby-map"
-        mapView.accessibilityLabel = "Nearby places map"
-        mapView.accessibilityValue = "0 places"
+        mapView.accessibilityLabel = "Nearby places map, 0 places"
 
         context.coordinator.attach(mapView)
         context.coordinator.applyStyle(colorScheme, to: mapView)
@@ -33,6 +34,9 @@ struct MapLibreMapView: UIViewRepresentable {
 
     func updateUIView(_ mapView: MLNMapView, context: Context) {
         context.coordinator.onCameraChanged = onCameraChanged
+        if mapView.showsUserLocation != showsUserLocation {
+            mapView.showsUserLocation = showsUserLocation
+        }
         context.coordinator.applyStyle(colorScheme, to: mapView)
         context.coordinator.update(lastMapPosition: lastMapPosition)
         context.coordinator.update(places: places)
@@ -164,8 +168,9 @@ struct MapLibreMapView: UIViewRepresentable {
                 mapView.addAnnotations(annotations)
             }
 
-            mapView.accessibilityValue =
-                places.count == 1 ? "1 place" : "\(places.count) places"
+            mapView.accessibilityLabel = places.count == 1
+                ? "Nearby places map, 1 place"
+                : "Nearby places map, \(places.count) places"
         }
 
         private func fitPlacesIfNeeded(force: Bool) {

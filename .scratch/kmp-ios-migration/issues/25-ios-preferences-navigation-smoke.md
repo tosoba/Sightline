@@ -205,3 +205,79 @@ The simulator used for this run was an iPhone 17 on iOS 27.2 with Xcode 27.2.
   handling is exercised here.
 - Map camera restore across a true process kill is covered by `terminate`/`launch`; an OS-initiated eviction
   uses the same DataStore read and adds no new path.
+
+### Smoke reproducibility follow-up (ticket 25b)
+
+The original gate only passed when an earlier run had left the toggle ON.
+It is now reproducible from a clean install.
+
+The user-location `Toggle` carries the `user-location-toggle` accessibility identifier.
+The tests tap the knob at the trailing edge instead of the `Form` row label, and they wait for
+`value == "1"` before continuing, so a missed tap fails instead of silently skipping the flow.
+
+Every UI test launches with `-resetPreferences`.
+`SightlineApp` waits for `SightlineShared.resetPreferencesForTesting()` before it builds `MainScreen`.
+That calls `UserPreferencesRepository.reset()`, which writes `UserPreferences()` through the same
+multiplatform DataStore the app uses; there is no Swift-side file surgery.
+Without the launch argument the reset path is inert.
+The smoke test asserts that the toggle is `0` and the radius is `1 km` before it changes anything.
+The argument and the identifier are documented in `iosApp/README.md`.
+
+`MLNMapView` overwrites `accessibilityValue` with `Zoom 1x`, which is why the old
+`value != "0 places"` predicate was tautological and passed against an empty map.
+The map now reports the count in `accessibilityLabel` as `Nearby places map, N places`, which MapLibre
+does not overwrite.
+`MapPageUITests` waits for `Nearby places map, [1-9][0-9]* places?`, asserts the parsed count is greater
+than zero, and asserts that neither the app nor SpringBoard has an alert on screen before and after the
+count assertion.
+
+`MapLibreMapView` starts with `showsUserLocation = false` and applies `model.userLocationEnabled` from
+`updateUIView`, so a clean install does not request location until the user enables the toggle.
+The UI tests still grant permission and use a fix after they turn the toggle on.
+
+Reproducing the clean run exposed a separate iOS defect: `CLLocationManager.delegate` is weak, and
+`IosLocationProvider` assigned an anonymous delegate without retaining it.
+The delegate could be collected, so the denial callback and location fixes never arrived.
+The provider now owns the delegate in a property, which makes the denial banner and the place count
+deterministic.
+
+Clean-install evidence (app uninstalled, location privacy reset, no simulator location scenario):
+
+```text
+$ xcrun simctl uninstall <device> com.trm.sightline
+$ xcrun simctl privacy <device> reset location com.trm.sightline
+$ xcrun simctl location <device> clear
+$ xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp \
+    -destination 'platform=iOS Simulator,id=<device>' test
+Test Case '-[iosAppUITests.SmokeUITests testLocationDenialOffersSettings]' passed
+Test Suite 'SmokeUITests' passed
+	 Executed 2 tests, with 0 failures (0 unexpected) in 74.135 (74.138) seconds
+Test Suite 'All tests' passed
+	 Executed 3 tests, with 0 failures (0 unexpected) in 97.786 (97.792) seconds
+** TEST SUCCEEDED **
+```
+
+A second run immediately afterwards passed with 3 tests and 0 failures.
+Before that second run the persisted state was deliberately left with `userLocationEnabled: true`,
+which proves that a previous ON state no longer changes the result:
+
+```json
+{"userLocationEnabled":true,"customLocationLatitude":null,"customLocationLongitude":null,"customLocationAddress":null,"customLocationTimestampMillis":null,"lastMapLatitude":null,"lastMapLongitude":null,"lastMapZoom":null,"lastMapBearing":null,"lastMapPitch":null,"searchRadiusMeters":null}
+```
+
+The map test was proven to fail when the count does not meet the assertion.
+With the predicate temporarily raised to `Nearby places map, 9[0-9]{3,} places?`, the run failed at the
+map count with `its label is Nearby places map, 50 places`.
+The predicate was restored and the test passed again.
+
+```text
+$ ./gradlew :app:assembleDebug test --console=plain
+BUILD SUCCESSFUL in 1s
+
+$ ./gradlew :shared:assembleSharedXCFramework :shared:iosSimulatorArm64Test --console=plain
+BUILD SUCCESSFUL in 1m 53s
+iosSimulatorArm64Test...SightlineSharedTest tests="5" failures="0"
+
+$ cd iosApp && xcodegen generate
+# no diff after a second generate
+```

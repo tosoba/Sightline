@@ -1,34 +1,52 @@
 import XCTest
 
 final class MapPageUITests: XCTestCase {
+    private enum Timeout {
+        static let element: TimeInterval = 25
+        static let loaded: TimeInterval = 60
+    }
+
+    override func setUp() {
+        continueAfterFailure = false
+    }
+
     func testMapPageRendersPlaces() {
-        let app = XCUIApplication()
-        app.resetAuthorizationStatus(for: .location)
-        app.launch()
-        allowLocationPromptIfNeeded()
+        let app = XCUIApplication.launchedForUITest()
 
         let preferences = app.buttons["Preferences"]
-        XCTAssertTrue(preferences.waitForExistence(timeout: 25))
+        XCTAssertTrue(preferences.waitForExistence(timeout: Timeout.element))
         preferences.tap()
 
-        let toggle = app.switches["Use my location"]
-        XCTAssertTrue(toggle.waitForExistence(timeout: 25))
-        if (toggle.value as? String) == "0" {
-            toggle.tap()
-            allowLocationPromptIfNeeded()
-        }
+        XCTAssertEqual(
+            app.switches["user-location-toggle"].value as? String,
+            "0",
+            "The preferences were not reset to their defaults at launch."
+        )
+        setUserLocationToggle(true, in: app, answeringPrompt: { LocationPrompt.allow() })
         app.buttons["Done"].tap()
 
         let mapButton = app.segmentedControls.buttons["Map"]
-        XCTAssertTrue(mapButton.waitForExistence(timeout: 25))
+        XCTAssertTrue(mapButton.waitForExistence(timeout: Timeout.element))
         mapButton.tap()
 
         let map = app.otherElements["nearby-map"]
-        XCTAssertTrue(map.waitForExistence(timeout: 25))
+        XCTAssertTrue(map.waitForExistence(timeout: Timeout.element))
 
-        let populated = NSPredicate(format: "value != %@", "0 places")
+        waitForNoAlerts(in: app)
+
+        let populated = NSPredicate(
+            format: "label MATCHES %@",
+            "^Nearby places map, [1-9][0-9]* places?$"
+        )
         let expectation = XCTNSPredicateExpectation(predicate: populated, object: map)
-        XCTAssertEqual(XCTWaiter().wait(for: [expectation], timeout: 60), .completed)
+        XCTAssertEqual(
+            XCTWaiter().wait(for: [expectation], timeout: Timeout.loaded),
+            .completed,
+            "The map page did not load any places; its label is \(map.label)."
+        )
+        XCTAssertGreaterThan(placeCount(on: map), 0, "The map page reported an empty place count.")
+
+        waitForNoAlerts(in: app)
 
         let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         screenshot.name = "map-page"
@@ -36,17 +54,9 @@ final class MapPageUITests: XCTestCase {
         add(screenshot)
     }
 
-    private func allowLocationPromptIfNeeded() {
-        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
-        let alert = springboard.alerts.firstMatch
-        guard alert.waitForExistence(timeout: 5) else { return }
-
-        for title in ["Allow While Using App", "Allow Once", "Allow"] {
-            let button = alert.buttons[title]
-            if button.exists {
-                button.tap()
-                return
-            }
-        }
+    private func placeCount(on map: XCUIElement) -> Int {
+        let value = map.label.replacingOccurrences(of: "Nearby places map, ", with: "")
+        guard let count = value.split(separator: " ").first else { return 0 }
+        return Int(count) ?? 0
     }
 }

@@ -31,6 +31,7 @@ struct PreferencesView: View {
                     .pickerStyle(.segmented)
 
                     Toggle("Use my location", isOn: locationBinding)
+                        .accessibilityIdentifier("user-location-toggle")
                 } footer: {
                     Text("Nearby places are searched within the selected radius around your location.")
                 }
