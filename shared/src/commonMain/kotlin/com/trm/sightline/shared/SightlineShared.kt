@@ -16,7 +16,7 @@ class SightlineShared
 internal constructor(
   private val placesRepository: PlacesRepository,
   private val locationProvider: LocationProvider,
-  userPreferencesRepository: UserPreferencesRepository,
+  private val userPreferencesRepository: UserPreferencesRepository,
 ) {
   val categories: List<PlaceCategory> = PlaceCategory.entries
 
@@ -41,6 +41,14 @@ internal constructor(
         radiusMeters = radiusMeters,
       )
       .sortedBy { place -> place.location.distanceTo(location) }
+
+  /**
+   * Restores every shared preference to its default through the real repository.
+   * The iOS host calls this only for the `-resetPreferences` UI-test launch argument.
+   */
+  suspend fun resetPreferencesForTesting() {
+    userPreferencesRepository.reset()
+  }
 
   companion object {
     fun create(): SightlineShared {
