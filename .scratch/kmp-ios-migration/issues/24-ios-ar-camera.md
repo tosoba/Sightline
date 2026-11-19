@@ -159,8 +159,9 @@ Screenshots, all in `screenshots/`, all captured on iPhone 17 / iOS 27.2:
 - `ios_ar_flat.png` - pitch 90; markers are hidden by the 45 degree pitch limit and the "hold upright" hint shows.
 - `ios_ar_default.png` - the default animated sweep with a sharp hole.
 
-HUD frame timings while sweeping both hole styles at 402x621 points (1206x1863 drawable pixels): GPU 0.22-0.62 ms per frame, CPU 2.0-4.2 ms including the Kotlin projection calls.
-That is `MTLCommandBuffer.gpuStartTime/gpuEndTime` and a `CACurrentMediaTime` bracket, shown live in the HUD.
+HUD frame timings while sweeping both hole styles at 402x621 points (1206x1863 drawable pixels): GPU 0.2-0.6 ms per frame, and 2.0-4.7 ms of CPU inside the `draw(in:)` call.
+The GPU figure is `MTLCommandBuffer.gpuStartTime/gpuEndTime`; the CPU figure is a `CACurrentMediaTime` bracket around the draw.
+The Kotlin projection calls happen on the motion callback, outside that bracket, and were not measured separately; two markers per frame is well below the draw cost either way.
 
 Validation: launches with `SIMCTL_CHILD_MTL_DEBUG_LAYER=1` log `Metal API Validation Enabled` and produce no Metal errors, no command-buffer errors and no validation assertions, for both `sharp` and `frosted`.
 `MTL_SHADER_VALIDATION=1` (GPU shader validation) fails pipeline creation on this simulator with `buffer binding has argument index 31 that is greater than 30`; that extra layer is reported to be unqualified on the iOS 27 simulator and is not part of the gate.
