@@ -6,7 +6,7 @@
 
 **Blocked by:** 14 (extract ar math), 18 (common KMP)
 
-**Status:** ready-for-agent
+**Status:** claimed
 
 - [ ] The math/geometry compiles in `commonMain`.
 - [ ] The Android renderer stays in `androidMain` and consumes the shared math with unchanged output.
