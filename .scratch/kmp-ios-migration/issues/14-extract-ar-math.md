@@ -6,7 +6,7 @@
 
 **Blocked by:** 11 (GeoLocation)
 
-**Status:** ready-for-agent
+**Status:** claimed
 
 - [ ] The math/geometry lives in a dedicated package with no Android type dependencies.
 - [ ] The OpenGL/CameraX/Canvas renderer consumes the extracted math and renders identically.

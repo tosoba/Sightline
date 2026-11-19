@@ -6,7 +6,7 @@
 
 **Blocked by:** 15, 16, 17, 18, 19, 20
 
-**Status:** ready-for-agent
+**Status:** claimed
 
 - [ ] A `shared` XCFramework exports the shared modules with SKIE interop (Flow to AsyncSequence, suspend to async).
 - [ ] The `iosApp` builds and fetches real nearby places end to end on a simulator or device.
