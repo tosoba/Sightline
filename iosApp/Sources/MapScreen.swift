@@ -13,6 +13,7 @@ struct MapScreen: View {
         MapLibreMapView(
             places: model.places,
             colorScheme: colorScheme,
+            showsUserLocation: model.userLocationEnabled,
             lastMapPosition: model.lastMapPosition,
             onCameraChanged: model.saveMapPosition
         )

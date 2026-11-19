@@ -42,21 +42,24 @@ class IosLocationProvider : LocationProvider {
   private val authorization =
     MutableStateFlow(locationManager.authorizationStatus.toLocationAuthorization())
 
-  init {
-    locationManager.delegate =
-      object : NSObject(), CLLocationManagerDelegateProtocol {
-        override fun locationManager(
-          manager: CLLocationManager,
-          didUpdateLocations: List<*>,
-        ) {
-          val location = didUpdateLocations.lastOrNull() as? CLLocation ?: return
-          updates.tryEmit(location.toGeoLocation())
-        }
-
-        override fun locationManagerDidChangeAuthorization(manager: CLLocationManager) {
-          authorization.value = manager.authorizationStatus.toLocationAuthorization()
-        }
+  // CLLocationManager.delegate is weak; the provider must own the delegate for callbacks to arrive.
+  private val delegate =
+    object : NSObject(), CLLocationManagerDelegateProtocol {
+      override fun locationManager(
+        manager: CLLocationManager,
+        didUpdateLocations: List<*>,
+      ) {
+        val location = didUpdateLocations.lastOrNull() as? CLLocation ?: return
+        updates.tryEmit(location.toGeoLocation())
       }
+
+      override fun locationManagerDidChangeAuthorization(manager: CLLocationManager) {
+        authorization.value = manager.authorizationStatus.toLocationAuthorization()
+      }
+    }
+
+  init {
+    locationManager.delegate = delegate
   }
 
   override fun locationUpdates(): Flow<GeoLocation> =

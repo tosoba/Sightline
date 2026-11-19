@@ -68,4 +68,11 @@ private class InMemoryUserPreferencesRepository : UserPreferencesRepository {
   override suspend fun setSearchRadius(radius: PlaceSearchRadius) {
     searchRadius.value = radius
   }
+
+  override suspend fun reset() {
+    customLocation.value = null
+    userLocationEnabled.value = false
+    lastMapPosition.value = null
+    searchRadius.value = PlaceSearchRadius.OneKilometer
+  }
 }

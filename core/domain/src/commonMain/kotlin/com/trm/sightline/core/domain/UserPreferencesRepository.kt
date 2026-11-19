@@ -21,4 +21,6 @@ interface UserPreferencesRepository {
   fun getSearchRadius(): Flow<PlaceSearchRadius>
 
   suspend fun setSearchRadius(radius: PlaceSearchRadius)
+
+  suspend fun reset()
 }

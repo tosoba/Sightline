@@ -93,4 +93,8 @@ class UserPreferencesLocalRepository(private val userPreferencesStore: DataStore
       preferences.copy(searchRadiusMeters = radius.meters)
     }
   }
+
+  override suspend fun reset() {
+    userPreferencesStore.updateData { UserPreferences() }
+  }
 }

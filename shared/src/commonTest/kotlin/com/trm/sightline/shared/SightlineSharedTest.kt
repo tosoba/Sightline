@@ -13,6 +13,7 @@ import com.trm.sightline.core.model.PlaceCategory
 import com.trm.sightline.core.model.PlaceSearchRadius
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.emptyFlow
@@ -82,6 +83,27 @@ class SightlineSharedTest {
 
     assertEquals(PlaceSearchRadius.TwoKilometers, shared.preferences.searchRadius.first())
   }
+
+  @Test
+  fun resettingPreferencesRestoresEveryDefault() = runTest {
+    shared.preferences.setUserLocationEnabled(true)
+    shared.preferences.setSearchRadius(PlaceSearchRadius.TwoKilometers)
+    shared.preferences.setLastMapPosition(
+      MapCameraPosition(
+        latitude = 50.0614,
+        longitude = 19.9366,
+        zoom = 12.5,
+        bearing = 30.0,
+        pitch = 45.0,
+      )
+    )
+
+    shared.resetPreferencesForTesting()
+
+    assertEquals(false, shared.preferences.userLocationEnabled.first())
+    assertEquals(PlaceSearchRadius.OneKilometer, shared.preferences.searchRadius.first())
+    assertNull(shared.preferences.lastMapPosition.first())
+  }
 }
 
 private data class PlaceQuery(
@@ -106,24 +128,40 @@ private class FakePlacesRepository(private val places: List<Place>) : PlacesRepo
 }
 
 private class FakeUserPreferencesRepository : UserPreferencesRepository {
+  private val customLocation = MutableStateFlow<CustomLocation?>(null)
+  private val userLocationEnabled = MutableStateFlow(false)
+  private val lastMapPosition = MutableStateFlow<MapCameraPosition?>(null)
   private val searchRadius = MutableStateFlow<PlaceSearchRadius>(PlaceSearchRadius.OneKilometer)
 
-  override fun getCustomLocation(): Flow<CustomLocation?> = emptyFlow()
+  override fun getCustomLocation(): Flow<CustomLocation?> = customLocation
 
-  override fun getUserLocationEnabled(): Flow<Boolean> = emptyFlow()
+  override fun getUserLocationEnabled(): Flow<Boolean> = userLocationEnabled
 
-  override fun getLastMapPosition(): Flow<MapCameraPosition?> = emptyFlow()
+  override fun getLastMapPosition(): Flow<MapCameraPosition?> = lastMapPosition
 
-  override suspend fun setCustomLocation(customLocation: CustomLocation) = Unit
+  override suspend fun setCustomLocation(customLocation: CustomLocation) {
+    this.customLocation.value = customLocation
+  }
 
-  override suspend fun setUserLocationEnabled(userLocationEnabled: Boolean) = Unit
+  override suspend fun setUserLocationEnabled(userLocationEnabled: Boolean) {
+    this.userLocationEnabled.value = userLocationEnabled
+  }
 
-  override suspend fun setLastMapPosition(position: MapCameraPosition) = Unit
+  override suspend fun setLastMapPosition(position: MapCameraPosition) {
+    lastMapPosition.value = position
+  }
 
   override fun getSearchRadius(): Flow<PlaceSearchRadius> = searchRadius
 
   override suspend fun setSearchRadius(radius: PlaceSearchRadius) {
     searchRadius.value = radius
+  }
+
+  override suspend fun reset() {
+    customLocation.value = null
+    userLocationEnabled.value = false
+    lastMapPosition.value = null
+    searchRadius.value = PlaceSearchRadius.OneKilometer
   }
 }
 

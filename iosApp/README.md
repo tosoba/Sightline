@@ -10,7 +10,7 @@ The `shared` Gradle module builds a static `Shared.xcframework`; this app consum
 - `Sources/` - SwiftUI app, root pager, MapLibre map wrapper, and view model.
 - `Resources/` - MapLibre `light_style.json` and `dark_style.json`, copied from `core/ui/src/main/res/raw` by `./gradlew :syncIosMapStyles`.
 - `Support/Info.plist` - app plist with `NSLocationWhenInUseUsageDescription`.
-- `UITests/` - UI test that switches to the Map page and captures a screenshot.
+- `UITests/` - the full smoke pass, the map page test, and their shared launch and location-prompt helpers.
 
 ## Build
 
@@ -34,7 +34,10 @@ xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp \
 
 The UI tests cover the full smoke pass: the camera page, the map with places, the category push and back,
 the location fix, and preferences surviving a relaunch.
-They reset and answer the system location prompt themselves, because reinstalling the app resets a simulator grant.
+Every test launches with `-resetPreferences`, which resets the shared preferences through the Kotlin
+`UserPreferencesRepository` before the first frame, so no test depends on state left by an earlier run.
+The tests reset and answer the system location prompt themselves, because reinstalling the app resets a
+simulator grant.
 Pre-granting and fixing the location still helps scripted runs:
 
 ```sh
@@ -45,10 +48,20 @@ xcrun simctl location booted set 50.0614,19.9366   # Krakow
 `-mapDebug` shows the persisted camera under the map (`lat,lon,zoom,bearing,pitch`); the smoke test uses it to
 assert that a changed camera survives a relaunch.
 
+### Test-only launch arguments and identifiers
+
+- `-resetPreferences` - before the first frame, calls `SightlineShared.resetPreferencesForTesting()`, which
+  writes `UserPreferences()` through the same `UserPreferencesRepository` the app uses.
+  Without the argument the reset path is inert.
+- `user-location-toggle` - accessibility identifier on the preferences `Toggle`.
+  The tests tap the knob at the trailing edge because tapping a `Form` row label does not move the switch.
+
 ## Preferences
 
 The gear button opens a preferences sheet backed by the shared `PreferencesFacade`: search radius and the
 user-location toggle.
+The map's user-location layer follows the toggle, so a clean install does not request location permission
+until the user enables it; Android gates location collection on the same preference.
 Values, including the last map camera, are stored in the shared DataStore file at
 `<app container>/Library/Application Support/Sightline/user_preferences.json`, the same path the Kotlin
 `OkioStorage` writes on iOS.
