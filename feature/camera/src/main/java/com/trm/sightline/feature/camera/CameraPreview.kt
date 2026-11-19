@@ -39,12 +39,13 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.trm.sightline.core.ar.camera.OpenGLRenderer
+import com.trm.sightline.core.ar.math.RoundedRectF
 import com.trm.sightline.core.ar.model.ARMarker
-import com.trm.sightline.core.ar.model.RoundedRectF
 import com.trm.sightline.core.ar.orientation.Orientation
 import com.trm.sightline.core.ar.orientation.OrientationManager
 import com.trm.sightline.core.ar.orientation.pitchWithinLimit
 import com.trm.sightline.core.ar.util.phoneRotation
+import com.trm.sightline.core.ar.util.screenRotation
 import com.trm.sightline.core.ar.view.ARMarkerRenderer
 import com.trm.sightline.core.ar.view.ARView
 import com.trm.sightline.core.model.GeoLocation
@@ -124,7 +125,7 @@ fun CameraPreview(
             view.markers = places.map(::ARMarker)
             view.markerRenderer.disabled = !enabled || !pitchWithinLimit
             view.onTouch = onCameraPreviewTouch
-            view.phoneRotation = context.phoneRotation
+            view.screenRotation = context.screenRotation
           },
         )
 

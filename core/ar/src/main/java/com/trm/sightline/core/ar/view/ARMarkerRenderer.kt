@@ -20,9 +20,12 @@ import androidx.compose.ui.graphics.vector.VectorNode
 import androidx.compose.ui.graphics.vector.VectorPath
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.withSave
+import com.trm.sightline.core.ar.math.MarkerSlotAssignment
+import com.trm.sightline.core.ar.math.MarkerSlotGeometry
+import com.trm.sightline.core.ar.math.MarkerSlotTarget
+import com.trm.sightline.core.ar.math.RoundedRectF
 import com.trm.sightline.core.ar.model.ARMarker
 import com.trm.sightline.core.ar.model.MarkersPagingState
-import com.trm.sightline.core.ar.model.RoundedRectF
 import com.trm.sightline.core.ar.util.bottomSheetHeightPx
 import com.trm.sightline.core.ar.util.cameraPreviewVerticalPaddingPx
 import com.trm.sightline.core.ar.util.dpToPx
@@ -40,8 +43,6 @@ import com.trm.sightline.core.ui.icon
 import java.util.Objects
 import kotlin.math.abs
 import kotlin.math.acos
-import kotlin.math.atan
-import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -151,8 +152,6 @@ class ARMarkerRenderer(private val context: Context) {
   private var lastCanvasWidth: Int = 0
   private var lastCanvasHeight: Int = 0
 
-  private var markerAngularWidthDeg: Double = 0.0
-
   // ── Paints ─────────────────────────────────────────────────────────────────
 
   // Primary text: place name
@@ -249,41 +248,38 @@ class ARMarkerRenderer(private val context: Context) {
     if (pagedMarkers.isEmpty()) return
     if (canvasWidth == 0 || canvasHeight == 0) return
 
-    val screenRatioX = (canvasWidth + canvasHeight) / 2.0
-    val effectiveScreenRatioX = screenRatioX * cos(MAX_EXPECTED_ROLL_RADIANS)
+    val slots =
+      MarkerSlotAssignment.assign(
+        povLocation = povLocation,
+        targets =
+          pagedMarkers.values.map { pagedMarker ->
+            MarkerSlotTarget(
+              id = pagedMarker.marker.place.id,
+              location = pagedMarker.marker.location,
+              distance = pagedMarker.marker.distance,
+            )
+          },
+        geometry =
+          MarkerSlotGeometry(
+            markerWidthPx = markerWidthPx,
+            markerHeightPx = markerHeightPx,
+            overlapGuardPx = overlapGuardPx,
+            verticalSpacingPx = MARKER_VERTICAL_SPACING_PX,
+            rows = numberOfRows,
+            baseY =
+              context.statusBarTopInsetPx +
+                markerHeightPx / 2f +
+                context.cameraPreviewVerticalPaddingPx,
+          ),
+        canvasWidth = canvasWidth,
+        canvasHeight = canvasHeight,
+      )
 
-    markerAngularWidthDeg =
-      Math.toDegrees(2.0 * atan((markerWidthPx + overlapGuardPx) / (2.0 * effectiveScreenRatioX)))
-
-    val baseY =
-      context.statusBarTopInsetPx + markerHeightPx / 2f + context.cameraPreviewVerticalPaddingPx
-
-    val sorted = pagedMarkers.values.sortedBy { it.marker.distance }
-    val assigned = mutableListOf<Pair<Float, PagedYPosition>>()
-
-    sorted.forEach { pagedMarker ->
-      val bearing = normalizeBearing(povLocation.bearingTo(pagedMarker.marker.location))
-      pagedMarker.bearing = bearing
-
-      val conflicting =
-        assigned
-          .filter { (b, _) -> angularDistanceDeg(bearing, b) < markerAngularWidthDeg }
-          .map { (_, pos) -> pos }
-          .toSet()
-
-      val position = PagedYPosition(baseY, 0)
-      var row = 0
-      while (conflicting.contains(position)) {
-        position.y += markerHeightPx + MARKER_VERTICAL_SPACING_PX
-        ++row
-        if (row >= numberOfRows) {
-          row = 0
-          position.y = baseY
-          ++position.page
-        }
+    slots.forEach { (id, slot) ->
+      pagedMarkers[id]?.apply {
+        bearing = slot.bearing
+        position = PagedYPosition(slot.y, slot.page)
       }
-      pagedMarker.position = position
-      assigned.add(Pair(bearing, position))
     }
   }
 
@@ -339,7 +335,15 @@ class ARMarkerRenderer(private val context: Context) {
         drawMarkerContent(marker, markerRectF)
       }
 
-      drawnRectFs.add(RoundedRectF(markerRectF, cornerRadiusPx))
+      drawnRectFs.add(
+        RoundedRectF(
+          left = markerRectF.left,
+          top = markerRectF.top,
+          right = markerRectF.right,
+          bottom = markerRectF.bottom,
+          cornerRadius = cornerRadiusPx,
+        )
+      )
     }
 
     maxPage = maxPageThisFrame
@@ -802,13 +806,6 @@ class ARMarkerRenderer(private val context: Context) {
   internal fun isOnCurrentPage(marker: ARMarker): Boolean =
     pagedMarkers[marker.place.id]?.position?.page == currentPage
 
-  private fun angularDistanceDeg(a: Float, b: Float): Double {
-    val diff = abs(a - b) % 360f
-    return (if (diff > 180f) 360f - diff else diff).toDouble()
-  }
-
-  private fun normalizeBearing(bearing: Float): Float = (bearing + 360f) % 360f
-
   private fun ARMarker.formattedDistance(): String =
     if (distance >= 1_000) "${(distance / 1_000).roundToDecimalPlaces(1)} km"
     else "${distance.roundToInt()} m"
@@ -845,7 +842,6 @@ class ARMarkerRenderer(private val context: Context) {
     private const val MAX_WIDTH_DIVISOR = 5
 
     private const val MARKER_OVERLAP_GUARD_FRACTION = 0.5f
-    private const val MAX_EXPECTED_ROLL_RADIANS = Math.PI / 6
 
     private const val MARKER_PADDING_DP = 12f
     private const val ELLIPSIS_WIDTH_PX = 10f

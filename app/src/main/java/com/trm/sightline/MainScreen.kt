@@ -3,7 +3,6 @@ package com.trm.sightline
 import android.Manifest
 import android.app.Activity
 import android.content.Intent
-import android.graphics.RectF
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -62,7 +61,7 @@ import androidx.compose.ui.unit.dp
 import com.trm.sightline.composable.MainPager
 import com.trm.sightline.composable.MainPagerToolbar
 import com.trm.sightline.composable.MainScreenErrorMessage
-import com.trm.sightline.core.ar.model.RoundedRectF
+import com.trm.sightline.core.ar.math.RoundedRectF
 import com.trm.sightline.core.ar.util.collapsedBottomSheetContentHeightDp
 import com.trm.sightline.core.ar.util.dpToPx
 import com.trm.sightline.core.ar.util.getScreenSize
@@ -381,21 +380,25 @@ fun SharedTransitionScope.MainScreen(
           blurredRectFs =
             listOf(
               with(LocalContext.current) {
-                RoundedRectF(
-                  rectF =
-                    if (isCompactHeight) {
-                      sideSheetRectF
-                    } else {
-                      val screenSize = getScreenSize()
-                      RectF(
-                        0f,
-                        sheetOffset,
-                        screenSize.width.toFloat(),
-                        screenSize.height.toFloat(),
-                      )
-                    },
-                  cornerRadius = if (isCompactHeight) 0f else dpToPx(32f),
-                )
+                if (isCompactHeight) {
+                  val sideSheetRect = sideSheetRectF
+                  RoundedRectF(
+                    left = sideSheetRect.left,
+                    top = sideSheetRect.top,
+                    right = sideSheetRect.right,
+                    bottom = sideSheetRect.bottom,
+                    cornerRadius = 0f,
+                  )
+                } else {
+                  val screenSize = getScreenSize()
+                  RoundedRectF(
+                    left = 0f,
+                    top = sheetOffset,
+                    right = screenSize.width.toFloat(),
+                    bottom = screenSize.height.toFloat(),
+                    cornerRadius = dpToPx(32f),
+                  )
+                }
               }
             ),
           cameraPreviewOverlayVisible = toolbarsVisible,

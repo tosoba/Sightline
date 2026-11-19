@@ -10,6 +10,7 @@ import android.view.Surface
 import android.view.WindowInsets
 import android.view.WindowManager
 import androidx.core.view.WindowInsetsCompat
+import com.trm.sightline.core.ar.math.ScreenRotation
 
 val Context.phoneRotation: Int
   get() =
@@ -18,6 +19,16 @@ val Context.phoneRotation: Int
     } else {
       @Suppress("DEPRECATION") getSystemService(WindowManager::class.java).defaultDisplay?.rotation
     } ?: Surface.ROTATION_0
+
+val Context.screenRotation: ScreenRotation
+  get() =
+    when (phoneRotation) {
+      Surface.ROTATION_0 -> ScreenRotation.ROTATION_0
+      Surface.ROTATION_90 -> ScreenRotation.ROTATION_90
+      Surface.ROTATION_180 -> ScreenRotation.ROTATION_180
+      Surface.ROTATION_270 -> ScreenRotation.ROTATION_270
+      else -> throw IllegalStateException()
+    }
 
 const val sideSheetWidthDp = 400
 const val collapsedBottomSheetContentHeightDp = 186

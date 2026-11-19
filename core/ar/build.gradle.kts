@@ -64,4 +64,6 @@ dependencies {
   implementation(libs.kotlinx.coroutines.core)
 
   implementation(libs.timber)
+
+  testImplementation(kotlin("test-junit"))
 }
