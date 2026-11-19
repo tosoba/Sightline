@@ -5,6 +5,15 @@ Status: complete (analytic derivation + throwaway prototype, Nov 2026)
 Branch: `prototype/09-ar-orientation`
 Prototype: `prototype/ar-orientation/`
 
+> **Correction (ticket 24).** Everything below derives the remap for `OrientationManager.Mode.COMPASS`
+> (`AXIS_Y`, `AXIS_MINUS_X`). The shipped AR screen uses `Mode.AR` (`AXIS_X`, `AXIS_Z`, see
+> `feature/camera/src/main/java/com/trm/sightline/feature/camera/CameraPreview.kt`), which needs a
+> different remap: `azimuth = atan2(m32, -m31)`, `pitch = asin(m33)`, `roll = atan2(-m13, m23)`.
+> Those are the formulas implemented in `shared/.../ArOrientationTracker.kt` and consumed by the iOS
+> camera; see the "Orientation finding" section of
+> `.scratch/kmp-ios-migration/issues/24-ios-ar-camera.md`. Applying the `Mode.COMPASS` formula below
+> to the shipped AR screen puts markers 90 degrees off.
+
 ## TL;DR
 
 The exact remapping from iOS `CMDeviceMotion.attitude` (`.xMagneticNorthZVertical`) to the
