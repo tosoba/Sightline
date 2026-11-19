@@ -6,8 +6,15 @@
 
 **Blocked by:** 15 (model KMP)
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] `core:domain` interfaces compile in `commonMain` against `core:model`.
-- [ ] Android consumes `core:domain` unchanged.
-- [ ] Android compiles and tests pass.
+- [x] `core:domain` interfaces compile in `commonMain` against `core:model`.
+- [x] Android consumes `core:domain` unchanged.
+- [x] Android compiles and tests pass.
+
+## Comments
+
+Replaced `java-library` + `kotlin-jvm` with `kotlin.multiplatform` + `com.android.kotlin.multiplatform.library`, moved the three repository interfaces to `src/commonMain/kotlin`, and declared `android`, `iosArm64`, and `iosSimulatorArm64` targets.
+The `jvm()` target stays until `core:datastore` (ticket 17) is KMP for the same reason as `core:model`.
+
+Verified `:app:assembleDebug`, `test`, and `:core:domain:compileKotlinIosSimulatorArm64` green.
