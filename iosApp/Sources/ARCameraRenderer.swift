@@ -29,9 +29,9 @@ struct ARHoleRect: Equatable {
     var cornerRadius: Float
 }
 
-/// How the stencil holes are filled. `sharp` matches the ticket's AR goal (unblurred holes);
-/// `frosted` reproduces the GL draw order literally (max-lod blur plus contrasting tint inside the
-/// rounded rect), which is the look shipped in `screenshots/camera_*.png`.
+/// How the stencil holes are filled. `frosted` is the default because it reproduces Android's GL draw
+/// order literally (max-lod blur plus contrasting tint inside the rounded rect), which is the look
+/// shipped in `screenshots/camera_*.png`. `sharp` keeps the ticket's literal unblurred holes.
 enum ARHoleFillStyle: String {
     case sharp
     case frosted
@@ -72,7 +72,7 @@ final class ARCameraRenderer: NSObject, MTKViewDelegate {
     private var lastSourceSize = CGSize.zero
     private var texTransform = matrix_identity_float4x4
 
-    var holeFillStyle: ARHoleFillStyle = .sharp
+    var holeFillStyle: ARHoleFillStyle = .frosted
     private var holeRects: [ARHoleRect] = []
 
     private(set) var lastGPUSeconds: Double = 0
@@ -525,7 +525,7 @@ final class ARCameraRenderer: NSObject, MTKViewDelegate {
             encodeBlurChain(commandBuffer: commandBuffer, source: sourceTexture, frame: frame, contrast: false, lod: frame.lod)
         }
 
-        guard var encoder = makeDrawableEncoder(commandBuffer, descriptor, loadAction: .clear, label: "AR drawable") else {
+        guard let encoder = makeDrawableEncoder(commandBuffer, descriptor, loadAction: .clear, label: "AR drawable") else {
             inFlight.signal()
             return
         }

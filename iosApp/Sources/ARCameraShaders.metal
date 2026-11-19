@@ -72,8 +72,12 @@ fragment float4 arNoBlurFragment(ARVertexOut in [[stage_in]],
         if (box > 1.0) {
             discard_fragment();
         }
-        // GL computed this edge mix but returned the unmodified colour; applying it here is the
-        // intended corner softness and only affects the outermost pixel.
+        // `box` is the signed distance to the rounded rect: beyond one pixel outside, the fragment is
+        // dropped, so the remaining edge band is the antialiased rim. Android computes the same mix
+        // into `color` and then returns `texColor`, discarding it. iOS keeps the mix because this is
+        // the only pipeline that writes this colour (the stencil-mask pass reuses the function with
+        // the colour write mask off, so the mix is dropped there), and removing it would harden the
+        // corner by a pixel.
         float edge = smoothstep(0.0, 1.0, box);
         return float4(mix(texColor.rgb, float3(0.0), edge), texColor.a);
     }

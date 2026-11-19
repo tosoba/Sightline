@@ -1,6 +1,7 @@
 import MetalKit
 import Shared
 import SwiftUI
+import UIKit
 
 struct ARCameraMetalView: UIViewRepresentable {
     let renderer: ARCameraRenderer
@@ -22,6 +23,7 @@ struct ARCameraScreen: View {
 
     @State private var camera: ARCameraModel?
     @Environment(\.displayScale) private var displayScale
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         GeometryReader { proxy in
@@ -33,24 +35,28 @@ struct ARCameraScreen: View {
                         ARCameraMetalView(renderer: renderer)
                             .ignoresSafeArea()
                     } else {
-                        VStack(spacing: 8) {
-                            Image(systemName: "camera.metering.unknown")
-                                .font(.largeTitle)
-                            Text(camera.errorMessage ?? "Camera renderer unavailable.")
-                                .multilineTextAlignment(.center)
-                        }
-                        .foregroundStyle(.white)
-                        .padding()
+                        messagePanel(
+                            title: "Camera unavailable",
+                            message: camera.errorMessage ?? "The camera renderer could not be created.",
+                            showsSettings: false
+                        )
                     }
                     ARCameraOverlay(placements: camera.placements)
                         .allowsHitTesting(false)
+                    if let unavailability = camera.unavailability {
+                        messagePanel(
+                            title: unavailability.title,
+                            message: unavailability.message,
+                            showsSettings: unavailability.offersSettings
+                        )
+                    }
                     if camera.options.debugHUD {
                         hud(camera)
                     }
-                    if camera.isSynthetic && !camera.options.debugHUD {
-                        syntheticBadge(camera)
+                    if camera.isSynthetic && camera.unavailability == nil && !camera.options.debugHUD {
+                        syntheticBadge
                     }
-                    if camera.pitchOutOfRange {
+                    if camera.pitchOutOfRange && camera.unavailability == nil {
                         holdUprightHint
                     }
                 } else {
@@ -79,6 +85,11 @@ struct ARCameraScreen: View {
             }
             .onChange(of: isActive) { _, active in
                 camera?.setActive(active)
+            }
+            .onChange(of: scenePhase) { _, phase in
+                if phase == .active {
+                    camera?.resumeAfterSettings()
+                }
             }
             .onChange(of: nearbyModel.places) { _, _ in
                 camera?.placesChanged()
@@ -123,7 +134,32 @@ struct ARCameraScreen: View {
         .padding(12)
     }
 
-    private func syntheticBadge(_ camera: ARCameraModel) -> some View {
+    private func messagePanel(title: String, message: String, showsSettings: Bool) -> some View {
+        VStack(spacing: 12) {
+            Image(systemName: "video.slash")
+                .font(.system(size: 34, weight: .semibold))
+            Text(title)
+                .font(.headline)
+            Text(message)
+                .font(.subheadline)
+                .multilineTextAlignment(.center)
+            if showsSettings {
+                Button("Open Settings") {
+                    guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+                    UIApplication.shared.open(url)
+                }
+                .buttonStyle(.bordered)
+                .tint(.white)
+            }
+        }
+        .foregroundStyle(.white)
+        .padding(20)
+        .frame(maxWidth: 320)
+        .background(.black.opacity(0.86), in: RoundedRectangle(cornerRadius: 18))
+        .padding(24)
+    }
+
+    private var syntheticBadge: some View {
         Text("Synthetic feed - no camera on this device")
             .font(.caption2.weight(.medium))
             .foregroundStyle(.white.opacity(0.85))
@@ -143,5 +179,28 @@ struct ARCameraScreen: View {
             .background(.black.opacity(0.55), in: Capsule())
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
             .padding(.bottom, 56)
+    }
+}
+
+private extension ARCameraUnavailability {
+    var title: String {
+        switch self {
+        case .permissionDenied: "Camera access denied"
+        case .configurationFailed: "Camera unavailable"
+        }
+    }
+
+    var message: String {
+        switch self {
+        case .permissionDenied:
+            "Enable camera access in Settings to see the live AR view."
+        case .configurationFailed(let detail):
+            detail
+        }
+    }
+
+    var offersSettings: Bool {
+        if case .permissionDenied = self { return true }
+        return false
     }
 }

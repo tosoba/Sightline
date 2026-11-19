@@ -24,7 +24,7 @@ enum MainPage: String, CaseIterable, Identifiable {
 
 struct MainScreen: View {
     @State private var model: NearbyPlacesModel
-    @State private var page: MainPage = .camera
+    @State private var page: MainPage = ARCameraLaunchOptions.current.requestedPage ?? .camera
 
     init(shared: SightlineShared) {
         _model = State(initialValue: NearbyPlacesModel(shared: shared))
