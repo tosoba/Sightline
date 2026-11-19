@@ -1,14 +1,14 @@
 package com.trm.sightline.core.ar.math
 
-import android.view.Surface
 import com.trm.sightline.core.ar.orientation.Orientation
 import com.trm.sightline.core.model.GeoLocation
+import kotlin.math.PI
 import kotlin.math.cos
 
 internal object Math3D {
   // http://gis.stackexchange.com/questions/2951/algorithm-for-offsetting-a-latitude-longitude-by-some-amount-of-meters
   private const val METERS_IN_A_DEGREE = 111111.0
-  private const val QUADRANT = Math.PI / 2
+  private const val QUADRANT = PI / 2
 
   /**
    * This method transforms the camera orientation angles into 3D space angles. It also calculates
@@ -16,8 +16,8 @@ internal object Math3D {
    * the whole universe)
    *
    * @param inOrientation Input parameter. The orientation of the camera
-   * @param inPhoneRotation Input parameter. The current camera rotation. This is a int constant
-   *   from Surface class with four possible values
+   * @param inPhoneRotation Input parameter. The current camera rotation as a neutral
+   *   [ScreenRotation]. The Android caller converts it from `Surface.ROTATION_*`
    * @param outCamRot Output parameter. The real camera rotation in our 3D Space
    * @param outCamTrig Output parameter. The trigonometric calculations of all three angles
    * @param outScreenRot Output parameter. The rotation angle of the screen (local Z angle)
@@ -25,7 +25,7 @@ internal object Math3D {
    */
   fun getCamRotation(
     inOrientation: Orientation,
-    inPhoneRotation: Int,
+    inPhoneRotation: ScreenRotation,
     outCamRot: Vector3,
     outCamTrig: Trig3,
     outScreenRot: Vector1,
@@ -34,18 +34,17 @@ internal object Math3D {
     // X goes the other way
     outCamRot.x = -inOrientation.pitch.toDouble()
     // 0 value is south, so turn around
-    outCamRot.y = inOrientation.azimuth + Math.PI
+    outCamRot.y = inOrientation.azimuth + PI
     // The universal rotation angle for Z is always 0
     outCamRot.z = 0.0
 
     // The value of the z angle (screen rotation)
     outScreenRot.v =
       when (inPhoneRotation) {
-        Surface.ROTATION_0 -> -inOrientation.roll.toDouble()
-        Surface.ROTATION_180 -> -inOrientation.roll + Math.PI
-        Surface.ROTATION_90 -> -inOrientation.roll - QUADRANT
-        Surface.ROTATION_270 -> -inOrientation.roll + QUADRANT
-        else -> throw IllegalStateException()
+        ScreenRotation.ROTATION_0 -> -inOrientation.roll.toDouble()
+        ScreenRotation.ROTATION_180 -> -inOrientation.roll + PI
+        ScreenRotation.ROTATION_90 -> -inOrientation.roll - QUADRANT
+        ScreenRotation.ROTATION_270 -> -inOrientation.roll + QUADRANT
       }
     outCamTrig.setVector3(outCamRot)
     outScreenRotTrig.setVector1(outScreenRot)

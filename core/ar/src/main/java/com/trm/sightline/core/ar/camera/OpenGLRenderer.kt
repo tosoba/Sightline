@@ -20,7 +20,7 @@ import androidx.core.content.ContextCompat
 import com.google.common.util.concurrent.ListenableFuture
 import com.trm.sightline.core.ar.camera.surface.SurfaceViewRenderSurface
 import com.trm.sightline.core.ar.camera.surface.TextureViewRenderSurface
-import com.trm.sightline.core.ar.model.RoundedRectF
+import com.trm.sightline.core.ar.math.RoundedRectF
 import java.util.Locale
 import java.util.concurrent.Executor
 import java.util.concurrent.RejectedExecutionException
@@ -91,12 +91,11 @@ class OpenGLRenderer {
 
       fun fillCoordinatesOf(rectFs: Collection<RoundedRectF>) {
         for (roundedRect in rectFs) {
-          val (rect, cornerRadius) = roundedRect
-          coordinates[index++] = rect.left
-          coordinates[index++] = rect.bottom
-          coordinates[index++] = rect.width()
-          coordinates[index++] = rect.height()
-          coordinates[index++] = cornerRadius
+          coordinates[index++] = roundedRect.left
+          coordinates[index++] = roundedRect.bottom
+          coordinates[index++] = roundedRect.width
+          coordinates[index++] = roundedRect.height
+          coordinates[index++] = roundedRect.cornerRadius
         }
       }
 

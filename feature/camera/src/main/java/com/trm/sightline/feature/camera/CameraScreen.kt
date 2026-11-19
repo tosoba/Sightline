@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.trm.sightline.core.ar.model.RoundedRectF
+import com.trm.sightline.core.ar.math.RoundedRectF
 import com.trm.sightline.core.ar.view.ARMarkerRenderer
 import com.trm.sightline.core.model.GeoLocation
 import com.trm.sightline.core.model.Place
