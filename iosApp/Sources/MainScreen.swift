@@ -36,7 +36,7 @@ struct MainScreen: View {
                 toolbar
                 Divider()
                 TabView(selection: $page) {
-                    NearbyPlacesView(model: model)
+                    ARCameraScreen(nearbyModel: model, isActive: page == .camera)
                         .tag(MainPage.camera)
                     MapScreen(model: model)
                         .tag(MainPage.map)
