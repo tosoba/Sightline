@@ -1,7 +1,7 @@
 package com.trm.sightline.core.common
 
-import java.io.IOException
-import retrofit2.HttpException
+import io.ktor.client.plugins.ResponseException
+import kotlinx.io.IOException
 
 sealed interface RequestError {
   data object IO : RequestError
@@ -13,14 +13,7 @@ sealed interface RequestError {
 
 fun Throwable.toRequestError(): RequestError =
   when (this) {
+    is ResponseException -> RequestError.Http(response.status.value, response.status.description)
     is IOException -> RequestError.IO
-    is HttpException -> RequestError.Http(code(), message())
     else -> RequestError.Other(this)
-  }
-
-fun RequestError.messageResource(): Int =
-  when (this) {
-    RequestError.IO -> R.string.error_connection
-    is RequestError.Http -> R.string.error_server
-    is RequestError.Other -> R.string.error_unknown
   }

@@ -1,4 +1,4 @@
-package com.trm.sightline.core.common.util
+package com.trm.sightline.core.ui
 
 import androidx.compose.material3.BottomSheetScaffoldState
 import androidx.compose.material3.ExperimentalMaterial3Api

@@ -1,46 +1,52 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
-  alias(libs.plugins.android.library)
-  alias(libs.plugins.kotlin.compose)
+  alias(libs.plugins.kotlin.multiplatform)
+  alias(libs.plugins.android.kmp.library)
   alias(libs.plugins.metro)
 }
 
-android {
-  namespace = "com.trm.sightline.core.common"
-  compileSdk { version = release(37) {} }
-
-  defaultConfig {
+kotlin {
+  android {
+    namespace = "com.trm.sightline.core.common"
+    compileSdk = 37
     minSdk = libs.versions.minSdk.get().toInt()
-    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+    compilerOptions { jvmTarget.set(JvmTarget.JVM_11) }
+
+    withHostTest {}
+
+    androidResources { enable = true }
   }
 
-  buildTypes {
-    release {
-      isMinifyEnabled = false
-      proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+  iosArm64()
+  iosSimulatorArm64()
+
+  sourceSets {
+    commonMain.dependencies {
+      api(project(":core:model"))
+
+      api(libs.kotlinx.coroutines.core)
+      api(libs.ktor.client.core)
+      implementation(libs.kotlinx.serialization.json)
+      implementation(libs.ktor.client.content.negotiation)
+      implementation(libs.ktor.serialization.kotlinx.json)
+    }
+
+    androidMain.dependencies {
+      implementation(libs.androidx.activity.compose)
+
+      implementation(libs.play.services.location)
+
+      implementation(libs.ktor.client.okhttp)
+      implementation(libs.ktor.client.logging)
+      implementation(libs.okhttp)
+      implementation(libs.okhttp.logging.interceptor)
+    }
+
+    iosMain.dependencies {
+      implementation(libs.ktor.client.darwin)
+      implementation(libs.ktor.client.logging)
     }
   }
-
-  compileOptions {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
-  }
-
-  buildFeatures { compose = true }
-}
-
-dependencies {
-  implementation(project(":core:model"))
-
-  implementation(libs.androidx.activity.compose)
-  implementation(libs.androidx.compose.ui)
-  implementation(libs.androidx.lifecycle.runtime.compose)
-  implementation(libs.androidx.compose.material3)
-
-  implementation(libs.kotlinx.coroutines.core)
-  implementation(libs.kotlinx.coroutines.play.services)
-
-  implementation(libs.play.services.location)
-  api(libs.okhttp)
-  api(libs.okhttp.logging.interceptor)
-  implementation(libs.retrofit)
 }

@@ -69,10 +69,8 @@ import com.trm.sightline.core.ar.util.getScreenSize
 import com.trm.sightline.core.ar.util.sideSheetRectF
 import com.trm.sightline.core.ar.util.sideSheetWidthDp
 import com.trm.sightline.core.common.PermissionStatus
-import com.trm.sightline.core.common.rememberPermissionState
 import com.trm.sightline.core.common.util.CheckLocationSettingsResult
 import com.trm.sightline.core.common.util.checkLocationSettings
-import com.trm.sightline.core.common.util.rememberBottomSheetScaffoldStateForScreenHeight
 import com.trm.sightline.core.common.util.startAppSettingsActivity
 import com.trm.sightline.core.model.CustomLocation
 import com.trm.sightline.core.model.GeoLocation
@@ -82,6 +80,8 @@ import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
 import com.trm.sightline.core.model.PlaceSearchRadius
 import com.trm.sightline.core.ui.rememberBottomSheetExpandedProgress
+import com.trm.sightline.core.ui.rememberBottomSheetScaffoldStateForScreenHeight
+import com.trm.sightline.core.ui.rememberPermissionState
 import com.trm.sightline.feature.places.PlacesContent
 import com.trm.sightline.feature.places.PlacesLayout
 import kotlinx.coroutines.launch

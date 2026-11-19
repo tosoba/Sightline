@@ -1,4 +1,4 @@
-package com.trm.sightline.core.common
+package com.trm.sightline.core.ui
 
 import android.content.pm.PackageManager
 import androidx.activity.compose.LocalActivity
@@ -12,6 +12,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LifecycleResumeEffect
+import com.trm.sightline.core.common.PermissionStatus
 
 interface PermissionState {
   val status: PermissionStatus

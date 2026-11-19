@@ -67,12 +67,12 @@ import com.trm.sightline.core.ar.util.sideSheetWidthDp
 import com.trm.sightline.core.common.R as commonR
 import com.trm.sightline.core.common.util.formattedDistance
 import com.trm.sightline.core.common.util.location
-import com.trm.sightline.core.common.util.rememberBottomSheetScaffoldStateForScreenHeight
 import com.trm.sightline.core.model.GeoLocation
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
 import com.trm.sightline.core.ui.MapCameraAnimateToBoundingBoxEffect
 import com.trm.sightline.core.ui.MapPreview
+import com.trm.sightline.core.ui.rememberBottomSheetScaffoldStateForScreenHeight
 import com.trm.sightline.core.ui.R as uiR
 import com.trm.sightline.core.ui.icon
 import com.trm.sightline.core.ui.labelRes
