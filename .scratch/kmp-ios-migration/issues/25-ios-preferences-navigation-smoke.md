@@ -253,11 +253,11 @@ Test Case '-[iosAppUITests.SmokeUITests testLocationDenialOffersSettings]' passe
 Test Suite 'SmokeUITests' passed
 	 Executed 2 tests, with 0 failures (0 unexpected) in 74.135 (74.138) seconds
 Test Suite 'All tests' passed
-	 Executed 3 tests, with 0 failures (0 unexpected) in 97.786 (97.792) seconds
+	 Executed 3 tests, with 0 failures (0 unexpected) in 98.067 (98.074) seconds
 ** TEST SUCCEEDED **
 ```
 
-A second run immediately afterwards passed with 3 tests and 0 failures.
+A second run immediately afterwards also passed with 3 tests and 0 failures.
 Before that second run the persisted state was deliberately left with `userLocationEnabled: true`,
 which proves that a previous ON state no longer changes the result:
 
