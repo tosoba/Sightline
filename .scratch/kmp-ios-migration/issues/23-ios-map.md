@@ -6,7 +6,7 @@
 
 **Blocked by:** 22 (shared + iosApp)
 
-**Status:** ready-for-agent
+**Status:** claimed
 
 - [ ] The MapLibre map renders with the shared style JSONs.
 - [ ] User location, place markers, and bounding-box fit work.
