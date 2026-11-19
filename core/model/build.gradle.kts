@@ -20,10 +20,6 @@ kotlin {
   iosArm64()
   iosSimulatorArm64()
 
-  // Transitional: core:datastore and core:domain are still JVM-only modules until their own
-  // KMP conversions land (tickets 16 and 17).
-  jvm()
-
   sourceSets {
     commonMain.dependencies { api(libs.kotlinx.serialization.json) }
 

@@ -1,11 +1,12 @@
 package com.trm.sightline.core.data
 
 import androidx.datastore.core.DataStore
-import com.trm.sightline.core.datastore.UserPreferences
 import com.trm.sightline.core.domain.UserPreferencesRepository
 import com.trm.sightline.core.model.CustomLocation
 import com.trm.sightline.core.model.MapCameraPosition
 import com.trm.sightline.core.model.PlaceSearchRadius
+import com.trm.sightline.core.model.UserPreferences
+import kotlin.time.Clock
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -13,22 +14,19 @@ class UserPreferencesLocalRepository(private val userPreferencesStore: DataStore
   UserPreferencesRepository {
   override fun getCustomLocation(): Flow<CustomLocation?> =
     userPreferencesStore.data.map { preferences ->
-      with(preferences) {
-        if (
-          hasCustomLocationLat() &&
-            hasCustomLocationLng() &&
-            hasCustomLocationAddress() &&
-            hasCustomLocationTimestamp()
-        ) {
-          CustomLocation(
-            latitude = customLocationLat,
-            longitude = customLocationLng,
-            address = customLocationAddress,
-            timestamp = customLocationTimestamp,
-          )
-        } else {
-          null
-        }
+      val latitude = preferences.customLocationLatitude
+      val longitude = preferences.customLocationLongitude
+      val address = preferences.customLocationAddress
+      val timestamp = preferences.customLocationTimestampMillis
+      if (latitude != null && longitude != null && address != null && timestamp != null) {
+        CustomLocation(
+          latitude = latitude,
+          longitude = longitude,
+          address = address,
+          timestamp = timestamp,
+        )
+      } else {
+        null
       }
     }
 
@@ -37,67 +35,62 @@ class UserPreferencesLocalRepository(private val userPreferencesStore: DataStore
 
   override fun getLastMapPosition(): Flow<MapCameraPosition?> =
     userPreferencesStore.data.map { preferences ->
-      with(preferences) {
-        if (
-          hasLastMapLat() &&
-            hasLastMapLng() &&
-            hasLastMapZoom() &&
-            hasLastMapBearing() &&
-            hasLastMapTilt()
-        ) {
-          MapCameraPosition(
-            latitude = lastMapLat,
-            longitude = lastMapLng,
-            zoom = lastMapZoom,
-            bearing = lastMapBearing,
-            pitch = lastMapTilt,
-          )
-        } else {
-          null
-        }
+      val latitude = preferences.lastMapLatitude
+      val longitude = preferences.lastMapLongitude
+      val zoom = preferences.lastMapZoom
+      val bearing = preferences.lastMapBearing
+      val pitch = preferences.lastMapPitch
+      if (latitude != null && longitude != null && zoom != null && bearing != null && pitch != null) {
+        MapCameraPosition(
+          latitude = latitude,
+          longitude = longitude,
+          zoom = zoom,
+          bearing = bearing,
+          pitch = pitch,
+        )
+      } else {
+        null
       }
     }
 
   override suspend fun setCustomLocation(customLocation: CustomLocation) {
     userPreferencesStore.updateData { preferences ->
-      preferences
-        .toBuilder()
-        .setCustomLocationLat(customLocation.latitude)
-        .setCustomLocationLng(customLocation.longitude)
-        .setCustomLocationAddress(customLocation.address)
-        .setCustomLocationTimestamp(System.currentTimeMillis())
-        .build()
+      preferences.copy(
+        customLocationLatitude = customLocation.latitude,
+        customLocationLongitude = customLocation.longitude,
+        customLocationAddress = customLocation.address,
+        customLocationTimestampMillis = Clock.System.now().toEpochMilliseconds(),
+      )
     }
   }
 
   override suspend fun setUserLocationEnabled(userLocationEnabled: Boolean) {
     userPreferencesStore.updateData { preferences ->
-      preferences.toBuilder().setUserLocationEnabled(userLocationEnabled).build()
+      preferences.copy(userLocationEnabled = userLocationEnabled)
     }
   }
 
   override suspend fun setLastMapPosition(position: MapCameraPosition) {
     userPreferencesStore.updateData { preferences ->
-      preferences
-        .toBuilder()
-        .setLastMapLat(position.latitude)
-        .setLastMapLng(position.longitude)
-        .setLastMapZoom(position.zoom)
-        .setLastMapBearing(position.bearing)
-        .setLastMapTilt(position.pitch)
-        .build()
+      preferences.copy(
+        lastMapLatitude = position.latitude,
+        lastMapLongitude = position.longitude,
+        lastMapZoom = position.zoom,
+        lastMapBearing = position.bearing,
+        lastMapPitch = position.pitch,
+      )
     }
   }
 
   override fun getSearchRadius(): Flow<PlaceSearchRadius> =
     userPreferencesStore.data.map { preferences ->
-      if (preferences.hasSearchRadius()) PlaceSearchRadius.fromMeters(preferences.searchRadius)
-      else PlaceSearchRadius.OneKilometer
+      preferences.searchRadiusMeters?.let(PlaceSearchRadius::fromMeters)
+        ?: PlaceSearchRadius.OneKilometer
     }
 
   override suspend fun setSearchRadius(radius: PlaceSearchRadius) {
     userPreferencesStore.updateData { preferences ->
-      preferences.toBuilder().setSearchRadius(radius.meters).build()
+      preferences.copy(searchRadiusMeters = radius.meters)
     }
   }
 }

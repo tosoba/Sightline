@@ -2,10 +2,13 @@ package com.trm.sightline.core.data
 
 import android.content.Context
 import androidx.datastore.core.DataStore
-import androidx.datastore.core.DataStoreFactory
-import com.trm.sightline.core.datastore.UserPreferences
-import com.trm.sightline.core.datastore.UserPreferencesSerializer
+import com.trm.sightline.core.datastore.LegacyProtobufPreferencesMigration
+import com.trm.sightline.core.datastore.LEGACY_USER_PREFERENCES_FILE_NAME
+import com.trm.sightline.core.datastore.USER_PREFERENCES_DIRECTORY
+import com.trm.sightline.core.datastore.createUserPreferencesDataStore
+import com.trm.sightline.core.datastore.userPreferencesStorage
 import com.trm.sightline.core.domain.UserPreferencesRepository
+import com.trm.sightline.core.model.UserPreferences
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.ContributesTo
@@ -18,11 +21,18 @@ import java.io.File
 object DataModule {
   @Provides
   @SingleIn(AppScope::class)
-  fun provideUserPreferencesDataStore(context: Context): DataStore<UserPreferences> =
-    DataStoreFactory.create(
-      serializer = UserPreferencesSerializer,
-      produceFile = { File(context.filesDir, "datastore/user_preferences.pb") },
+  fun provideUserPreferencesDataStore(context: Context): DataStore<UserPreferences> {
+    val directory = File(context.filesDir, USER_PREFERENCES_DIRECTORY)
+    return createUserPreferencesDataStore(
+      storage = userPreferencesStorage(directory.absolutePath),
+      migrations =
+        listOf(
+          LegacyProtobufPreferencesMigration(
+            File(directory, LEGACY_USER_PREFERENCES_FILE_NAME)
+          )
+        ),
     )
+  }
 
   @Provides
   fun provideUserPreferencesRepository(

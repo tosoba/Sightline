@@ -19,9 +19,6 @@ kotlin {
   iosArm64()
   iosSimulatorArm64()
 
-  // Transitional: core:datastore is still a JVM-only module until ticket 17 lands.
-  jvm()
-
   sourceSets {
     commonMain.dependencies {
       api(project(":core:model"))

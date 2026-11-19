@@ -32,12 +32,7 @@ dependencies {
   api(project(":core:datastore"))
   api(project(":core:domain"))
 
-  api(libs.androidx.datastore)
-  implementation(libs.androidx.datastore.preferences)
-
   implementation(libs.kotlinx.coroutines.core)
-
-  implementation(libs.protobuf.kotlin.lite)
 
   testImplementation(libs.junit)
 }

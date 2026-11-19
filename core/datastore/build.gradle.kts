@@ -1,36 +1,38 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-  id("java-library")
-  alias(libs.plugins.kotlin.jvm)
-  alias(libs.plugins.protobuf)
+  alias(libs.plugins.kotlin.multiplatform)
+  alias(libs.plugins.android.kmp.library)
+  alias(libs.plugins.kotlin.serialization)
 }
 
-dependencies {
-  api(project(":core:domain"))
-  api(project(":core:model"))
+kotlin {
+  android {
+    namespace = "com.trm.sightline.core.datastore"
+    compileSdk = 37
+    minSdk = libs.versions.minSdk.get().toInt()
 
-  api(libs.androidx.datastore)
-  api(libs.protobuf.kotlin.lite)
+    compilerOptions { jvmTarget.set(JvmTarget.JVM_11) }
 
-  implementation(libs.kotlinx.coroutines.core)
-}
+    withHostTest {}
+  }
 
-java {
-  sourceCompatibility = JavaVersion.VERSION_11
-  targetCompatibility = JavaVersion.VERSION_11
-}
+  iosArm64()
+  iosSimulatorArm64()
 
-kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_11 } }
-
-protobuf {
-  protoc { artifact = libs.protobuf.protoc.get().toString() }
-  generateProtoTasks {
-    all().configureEach {
-      builtins {
-        named("java") { option("lite") }
-        register("kotlin") { option("lite") }
-      }
+  sourceSets {
+    commonMain.dependencies {
+      api(project(":core:model"))
+      api(libs.androidx.datastore.core)
+      implementation(libs.kotlinx.coroutines.core)
+      implementation(libs.kotlinx.serialization.json)
     }
+
+    iosMain.dependencies {
+      implementation(libs.androidx.datastore.core.okio)
+      implementation(libs.okio)
+    }
+
+    commonTest.dependencies { implementation(kotlin("test")) }
   }
 }
