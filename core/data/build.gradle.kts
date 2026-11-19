@@ -1,38 +1,34 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
-  alias(libs.plugins.android.library)
+  alias(libs.plugins.kotlin.multiplatform)
+  alias(libs.plugins.android.kmp.library)
   alias(libs.plugins.metro)
 }
 
-android {
-  namespace = "com.trm.sightline.core.data"
-  compileSdk { version = release(37) {} }
-
-  defaultConfig {
+kotlin {
+  android {
+    namespace = "com.trm.sightline.core.data"
+    compileSdk = 37
     minSdk = libs.versions.minSdk.get().toInt()
-    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+    compilerOptions { jvmTarget.set(JvmTarget.JVM_11) }
+
+    withHostTest {}
   }
 
-  buildFeatures { buildConfig = true }
+  iosArm64()
+  iosSimulatorArm64()
 
-  buildTypes {
-    release {
-      isMinifyEnabled = false
-      proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+  sourceSets {
+    commonMain.dependencies {
+      api(project(":api:photon"))
+      api(project(":core:datastore"))
+      api(project(":core:domain"))
+
+      implementation(libs.kotlinx.coroutines.core)
     }
+
+    commonTest.dependencies { implementation(kotlin("test")) }
   }
-
-  compileOptions {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
-  }
-}
-
-dependencies {
-  api(project(":api:photon"))
-  api(project(":core:datastore"))
-  api(project(":core:domain"))
-
-  implementation(libs.kotlinx.coroutines.core)
-
-  testImplementation(libs.junit)
 }

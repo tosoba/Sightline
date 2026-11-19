@@ -1,15 +1,15 @@
 package com.trm.sightline.core.data
 
 import com.trm.sightline.core.model.PlaceCategory
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
+import kotlin.test.Test
 
 class PlaceCategoryOsmTagsTest {
   @Test
   fun `every category maps to a non-empty tag list`() {
     PlaceCategory.entries.forEach { category ->
-      assertTrue("${category.name} must map to at least one OSM tag", category.osmTags.isNotEmpty())
+      assertTrue(category.osmTags.isNotEmpty(), "${category.name} must map to at least one OSM tag")
     }
   }
 
@@ -114,6 +114,6 @@ class PlaceCategoryOsmTagsTest {
       )
 
     assertEquals(PlaceCategory.entries.toSet(), expected.keys)
-    expected.forEach { (category, tags) -> assertEquals(category.name, tags, category.osmTags) }
+    expected.forEach { (category, tags) -> assertEquals(tags, category.osmTags, category.name) }
   }
 }
