@@ -2,6 +2,7 @@ package com.trm.sightline.shared
 
 import com.trm.sightline.core.domain.UserPreferencesRepository
 import com.trm.sightline.core.model.CustomLocation
+import com.trm.sightline.core.model.MapCameraPosition
 import com.trm.sightline.core.model.PlaceSearchRadius
 import kotlinx.coroutines.flow.Flow
 
@@ -11,6 +12,8 @@ class PreferencesFacade internal constructor(private val repository: UserPrefere
   val customLocation: Flow<CustomLocation?> = repository.getCustomLocation()
 
   val userLocationEnabled: Flow<Boolean> = repository.getUserLocationEnabled()
+
+  val lastMapPosition: Flow<MapCameraPosition?> = repository.getLastMapPosition()
 
   suspend fun setSearchRadius(radius: PlaceSearchRadius) {
     repository.setSearchRadius(radius)
@@ -22,5 +25,9 @@ class PreferencesFacade internal constructor(private val repository: UserPrefere
 
   suspend fun setUserLocationEnabled(enabled: Boolean) {
     repository.setUserLocationEnabled(enabled)
+  }
+
+  suspend fun setLastMapPosition(position: MapCameraPosition) {
+    repository.setLastMapPosition(position)
   }
 }
