@@ -8,30 +8,79 @@
 
 /* Begin PBXBuildFile section */
 		170BECB998A5F87CD8139741 /* NearbyPlacesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F9AE50F2B47D799F3203A3C /* NearbyPlacesView.swift */; };
+		1C81D6F669B7BB6D2FFCCEB3 /* MapLibre in Frameworks */ = {isa = PBXBuildFile; productRef = B26BDE9F5B50F285C10A6766 /* MapLibre */; };
+		34E35379848E919FD0600664 /* PlaceCategoryTitle.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5D18FDB4739848F99AC3737 /* PlaceCategoryTitle.swift */; };
 		3AECDADE4D165A4D4A4E8F93 /* SightlineApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0B8CB6AC9CE9D17AF4DFA1B /* SightlineApp.swift */; };
+		45228537D1FB75C2794D02E6 /* MapPageUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C0BE0BD2C453896E01CBEBB /* MapPageUITests.swift */; };
+		496C9FEC4B353DE50AA10ADC /* MainScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E4CA9E699DDB96F8B8D04BF /* MainScreen.swift */; };
+		6AD776884F44D9355F045FE0 /* light_style.json in Resources */ = {isa = PBXBuildFile; fileRef = F954F8A9CC4247902BFD7B5A /* light_style.json */; };
+		7AC8305FF41ED484BF8B4C31 /* dark_style.json in Resources */ = {isa = PBXBuildFile; fileRef = 7E89613391F5E3CE7C3B793B /* dark_style.json */; };
+		940905A6CF514EA14B1C4647 /* MapLibreMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F197093DA6B407F8BCCDF0F6 /* MapLibreMapView.swift */; };
+		DA13F1CEE97C74F908A08790 /* MapScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C60CB2DA6FF7C01D784C063 /* MapScreen.swift */; };
 		E2CF276D1A2EC5BC1F2008F5 /* NearbyPlacesModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D07A51E4E9017DC595E1DC10 /* NearbyPlacesModel.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		AF7B34C8ADC44424B579AC0A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 242FB5348943441C388468CE /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 78B53CC79860CBFC2F5543C6;
+			remoteInfo = iosApp;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		1F9AE50F2B47D799F3203A3C /* NearbyPlacesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearbyPlacesView.swift; sourceTree = "<group>"; };
+		323906AFB18147ABEDEBDB38 /* iosAppUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = iosAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		6C0BE0BD2C453896E01CBEBB /* MapPageUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapPageUITests.swift; sourceTree = "<group>"; };
+		7C60CB2DA6FF7C01D784C063 /* MapScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapScreen.swift; sourceTree = "<group>"; };
+		7E89613391F5E3CE7C3B793B /* dark_style.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = dark_style.json; sourceTree = "<group>"; };
 		86038AE1032E284E79B32AD6 /* iosApp.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = iosApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		9E4CA9E699DDB96F8B8D04BF /* MainScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainScreen.swift; sourceTree = "<group>"; };
 		D07A51E4E9017DC595E1DC10 /* NearbyPlacesModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearbyPlacesModel.swift; sourceTree = "<group>"; };
 		D0B8CB6AC9CE9D17AF4DFA1B /* SightlineApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SightlineApp.swift; sourceTree = "<group>"; };
+		F197093DA6B407F8BCCDF0F6 /* MapLibreMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapLibreMapView.swift; sourceTree = "<group>"; };
+		F5D18FDB4739848F99AC3737 /* PlaceCategoryTitle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceCategoryTitle.swift; sourceTree = "<group>"; };
+		F954F8A9CC4247902BFD7B5A /* light_style.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = light_style.json; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		EF8A6E9BFD470986D9D5C9B5 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1C81D6F669B7BB6D2FFCCEB3 /* MapLibre in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		38B69C3F79CD97858CF7B609 = {
 			isa = PBXGroup;
 			children = (
+				7B45CC5FD21777444CE3CA27 /* Resources */,
 				B53BB82DD7780F3657A03A11 /* Sources */,
+				F13ED58769885D2F4FFF934C /* UITests */,
 				94C98B8B3A2BFC1966447269 /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		7B45CC5FD21777444CE3CA27 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				7E89613391F5E3CE7C3B793B /* dark_style.json */,
+				F954F8A9CC4247902BFD7B5A /* light_style.json */,
+			);
+			path = Resources;
 			sourceTree = "<group>";
 		};
 		94C98B8B3A2BFC1966447269 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 				86038AE1032E284E79B32AD6 /* iosApp.app */,
+				323906AFB18147ABEDEBDB38 /* iosAppUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -39,11 +88,23 @@
 		B53BB82DD7780F3657A03A11 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				9E4CA9E699DDB96F8B8D04BF /* MainScreen.swift */,
+				F197093DA6B407F8BCCDF0F6 /* MapLibreMapView.swift */,
+				7C60CB2DA6FF7C01D784C063 /* MapScreen.swift */,
 				D07A51E4E9017DC595E1DC10 /* NearbyPlacesModel.swift */,
 				1F9AE50F2B47D799F3203A3C /* NearbyPlacesView.swift */,
+				F5D18FDB4739848F99AC3737 /* PlaceCategoryTitle.swift */,
 				D0B8CB6AC9CE9D17AF4DFA1B /* SightlineApp.swift */,
 			);
 			path = Sources;
+			sourceTree = "<group>";
+		};
+		F13ED58769885D2F4FFF934C /* UITests */ = {
+			isa = PBXGroup;
+			children = (
+				6C0BE0BD2C453896E01CBEBB /* MapPageUITests.swift */,
+			);
+			path = UITests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -55,6 +116,8 @@
 			buildPhases = (
 				A1E8647CABF1DE9EC8B0FE6B /* Build Shared framework */,
 				297B59D9CE634556D6007C40 /* Sources */,
+				1623B02D10928C8101C1F806 /* Resources */,
+				EF8A6E9BFD470986D9D5C9B5 /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -62,10 +125,29 @@
 			);
 			name = iosApp;
 			packageProductDependencies = (
+				B26BDE9F5B50F285C10A6766 /* MapLibre */,
 			);
 			productName = iosApp;
 			productReference = 86038AE1032E284E79B32AD6 /* iosApp.app */;
 			productType = "com.apple.product-type.application";
+		};
+		C6FCE5742C7A4D59A165E213 /* iosAppUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 23A9D56B778ED352702A9EC4 /* Build configuration list for PBXNativeTarget "iosAppUITests" */;
+			buildPhases = (
+				230C1ACAE727061B7F5FBD3D /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				1155A4D5B3A0F847BB943AC1 /* PBXTargetDependency */,
+			);
+			name = iosAppUITests;
+			packageProductDependencies = (
+			);
+			productName = iosAppUITests;
+			productReference = 323906AFB18147ABEDEBDB38 /* iosAppUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
 
@@ -76,6 +158,9 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1600;
 				TargetAttributes = {
+					C6FCE5742C7A4D59A165E213 = {
+						TestTargetID = 78B53CC79860CBFC2F5543C6;
+					};
 				};
 			};
 			buildConfigurationList = FF7CA1CA754D017066F1822F /* Build configuration list for PBXProject "iosApp" */;
@@ -87,15 +172,31 @@
 			);
 			mainGroup = 38B69C3F79CD97858CF7B609;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				80076D90A7FE34AABA9D364A /* XCRemoteSwiftPackageReference "maplibre-gl-native-distribution" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 94C98B8B3A2BFC1966447269 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
 				78B53CC79860CBFC2F5543C6 /* iosApp */,
+				C6FCE5742C7A4D59A165E213 /* iosAppUITests */,
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		1623B02D10928C8101C1F806 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7AC8305FF41ED484BF8B4C31 /* dark_style.json in Resources */,
+				6AD776884F44D9355F045FE0 /* light_style.json in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
 		A1E8647CABF1DE9EC8B0FE6B /* Build Shared framework */ = {
@@ -115,22 +216,42 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cd \"$SRCROOT/..\"\n./gradlew :shared:embedAndSignAppleFrameworkForXcode\n";
+			shellScript = "cd \"$SRCROOT/..\"\n./gradlew :syncIosMapStyles :shared:embedAndSignAppleFrameworkForXcode\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		230C1ACAE727061B7F5FBD3D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				45228537D1FB75C2794D02E6 /* MapPageUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		297B59D9CE634556D6007C40 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				496C9FEC4B353DE50AA10ADC /* MainScreen.swift in Sources */,
+				940905A6CF514EA14B1C4647 /* MapLibreMapView.swift in Sources */,
+				DA13F1CEE97C74F908A08790 /* MapScreen.swift in Sources */,
 				E2CF276D1A2EC5BC1F2008F5 /* NearbyPlacesModel.swift in Sources */,
 				170BECB998A5F87CD8139741 /* NearbyPlacesView.swift in Sources */,
+				34E35379848E919FD0600664 /* PlaceCategoryTitle.swift in Sources */,
 				3AECDADE4D165A4D4A4E8F93 /* SightlineApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		1155A4D5B3A0F847BB943AC1 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 78B53CC79860CBFC2F5543C6 /* iosApp */;
+			targetProxy = AF7B34C8ADC44424B579AC0A /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		11814011E7D6EC822BFBC66D /* Release */ = {
@@ -186,6 +307,25 @@
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		68B872497F35811E133D4018 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.trm.sightline.uitests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = iosApp;
 			};
 			name = Release;
 		};
@@ -249,6 +389,25 @@
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		87B17B5399C9FFE987AA9050 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.trm.sightline.uitests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = iosApp;
 			};
 			name = Debug;
 		};
@@ -321,6 +480,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		23A9D56B778ED352702A9EC4 /* Build configuration list for PBXNativeTarget "iosAppUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				87B17B5399C9FFE987AA9050 /* Debug */,
+				68B872497F35811E133D4018 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 		29DCA9F0B3A40325067EB163 /* Build configuration list for PBXNativeTarget "iosApp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -340,6 +508,25 @@
 			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		80076D90A7FE34AABA9D364A /* XCRemoteSwiftPackageReference "maplibre-gl-native-distribution" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/maplibre/maplibre-gl-native-distribution";
+			requirement = {
+				kind = exactVersion;
+				version = 7.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		B26BDE9F5B50F285C10A6766 /* MapLibre */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 80076D90A7FE34AABA9D364A /* XCRemoteSwiftPackageReference "maplibre-gl-native-distribution" */;
+			productName = MapLibre;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 242FB5348943441C388468CE /* Project object */;
 }
