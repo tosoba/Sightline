@@ -23,10 +23,13 @@
 
 ### What shipped
 
-Two commits on `feature/24-ios-ar-camera`:
+Commits on `feature/24-ios-ar-camera`:
 
-- `09a6e06 Expose shared AR math and blur state to iOS through the framework`
-- `6760e19 Render the AR camera feed with a Metal blur and stencil holes`
+- `Expose shared AR math and blur state to iOS through the framework`
+- `Render the AR camera feed with a Metal blur and stencil holes`
+- `Record the iOS AR camera port, its verification and the Mode.AR remap finding`
+
+Plus the routine `integration/kmp-ios-migration` merge (ticket 23 landed there).
 
 The Camera page of `MainScreen`'s pager now hosts `ARCameraScreen`; capture and motion start on appearance and stop when the page changes or the view disappears.
 `SightlineApp` and the map feature are untouched.
@@ -160,7 +163,7 @@ HUD frame timings while sweeping both hole styles at 402x621 points (1206x1863 d
 That is `MTLCommandBuffer.gpuStartTime/gpuEndTime` and a `CACurrentMediaTime` bracket, shown live in the HUD.
 
 Validation: launches with `SIMCTL_CHILD_MTL_DEBUG_LAYER=1` log `Metal API Validation Enabled` and produce no Metal errors, no command-buffer errors and no validation assertions, for both `sharp` and `frosted`.
-`MTL_SHADER_VALIDATION=1` (GPU shader validation) fails pipeline creation on this simulator with `buffer binding has argument index 31 that is greater than 30`; this is a known simulator-only limitation of that extra layer, not an app error, and it is not part of the gate.
+`MTL_SHADER_VALIDATION=1` (GPU shader validation) fails pipeline creation on this simulator with `buffer binding has argument index 31 that is greater than 30`; that extra layer is reported to be unqualified on the iOS 27 simulator and is not part of the gate.
 The shader compiles cleanly with `xcrun -sdk iphonesimulator metal -c iosApp/Sources/ARCameraShaders.metal`.
 
 ### What remains device-only

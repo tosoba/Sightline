@@ -188,17 +188,17 @@ final class ARCameraModel {
         let next = tracker.update(rotationMatrix: matrix)
         orientation = next
         let pitchDegrees = Double(next.pitch) * 180 / .pi
-        let azimuthDegrees = Double(next.azimuth) * 180 / .pi
-        let rollDegrees = Double(next.roll) * 180 / .pi
-        orientationText = String(
-            format: "az %.0f  pitch %.0f  roll %.0f",
-            Self.normalizedDegrees(azimuthDegrees),
-            pitchDegrees,
-            rollDegrees
-        )
         let outOfRange = abs(pitchDegrees) > Self.pitchLimitRadians * 180 / .pi
         if outOfRange != pitchOutOfRange {
             pitchOutOfRange = outOfRange
+        }
+        if options.debugHUD {
+            orientationText = String(
+                format: "az %.0f  pitch %.0f  roll %.0f",
+                Self.normalizedDegrees(Double(next.azimuth) * 180 / .pi),
+                pitchDegrees,
+                Double(next.roll) * 180 / .pi
+            )
         }
         recompute()
     }
@@ -277,16 +277,18 @@ final class ARCameraModel {
         }
         self.placements = placements
         markerCount = placements.count
-        layoutDebugText = String(
-            format: "vp %.0fx%.0f s%.0f  m0 %.0f,%.0f  m1 %.0f,%.0f",
-            viewport.width,
-            viewport.height,
-            displayScale,
-            placements.first?.rect.midX ?? -1,
-            placements.first?.rect.midY ?? -1,
-            placements.dropFirst().first?.rect.midX ?? -1,
-            placements.dropFirst().first?.rect.midY ?? -1
-        )
+        if options.debugHUD {
+            layoutDebugText = String(
+                format: "vp %.0fx%.0f s%.0f  m0 %.0f,%.0f  m1 %.0f,%.0f",
+                viewport.width,
+                viewport.height,
+                displayScale,
+                placements.first?.rect.midX ?? -1,
+                placements.first?.rect.midY ?? -1,
+                placements.dropFirst().first?.rect.midX ?? -1,
+                placements.dropFirst().first?.rect.midY ?? -1
+            )
+        }
 
         let scale = displayScale
         pushHoleRects(

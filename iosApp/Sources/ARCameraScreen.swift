@@ -32,6 +32,15 @@ struct ARCameraScreen: View {
                     if let renderer = camera.renderer {
                         ARCameraMetalView(renderer: renderer)
                             .ignoresSafeArea()
+                    } else {
+                        VStack(spacing: 8) {
+                            Image(systemName: "camera.metering.unknown")
+                                .font(.largeTitle)
+                            Text(camera.errorMessage ?? "Camera renderer unavailable.")
+                                .multilineTextAlignment(.center)
+                        }
+                        .foregroundStyle(.white)
+                        .padding()
                     }
                     ARCameraOverlay(placements: camera.placements)
                         .allowsHitTesting(false)
