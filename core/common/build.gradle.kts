@@ -33,6 +33,8 @@ kotlin {
       implementation(libs.ktor.serialization.kotlinx.json)
     }
 
+    commonTest.dependencies { implementation(kotlin("test")) }
+
     androidMain.dependencies {
       implementation(libs.androidx.activity.compose)
 
