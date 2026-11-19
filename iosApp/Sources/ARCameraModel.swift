@@ -16,6 +16,21 @@ struct ARPlacement: Identifiable, Equatable {
     let cornerRadius: CGFloat
 }
 
+/// Debug-only stand-in for a capture failure. Simulators have no camera device, so the OS cannot
+/// drive the permission or configuration branches there; `-arUnavailable` injects the same handler.
+enum ARSimulatedUnavailability: String {
+    case permission
+    case configuration
+}
+
+/// Why the page cannot show a live feed. Kept apart from the synthetic feed: a genuine no-camera
+/// device still renders the generated texture, while these states show a message and keep the real
+/// nearby places instead of the synthetic fixture.
+enum ARCameraUnavailability: Equatable {
+    case permissionDenied
+    case configurationFailed(String)
+}
+
 struct ARCameraLaunchOptions {
     let isArEntry: Bool
     let forceSynthetic: Bool
@@ -24,8 +39,12 @@ struct ARCameraLaunchOptions {
     let blurEnabled: Bool
     let holeFill: ARHoleFillStyle
     let debugHUD: Bool
+    let simulatedUnavailability: ARSimulatedUnavailability?
 
     static var current: ARCameraLaunchOptions { ARCameraLaunchOptions(arguments: ProcessInfo.processInfo.arguments) }
+
+    /// `-arCamera` pins scripted launches to the AR page; without it the pager keeps its own default.
+    var requestedPage: MainPage? { isArEntry ? .camera : nil }
 
     init(arguments: [String]) {
         func value(after flag: String) -> String? {
@@ -40,8 +59,9 @@ struct ARCameraLaunchOptions {
         attitude = value(after: "-arAttitude").flatMap(ARScriptedAttitude.init(rawValue:))
         blurStrength = value(after: "-arBlur").flatMap(Float.init)
         blurEnabled = !arguments.contains("-arNoBlur")
-        holeFill = value(after: "-arHoleFill").flatMap(ARHoleFillStyle.init(rawValue:)) ?? .sharp
+        holeFill = value(after: "-arHoleFill").flatMap(ARHoleFillStyle.init(rawValue:)) ?? .frosted
         debugHUD = arguments.contains("-arDebug")
+        simulatedUnavailability = value(after: "-arUnavailable").flatMap(ARSimulatedUnavailability.init(rawValue:))
     }
 }
 
@@ -69,6 +89,7 @@ final class ARCameraModel {
     private(set) var pitchOutOfRange = false
     private(set) var markerCount = 0
     private(set) var layoutDebugText = "-"
+    private(set) var unavailability: ARCameraUnavailability?
     private(set) var errorMessage: String?
 
     var blurEnabled: Bool = true
@@ -77,7 +98,6 @@ final class ARCameraModel {
     private var displayScale: CGFloat = 3
     private var orientation: Orientation?
     private var cameraLocation: GeoLocation?
-    private var syntheticLocation: GeoLocation?
     private var lastHoleRects: [ARHoleRect] = []
 
     private static let markerHeight: CGFloat = 88
@@ -116,24 +136,36 @@ final class ARCameraModel {
     private func start() {
         guard let renderer else { return }
         isRunning = true
+        unavailability = nil
         renderer.holeFillStyle = options.holeFill
         renderer.setContrastingColor(red: 0.22, green: 0.22, blue: 0.26)
 
         let useSynthetic = options.forceSynthetic || !ARCameraCapture.isCameraAvailable
         isSynthetic = useSynthetic
         if useSynthetic {
-            syntheticLocation = Self.syntheticCameraLocation
-            cameraLocation = syntheticLocation
+            cameraLocation = Self.syntheticCameraLocation
             renderer.setSyntheticTexture(ARCameraSyntheticFeed.makeTexture(device: renderer.device))
             statusText = "Synthetic feed"
         } else {
-            capture.onUnavailable = { [weak self] reason in
-                self?.statusText = reason
-                self?.isSynthetic = true
+            renderer.setSyntheticTexture(nil)
+            capture.onUnavailable = { [weak self] failure in
+                self?.handle(failure)
             }
             capture.start(renderer: renderer)
             cameraLocation = nearby.currentLocation
             statusText = "Live camera"
+        }
+        Self.log.info(
+            "start: \(useSynthetic ? "synthetic" : "live", privacy: .public) feed, camera \(ARCameraCapture.isCameraAvailable ? "present" : "absent", privacy: .public)"
+        )
+
+        if let simulated = options.simulatedUnavailability {
+            switch simulated {
+            case .permission:
+                handle(.permissionDenied)
+            case .configuration:
+                handle(.configurationFailed("The camera session could not be configured."))
+            }
         }
 
         motion.onRotationMatrix = { [weak self] matrix in
@@ -154,6 +186,40 @@ final class ARCameraModel {
         motion.stop()
         capture.stop()
         renderer?.setBlurEnabled(false, animated: false)
+        Self.log.info("stop")
+    }
+
+    private func handle(_ failure: ARCameraCaptureFailure) {
+        switch failure {
+        case .permissionDenied:
+            unavailability = .permissionDenied
+            statusText = "Camera access denied"
+        case .configurationFailed(let message):
+            unavailability = .configurationFailed(message)
+            statusText = "Camera unavailable"
+        }
+        Self.log.notice("camera unavailable: \(self.statusText, privacy: .public)")
+        isSynthetic = false
+        renderer?.setSyntheticTexture(nil)
+        cameraLocation = nearby.currentLocation
+        recompute()
+    }
+
+    /// Called when the app returns to the foreground: a round trip through Settings should recover
+    /// without leaving the page.
+    func resumeAfterSettings() {
+        guard unavailability == .permissionDenied,
+              options.simulatedUnavailability == nil,
+              let renderer,
+              ARCameraCapture.isAuthorized else {
+            return
+        }
+        Self.log.info("camera access granted while in Settings")
+        unavailability = nil
+        capture.start(renderer: renderer)
+        cameraLocation = nearby.currentLocation
+        statusText = "Live camera"
+        recompute()
     }
 
     // MARK: - Inputs
@@ -193,12 +259,13 @@ final class ARCameraModel {
             pitchOutOfRange = outOfRange
         }
         if options.debugHUD {
-            orientationText = String(
-                format: "az %.0f  pitch %.0f  roll %.0f",
-                Self.normalizedDegrees(Double(next.azimuth) * 180 / .pi),
-                pitchDegrees,
-                Double(next.roll) * 180 / .pi
-            )
+            func degrees(_ value: Double) -> String {
+                guard value.isFinite else { return "-" }
+                return String(format: "%.0f", value)
+            }
+            orientationText = "az \(degrees(Self.normalizedDegrees(Double(next.azimuth) * 180 / .pi)))"
+                + "  pitch \(degrees(pitchDegrees))"
+                + "  roll \(degrees(Double(next.roll) * 180 / .pi))"
         }
         recompute()
     }
@@ -278,15 +345,10 @@ final class ARCameraModel {
         self.placements = placements
         markerCount = placements.count
         if options.debugHUD {
-            layoutDebugText = String(
-                format: "vp %.0fx%.0f s%.0f  m0 %.0f,%.0f  m1 %.0f,%.0f",
-                viewport.width,
-                viewport.height,
-                displayScale,
-                placements.first?.rect.midX ?? -1,
-                placements.first?.rect.midY ?? -1,
-                placements.dropFirst().first?.rect.midX ?? -1,
-                placements.dropFirst().first?.rect.midY ?? -1
+            layoutDebugText = Self.debugLayoutText(
+                viewport: viewport,
+                displayScale: displayScale,
+                placements: placements
             )
         }
 
@@ -305,6 +367,26 @@ final class ARCameraModel {
         guard rects != lastHoleRects else { return }
         lastHoleRects = rects
         renderer?.setHoleRects(rects)
+    }
+
+    /// Metrics are blanked when no placement survives, which is exactly the pitch-out-of-range and
+    /// no-location states; formatting a missing rect would otherwise print a sentinel or `nan`.
+    private static func debugLayoutText(
+        viewport: CGSize,
+        displayScale: CGFloat,
+        placements: [ARPlacement]
+    ) -> String {
+        let viewportText = String(format: "vp %.0fx%.0f s%.0f", viewport.width, viewport.height, displayScale)
+        guard !placements.isEmpty else { return "\(viewportText)  no placements" }
+
+        func centre(_ placement: ARPlacement?) -> String {
+            guard let placement, placement.rect.midX.isFinite, placement.rect.midY.isFinite else {
+                return "-"
+            }
+            return String(format: "%.0f,%.0f", placement.rect.midX, placement.rect.midY)
+        }
+
+        return "\(viewportText)  m0 \(centre(placements.first))  m1 \(centre(placements.dropFirst().first))"
     }
 
     // MARK: - Synthetic fixtures
