@@ -20,10 +20,12 @@ final class NearbyPlacesModel {
 
     private(set) var searchRadius: PlaceSearchRadius = .oneKilometer
     private(set) var userLocationEnabled = false
+    private(set) var isLocationServicesDisabled = false
     private(set) var lastMapPosition: MapCameraPosition?
 
     private var locationTask: Task<Void, Never>?
     private var mapPositionTask: Task<Void, Never>?
+    private var locationEnabledTask: Task<Void, Never>?
 
     var isLocationDenied: Bool {
         authorization == .denied || authorization == .restricted
@@ -45,6 +47,19 @@ final class NearbyPlacesModel {
             group.addTask { await self.observeUserLocationEnabled() }
             group.addTask { await self.observeSearchRadius() }
             group.addTask { await self.observeLastMapPosition() }
+        }
+    }
+
+    /// `CLLocationManager.locationServicesEnabled()` has no change notification, so the shared flow
+    /// re-reads it per collection: restarting this observation is the re-check.
+    func refreshLocationServices() {
+        locationEnabledTask?.cancel()
+        locationEnabledTask = Task { [weak self] in
+            guard let self else { return }
+            for await enabled in self.shared.locationEnabled {
+                self.isLocationServicesDisabled = !enabled.boolValue
+                Self.logger.info("location services enabled: \(enabled.boolValue, privacy: .public)")
+            }
         }
     }
 

@@ -27,6 +27,7 @@ struct MainScreen: View {
     @State private var page: MainPage = ARCameraLaunchOptions.current.requestedPage ?? .camera
     @State private var path: [CategoryRoute] = []
     @State private var showsPreferences = false
+    @Environment(\.scenePhase) private var scenePhase
 
     init(shared: SightlineShared) {
         _model = State(initialValue: NearbyPlacesModel(shared: shared))
@@ -63,9 +64,15 @@ struct MainScreen: View {
                 PreferencesView(model: model)
             }
             .task {
+                model.refreshLocationServices()
                 await withTaskGroup(of: Void.self) { group in
                     group.addTask { await model.observeAuthorization() }
                     group.addTask { await model.observePreferences() }
+                }
+            }
+            .onChange(of: scenePhase) { _, phase in
+                if phase == .active {
+                    model.refreshLocationServices()
                 }
             }
         }
@@ -119,6 +126,12 @@ struct MainScreen: View {
         if model.isLocationDenied {
             LocationAccessBanner(
                 message: "Location access is off. Enable it in Settings to see nearby places.",
+                actionTitle: "Settings",
+                action: AppSettings.open
+            )
+        } else if model.isLocationServicesDisabled && model.userLocationEnabled {
+            LocationAccessBanner(
+                message: "Location services are off. Enable them in Settings to see nearby places.",
                 actionTitle: "Settings",
                 action: AppSettings.open
             )
