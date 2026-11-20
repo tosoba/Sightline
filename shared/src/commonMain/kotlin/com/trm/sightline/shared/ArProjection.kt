@@ -32,9 +32,6 @@ class ArProjection {
 
   fun project(location: GeoLocation): ProjectedMarker = projection.project(location)
 
-  fun projectAll(locations: List<GeoLocation>): List<ProjectedMarker> =
-    locations.map(projection::project)
-
   /**
    * Screen-space hole for one marker, centred on its projected position. The overlay draws its card
    * into this rect and the Metal renderer punches the matching stencil hole, so both stay aligned.

@@ -61,22 +61,6 @@ class GeoBoundsTest {
     assertEquals(50.0614, bounds?.north)
   }
 
-  @Test
-  fun `bounds center is the middle of the box`() {
-    val bounds =
-      GeoBounds.paddedAround(
-        places =
-          listOf(
-            place(id = "south-west", latitude = 50.0, longitude = 19.0),
-            place(id = "north-east", latitude = 50.2, longitude = 20.0),
-          ),
-        percentageIncrease = 0.0,
-      )
-
-    assertEquals(50.1, bounds?.center?.latitude)
-    assertEquals(19.5, bounds?.center?.longitude)
-  }
-
   private fun place(id: String, latitude: Double, longitude: Double) =
     Place(
       id = id,

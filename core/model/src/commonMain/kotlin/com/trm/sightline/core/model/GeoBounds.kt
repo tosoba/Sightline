@@ -6,9 +6,6 @@ data class GeoBounds(
   val east: Double,
   val north: Double,
 ) {
-  val center: GeoLocation
-    get() = GeoLocation(latitude = (south + north) / 2.0, longitude = (west + east) / 2.0)
-
   companion object {
     fun paddedAround(places: List<Place>, percentageIncrease: Double = 0.0): GeoBounds? {
       if (places.isEmpty()) return null

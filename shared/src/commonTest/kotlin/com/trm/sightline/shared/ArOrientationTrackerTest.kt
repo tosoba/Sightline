@@ -98,18 +98,6 @@ class ArOrientationTrackerTest {
   }
 
   @Test
-  fun `reset forgets the smoothed state`() {
-    val tracker = ArOrientationTracker()
-    tracker.update(uprightFacing(bearingRadians = 0.0))
-    tracker.update(uprightFacing(bearingRadians = 0.05))
-
-    tracker.reset()
-    val orientation = tracker.update(uprightFacing(bearingRadians = toRadians(40.0)))
-
-    assertAngle(toRadians(40.0), orientation.azimuth)
-  }
-
-  @Test
   fun `the tracker smooths pitch and roll independently of azimuth`() {
     val tracker = ArOrientationTracker()
     tracker.update(pitchedDownFacing(bearingRadians = 0.0, downRadians = 0.0))

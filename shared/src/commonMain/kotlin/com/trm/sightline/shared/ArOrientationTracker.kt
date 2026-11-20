@@ -52,10 +52,6 @@ class ArOrientationTracker {
     return smoothed
   }
 
-  fun reset() {
-    previous = null
-  }
-
   companion object {
     private const val CIRCLE = (PI * 2).toFloat()
     private const val SMOOTH_THRESHOLD = CIRCLE / 20f

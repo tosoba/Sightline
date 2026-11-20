@@ -6,7 +6,6 @@ import com.trm.sightline.core.model.GeoLocation
 import kotlin.math.PI
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /**
@@ -54,17 +53,6 @@ class ArProjectionTest {
     assertTrue(marker.isInFront)
     assertEquals(540.0, marker.screenX.toDouble(), CENTRE_TOLERANCE)
     assertEquals(1200.0, marker.screenY.toDouble(), CENTRE_TOLERANCE)
-  }
-
-  @Test
-  fun `projectAll keeps the input order and flags targets behind the camera`() {
-    val markers = projection().projectAll(listOf(north, south))
-
-    assertEquals(2, markers.size)
-    assertEquals(540.0, markers[0].screenX.toDouble(), CENTRE_TOLERANCE)
-    assertTrue(markers[0].isInFront)
-    assertFalse(markers[1].isInFront)
-    assertFalse(markers[1].isDrawn)
   }
 
   @Test
