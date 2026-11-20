@@ -144,12 +144,9 @@ struct ARCameraScreen: View {
                 .font(.subheadline)
                 .multilineTextAlignment(.center)
             if showsSettings {
-                Button("Open Settings") {
-                    guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
-                    UIApplication.shared.open(url)
-                }
-                .buttonStyle(.bordered)
-                .tint(.white)
+                Button("Open Settings", action: AppSettings.open)
+                    .buttonStyle(.bordered)
+                    .tint(.white)
             }
         }
         .foregroundStyle(.white)

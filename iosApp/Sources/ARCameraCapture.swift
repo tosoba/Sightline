@@ -2,7 +2,10 @@ import AVFoundation
 import Foundation
 import os
 
-enum ARCameraCaptureFailure {
+/// Why the page cannot show a live feed. Kept apart from the synthetic feed: a genuine no-camera
+/// device still renders the generated texture, while these states show a message and keep the real
+/// nearby places instead of the synthetic fixture.
+enum ARCameraUnavailability: Equatable {
     case permissionDenied
     case configurationFailed(String)
 }
@@ -25,7 +28,7 @@ final class ARCameraCapture: NSObject, AVCaptureVideoDataOutputSampleBufferDeleg
         AVCaptureDevice.authorizationStatus(for: .video) == .authorized
     }
 
-    var onUnavailable: (@MainActor (ARCameraCaptureFailure) -> Void)?
+    var onUnavailable: (@MainActor (ARCameraUnavailability) -> Void)?
 
     func start(renderer: ARCameraRenderer) {
         self.renderer = renderer
@@ -68,7 +71,7 @@ final class ARCameraCapture: NSObject, AVCaptureVideoDataOutputSampleBufferDeleg
         renderer = nil
     }
 
-    private func report(_ failure: ARCameraCaptureFailure) {
+    private func report(_ failure: ARCameraUnavailability) {
         let report = onUnavailable
         Task { @MainActor in report?(failure) }
     }

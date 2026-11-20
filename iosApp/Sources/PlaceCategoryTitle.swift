@@ -4,7 +4,7 @@ import SwiftUI
 extension PlaceCategory {
     var title: String {
         switch self {
-        case .sightsLandmarks: "Sights"
+        case .sightsLandmarks: "Sights & landmarks"
         case .artsCulture: "Arts & culture"
         case .foodDrink: "Food & drink"
         case .nightlife: "Nightlife"

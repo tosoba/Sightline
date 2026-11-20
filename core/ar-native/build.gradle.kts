@@ -2,7 +2,7 @@ plugins { alias(libs.plugins.android.library) }
 
 android {
   namespace = "com.trm.sightline.core.arnative"
-  compileSdk { version = release(37) {} }
+  compileSdk = 37
 
   defaultConfig {
     minSdk = libs.versions.minSdk.get().toInt()

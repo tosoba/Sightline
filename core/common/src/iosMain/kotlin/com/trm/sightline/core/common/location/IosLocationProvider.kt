@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -25,7 +26,9 @@ import platform.CoreLocation.kCLAuthorizationStatusAuthorizedWhenInUse
 import platform.CoreLocation.kCLAuthorizationStatusDenied
 import platform.CoreLocation.kCLAuthorizationStatusNotDetermined
 import platform.CoreLocation.kCLAuthorizationStatusRestricted
+import platform.CoreLocation.kCLErrorDenied
 import platform.CoreLocation.kCLLocationAccuracyBest
+import platform.Foundation.NSError
 import platform.Foundation.timeIntervalSince1970
 import platform.darwin.NSObject
 
@@ -42,8 +45,16 @@ class IosLocationProvider : LocationProvider {
   private val authorization =
     MutableStateFlow(locationManager.authorizationStatus.toLocationAuthorization())
 
+  // `locationServicesEnabled()` has no change broadcast, so the last reading is cached here and
+  // refreshed on every collection plus when CoreLocation reports a denial.
+  private val locationEnabled =
+    MutableStateFlow(CLLocationManager.locationServicesEnabled())
+
   // CLLocationManager.delegate is weak; the provider must own the delegate for callbacks to arrive.
-  private val delegate = LocationDelegate(updates, authorization)
+  private val delegate =
+    LocationDelegate(updates, authorization) {
+      locationEnabled.value = CLLocationManager.locationServicesEnabled()
+    }
 
   init {
     locationManager.delegate = delegate
@@ -68,7 +79,10 @@ class IosLocationProvider : LocationProvider {
       .throttleFirst(UPDATE_THROTTLE)
 
   override fun isLocationEnabled(): Flow<Boolean> =
-    flow { emit(CLLocationManager.locationServicesEnabled()) }
+    flow {
+        locationEnabled.value = CLLocationManager.locationServicesEnabled()
+        emitAll(locationEnabled)
+      }
 
   override val authorizationState: Flow<LocationAuthorization> = authorization.asStateFlow()
 
@@ -94,6 +108,7 @@ private const val MILLIS_PER_SECOND = 1_000.0
 private class LocationDelegate(
   private val updates: MutableSharedFlow<GeoLocation>,
   private val authorization: MutableStateFlow<LocationAuthorization>,
+  private val onLocationDenied: () -> Unit,
 ) : NSObject(), CLLocationManagerDelegateProtocol {
   override fun locationManager(
     manager: CLLocationManager,
@@ -105,6 +120,10 @@ private class LocationDelegate(
 
   override fun locationManagerDidChangeAuthorization(manager: CLLocationManager) {
     authorization.value = manager.authorizationStatus.toLocationAuthorization()
+  }
+
+  override fun locationManager(manager: CLLocationManager, didFailWithError: NSError) {
+    if (didFailWithError.code == kCLErrorDenied) onLocationDenied()
   }
 }
 

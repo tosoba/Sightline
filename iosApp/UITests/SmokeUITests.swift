@@ -53,11 +53,11 @@ final class SmokeUITests: XCTestCase {
         waitForPlaces(on: map)
         attachScreenshot(named: "smoke-map")
 
-        let category = app.buttons["Sights"]
+        let category = app.buttons["Sights & landmarks"]
         XCTAssertTrue(category.waitForExistence(timeout: Timeout.element))
         category.tap()
 
-        let categoryTitle = app.navigationBars["Sights"]
+        let categoryTitle = app.navigationBars["Sights & landmarks"]
         XCTAssertTrue(
             categoryTitle.waitForExistence(timeout: Timeout.loaded),
             "Tapping a category did not push the category screen."
@@ -74,7 +74,7 @@ final class SmokeUITests: XCTestCase {
             "Back navigation did not return to the pager."
         )
         XCTAssertTrue(
-            app.buttons["Sights"].exists,
+            app.buttons["Sights & landmarks"].exists,
             "The selected category was not preserved after back navigation."
         )
 

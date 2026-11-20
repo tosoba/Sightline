@@ -91,15 +91,15 @@ struct MapLibreMapView: UIViewRepresentable {
         func update(places: [Place]) {
             guard places.map(\.id) != self.places.map(\.id) else { return }
             self.places = places
-            syncAnnotations(force: true)
-            fitPlacesIfNeeded(force: true)
+            syncAnnotations()
+            fitPlacesIfNeeded()
         }
 
         func mapView(_: MLNMapView, didFinishLoading _: MLNStyle) {
             styleLoaded = true
             applyRestoredCameraIfNeeded()
-            syncAnnotations(force: true)
-            fitPlacesIfNeeded(force: true)
+            syncAnnotations()
+            fitPlacesIfNeeded()
         }
 
         func mapView(_ mapView: MLNMapView, regionDidChangeAnimated _: Bool) {
@@ -145,9 +145,8 @@ struct MapLibreMapView: UIViewRepresentable {
             )
         }
 
-        private func syncAnnotations(force: Bool) {
+        private func syncAnnotations() {
             guard let mapView, styleLoaded else { return }
-            guard force || annotations.count != places.count else { return }
 
             if !annotations.isEmpty {
                 mapView.removeAnnotations(annotations)
@@ -173,7 +172,7 @@ struct MapLibreMapView: UIViewRepresentable {
                 : "Nearby places map, \(places.count) places"
         }
 
-        private func fitPlacesIfNeeded(force: Bool) {
+        private func fitPlacesIfNeeded() {
             guard let mapView, styleLoaded else { return }
 
             guard let bounds = GeoBounds.companion.paddedAround(
@@ -189,7 +188,7 @@ struct MapLibreMapView: UIViewRepresentable {
                 return
             }
 
-            guard force || bounds != lastFittedBounds else { return }
+            guard bounds != lastFittedBounds else { return }
             lastFittedBounds = bounds
             hasFittedPlaces = true
 
@@ -207,7 +206,7 @@ struct MapLibreMapView: UIViewRepresentable {
             mapView.setVisibleCoordinateBounds(
                 coordinateBounds,
                 edgePadding: UIEdgeInsets(top: 64, left: 40, bottom: 120, right: 40),
-                animated: force,
+                animated: true,
                 completionHandler: nil
             )
         }

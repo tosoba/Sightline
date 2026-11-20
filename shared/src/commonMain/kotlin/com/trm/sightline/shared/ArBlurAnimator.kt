@@ -38,9 +38,6 @@ class ArBlurAnimator {
   private var green = NOT_SET
   private var blue = NOT_SET
 
-  val isBlurEnabled: Boolean
-    get() = blurEnabled
-
   fun setBlurEnabled(enabled: Boolean, animated: Boolean) {
     if (blurEnabled == enabled) return
     blurEnabled = enabled

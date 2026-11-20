@@ -281,3 +281,10 @@ iosSimulatorArm64Test...SightlineSharedTest tests="5" failures="0"
 $ cd iosApp && xcodegen generate
 # no diff after a second generate
 ```
+
+### Review fix: location services disabled state
+
+The root banner gained the third state the shared location API already supported: when location services are off while "Use my location" is on, `MainScreen` shows the same `LocationAccessBanner` with the Settings deep link instead of staying silent.
+`NearbyPlacesModel.refreshLocationServices()` starts the shared `locationEnabled` observation on launch and restarts it on every `scenePhase == .active`, because `CLLocationManager.locationServicesEnabled()` has no change notification; restarting the collection is the re-check.
+`IosLocationProvider` now caches the reading in a `StateFlow` and refreshes it from the delegate's `didFailWithError` when the error is `CLError.denied`, so a running observation also sees the change without a foreground round trip.
+The simulator always reports location services as enabled, so this branch is device-only; the three UI tests are unaffected and still pass.
