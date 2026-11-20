@@ -271,3 +271,24 @@ Denial-path evidence, and its limits, on the simulator:
 
 What was deliberately left alone: `NearbyPlacesView`, the map feature, the style sync pre-build step, `project.yml`, and the shared Kotlin AR facade.
 The ticket stays `ready-for-human` because the device-only items are still open.
+
+### Review fix: iOS marker layout comes from the shared slot assignment
+
+The iOS overlay no longer re-derives marker positions in Swift.
+`ARCameraModel.recompute` calls `MarkerSlotAssignment.assign` from `core/ar` commonMain with the same geometry Android's `ARMarkerRenderer` passes: marker width, marker height, a half-a-width overlap guard (`MARKER_OVERLAP_GUARD_FRACTION`), the vertical row gap, the row count for the current viewport, and the base row at the top padding plus half a marker.
+Markers whose bearings fall inside the shared angular guard now stack into rows instead of overlapping, and the rows and pages come from one implementation for both platforms.
+
+What stays in Swift, and why:
+
+- marker width (`min(viewport.width * 0.42, 240)`, floor 150) and height (88) are the iOS pixel constants the overlay and the Metal stencil holes already use;
+- only `page == 0` slots are drawn, because the iOS page has no marker pager to reach later pages, while Android still pages through them;
+- the slot layout is cached and recomputed only when the viewport, the place set, or the device position changes by more than 10 m, matching Android's `LOCATION_REASSIGN_THRESHOLD_METERS`; the per-frame projection still supplies each marker's x;
+- the old `maxMarkers = 8` cap is gone: the shared row count now bounds what the first page can hold, so a second cap would be redundant.
+
+Two Swift defects fixed while wiring it:
+
+- the pitch limit compared a constant named radians in degree space (`pitchLimitRadians * 180 / .pi`); it is now `pitchLimitDegrees = 45` and the numeric threshold is unchanged;
+- `ARCameraCaptureFailure` duplicated `ARCameraUnavailability` and `handle` was a pure identity mapping; there is now one `ARCameraUnavailability`, declared next to the capture that produces it.
+
+Proof: `screenshots/ios_ar_slot_stacking.png`, captured with `-arSynthetic -arAttitude uprightNorth` where the two fixture markers are 24 degrees apart, inside the shared angular guard.
+The debug HUD in the same pose reports `vp 402x585 s3  m0 96,60  m1 306,164  markers 2`, which are the first two shared slots (`baseY` then `baseY + markerHeight + verticalSpacing`).
