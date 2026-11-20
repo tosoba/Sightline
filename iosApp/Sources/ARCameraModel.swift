@@ -23,14 +23,6 @@ enum ARSimulatedUnavailability: String {
     case configuration
 }
 
-/// Why the page cannot show a live feed. Kept apart from the synthetic feed: a genuine no-camera
-/// device still renders the generated texture, while these states show a message and keep the real
-/// nearby places instead of the synthetic fixture.
-enum ARCameraUnavailability: Equatable {
-    case permissionDenied
-    case configurationFailed(String)
-}
-
 struct ARCameraLaunchOptions {
     let isArEntry: Bool
     let forceSynthetic: Bool
@@ -99,12 +91,19 @@ final class ARCameraModel {
     private var orientation: Orientation?
     private var cameraLocation: GeoLocation?
     private var lastHoleRects: [ARHoleRect] = []
+    private var cachedSlots: CachedSlots?
 
     private static let markerHeight: CGFloat = 88
-    private static let markerSpacing: CGFloat = 12
+    private static let markerVerticalSpacing: CGFloat = 16
+    private static let markerOverlapGuardFraction: CGFloat = 0.5
+    private static let markerTopPadding: CGFloat = 16
+    private static let minMarkerRows = 1
+    private static let maxMarkerRows = 6
     private static let cornerRadius: CGFloat = 16
-    private static let maxMarkers = 8
-    private static let pitchLimitRadians = Double.pi / 4
+    private static let pitchLimitDegrees: Double = 45
+    /// Same reassign policy as Android's `ARMarkerRenderer`: a slot layout only depends on the
+    /// device position, not on the camera orientation, so a small move reuses it.
+    private static let locationReassignThresholdMeters: Float = 10
 
     init(nearby: NearbyPlacesModel, options: ARCameraLaunchOptions = .current) {
         self.nearby = nearby
@@ -189,13 +188,12 @@ final class ARCameraModel {
         Self.log.info("stop")
     }
 
-    private func handle(_ failure: ARCameraCaptureFailure) {
+    private func handle(_ failure: ARCameraUnavailability) {
+        unavailability = failure
         switch failure {
         case .permissionDenied:
-            unavailability = .permissionDenied
             statusText = "Camera access denied"
-        case .configurationFailed(let message):
-            unavailability = .configurationFailed(message)
+        case .configurationFailed:
             statusText = "Camera unavailable"
         }
         Self.log.notice("camera unavailable: \(self.statusText, privacy: .public)")
@@ -254,7 +252,7 @@ final class ARCameraModel {
         let next = tracker.update(rotationMatrix: matrix)
         orientation = next
         let pitchDegrees = Double(next.pitch) * 180 / .pi
-        let outOfRange = abs(pitchDegrees) > Self.pitchLimitRadians * 180 / .pi
+        let outOfRange = abs(pitchDegrees) > Self.pitchLimitDegrees
         if outOfRange != pitchOutOfRange {
             pitchOutOfRange = outOfRange
         }
@@ -299,16 +297,18 @@ final class ARCameraModel {
 
         let markerWidth = max(min(viewport.width * 0.42, 240), 150)
         let places: [Place] = isSynthetic ? Self.syntheticPlaces() : nearby.places
+        let candidates = places.map { Self.candidate(for: $0, camera: location) }
+        let slots = slotAssignment(
+            for: candidates,
+            at: location,
+            markerWidth: markerWidth
+        )
+
         var placements: [ARPlacement] = []
-        for place in places {
-            let placeLocation = GeoLocation(
-                latitude: place.latitude,
-                longitude: place.longitude,
-                altitude: location.altitude + Self.altitudeOffset(for: place),
-                horizontalAccuracyMeters: nil,
-                timestampMillis: 0
-            )
-            let projected = projection.project(location: placeLocation)
+        for candidate in candidates {
+            // No marker pager on iOS: rows past the viewport are dropped instead of being paged.
+            guard let slot = slots[candidate.place.id], slot.page == 0 else { continue }
+            let projected = projection.project(location: candidate.location)
             guard projected.isInFront, projected.isDrawn else { continue }
             let rect = projection.markerRect(
                 marker: projected,
@@ -318,17 +318,17 @@ final class ARCameraModel {
             )
             let frame = CGRect(
                 x: CGFloat(rect.left),
-                y: CGFloat(rect.top),
+                y: CGFloat(slot.y) - Self.markerHeight / 2,
                 width: CGFloat(rect.width),
                 height: CGFloat(rect.height)
             )
             guard frame.maxY > 0, frame.minY < viewport.height else { continue }
             placements.append(
                 ARPlacement(
-                    id: place.id,
-                    name: place.name,
-                    category: place.category,
-                    distanceMeters: placeLocation.distanceTo(other: location),
+                    id: candidate.place.id,
+                    name: candidate.place.name,
+                    category: candidate.place.category,
+                    distanceMeters: candidate.target.distance,
                     rect: frame,
                     cornerRadius: Self.cornerRadius
                 )
@@ -336,9 +336,6 @@ final class ARCameraModel {
         }
 
         placements.sort { $0.distanceMeters < $1.distanceMeters }
-        if placements.count > Self.maxMarkers {
-            placements.removeLast(placements.count - Self.maxMarkers)
-        }
         if pitchOutOfRange {
             placements = []
         }
@@ -367,6 +364,90 @@ final class ARCameraModel {
         guard rects != lastHoleRects else { return }
         lastHoleRects = rects
         renderer?.setHoleRects(rects)
+    }
+
+    private struct MarkerCandidate {
+        let place: Place
+        let location: GeoLocation
+        let target: MarkerSlotTarget
+    }
+
+    private struct CachedSlots {
+        let location: GeoLocation
+        let viewport: CGSize
+        let placeIDs: [String]
+        let slots: [String: MarkerSlot]
+    }
+
+    private func slotAssignment(
+        for candidates: [MarkerCandidate],
+        at location: GeoLocation,
+        markerWidth: CGFloat
+    ) -> [String: MarkerSlot] {
+        let placeIDs = candidates.map(\.place.id)
+        if let cached = cachedSlots,
+            cached.viewport == viewport,
+            cached.placeIDs == placeIDs,
+            cached.location.distanceTo(other: location) <= Self.locationReassignThresholdMeters {
+            return cached.slots
+        }
+
+        let slots = MarkerSlotAssignment.shared.assign(
+            povLocation: location,
+            targets: candidates.map(\.target),
+            geometry: Self.slotGeometry(
+                markerWidth: markerWidth,
+                markerHeight: Self.markerHeight,
+                viewportHeight: viewport.height
+            ),
+            canvasWidth: Int32(viewport.width.rounded()),
+            canvasHeight: Int32(viewport.height.rounded())
+        )
+        cachedSlots = CachedSlots(
+            location: location,
+            viewport: viewport,
+            placeIDs: placeIDs,
+            slots: slots
+        )
+        return slots
+    }
+
+    private static func candidate(for place: Place, camera: GeoLocation) -> MarkerCandidate {
+        let location = GeoLocation(
+            latitude: place.latitude,
+            longitude: place.longitude,
+            altitude: camera.altitude + altitudeOffset(for: place),
+            horizontalAccuracyMeters: nil,
+            timestampMillis: 0
+        )
+        return MarkerCandidate(
+            place: place,
+            location: location,
+            target: MarkerSlotTarget(
+                id: place.id,
+                location: location,
+                distance: location.distanceTo(other: camera)
+            )
+        )
+    }
+
+    /// Mirrors `ARMarkerRenderer`'s pixel constants so both platforms feed the shared slot assignment
+    /// the same geometry: a row per marker height plus the vertical gap, half a marker of overlap
+    /// guard, and the first row at the top padding plus half a marker.
+    private static func slotGeometry(
+        markerWidth: CGFloat,
+        markerHeight: CGFloat,
+        viewportHeight: CGFloat
+    ) -> MarkerSlotGeometry {
+        let rows = Int(viewportHeight / (markerHeight + markerVerticalSpacing))
+        return MarkerSlotGeometry(
+            markerWidthPx: Float(markerWidth),
+            markerHeightPx: Float(markerHeight),
+            overlapGuardPx: Float(markerWidth * markerOverlapGuardFraction),
+            verticalSpacingPx: Float(markerVerticalSpacing),
+            rows: Int32(min(max(rows, minMarkerRows), maxMarkerRows)),
+            baseY: Float(markerTopPadding + markerHeight / 2)
+        )
     }
 
     /// Metrics are blanked when no placement survives, which is exactly the pitch-out-of-range and
