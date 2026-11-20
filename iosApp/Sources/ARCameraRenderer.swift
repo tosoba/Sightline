@@ -378,6 +378,18 @@ final class ARCameraRenderer: NSObject, MTKViewDelegate {
         )
     }
 
+    /// Uniforms for a pass that covers its whole target: no offset and no rounding. Only the frosted
+    /// hole fill tints, so every other pass keeps the shader's "do not tint" sentinel.
+    private func passUniforms(
+        width: Float,
+        height: Float,
+        lod: Float,
+        contrast: Bool = false,
+        frame: ArBlurFrame
+    ) -> ARShaderUniforms {
+        uniforms(width: width, height: height, lod: lod, contrast: contrast, frame: frame)
+    }
+
     private func encodeFullScreen(
         _ encoder: MTLRenderCommandEncoder,
         pipeline: MTLRenderPipelineState,
@@ -431,7 +443,7 @@ final class ARCameraRenderer: NSObject, MTKViewDelegate {
         var input = source
         for (index, pass) in passes.enumerated() {
             let target = pass.0
-            let uniforms = uniforms(
+            let uniforms = passUniforms(
                 width: Float(target.width),
                 height: Float(target.height),
                 lod: lod,
@@ -530,11 +542,10 @@ final class ARCameraRenderer: NSObject, MTKViewDelegate {
             return
         }
         if frame.shouldBlur {
-            let finalUniforms = uniforms(
+            let finalUniforms = passUniforms(
                 width: Float(size.width),
                 height: Float(size.height),
                 lod: frame.lod,
-                contrast: false,
                 frame: frame
             )
             encodeFullScreen(
@@ -545,11 +556,10 @@ final class ARCameraRenderer: NSObject, MTKViewDelegate {
                 uniforms: finalUniforms
             )
         } else {
-            let fullUniforms = uniforms(
+            let fullUniforms = passUniforms(
                 width: Float(size.width),
                 height: Float(size.height),
                 lod: frame.lod,
-                contrast: false,
                 frame: frame
             )
             encodeFullScreen(
@@ -571,11 +581,10 @@ final class ARCameraRenderer: NSObject, MTKViewDelegate {
             case .sharp:
                 encoder.setStencilReferenceValue(1)
                 encoder.setScissorRect(MTLScissorRect(x: 0, y: 0, width: Int(size.width), height: Int(size.height)))
-                let fillUniforms = uniforms(
+                let fillUniforms = passUniforms(
                     width: Float(size.width),
                     height: Float(size.height),
                     lod: frame.lod,
-                    contrast: false,
                     frame: frame
                 )
                 encodeFullScreen(
@@ -609,7 +618,7 @@ final class ARCameraRenderer: NSObject, MTKViewDelegate {
                 }
                 fillEncoder.setStencilReferenceValue(1)
                 fillEncoder.setScissorRect(MTLScissorRect(x: 0, y: 0, width: Int(size.width), height: Int(size.height)))
-                let frostedUniforms = uniforms(
+                let frostedUniforms = passUniforms(
                     width: Float(size.width),
                     height: Float(size.height),
                     lod: maxLod,
