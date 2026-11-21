@@ -15,7 +15,9 @@ enum ARCameraSyntheticFeed {
             bitsPerComponent: 8,
             bytesPerRow: width * 4,
             space: CGColorSpaceCreateDeviceRGB(),
-            bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue | CGBitmapInfo.byteOrder32Little.rawValue
+            // Opaque straight BGRA, matching the opaque camera feed. The blur shader no longer
+            // un-premultiplies by alpha, so a premultiplied test pattern would render darker.
+            bitmapInfo: CGImageAlphaInfo.noneSkipFirst.rawValue | CGBitmapInfo.byteOrder32Little.rawValue
         ) else {
             return nil
         }

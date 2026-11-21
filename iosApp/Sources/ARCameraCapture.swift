@@ -16,7 +16,8 @@ final class ARCameraCapture: NSObject, AVCaptureVideoDataOutputSampleBufferDeleg
     private static let log = Logger(subsystem: "com.trm.sightline", category: "arcamera.capture")
 
     private let session = AVCaptureSession()
-    private let queue = DispatchQueue(label: "com.trm.sightline.arcamera.capture")
+    private let sessionQueue = DispatchQueue(label: "com.trm.sightline.arcamera.session")
+    private let videoQueue = DispatchQueue(label: "com.trm.sightline.arcamera.video")
     private weak var renderer: ARCameraRenderer?
     private var isConfigured = false
 
@@ -63,7 +64,7 @@ final class ARCameraCapture: NSObject, AVCaptureVideoDataOutputSampleBufferDeleg
 
     func stop() {
         Self.log.info("stop requested: session \(self.session.isRunning ? "running" : "idle", privacy: .public)")
-        queue.async { [session] in
+        sessionQueue.async { [session] in
             guard session.isRunning else { return }
             session.stopRunning()
             Self.log.info("capture session stopped")
@@ -87,7 +88,7 @@ final class ARCameraCapture: NSObject, AVCaptureVideoDataOutputSampleBufferDeleg
     }
 
     private func startSession() {
-        queue.async { [weak self] in
+        sessionQueue.async { [weak self] in
             guard let self else { return }
             if !self.isConfigured {
                 guard self.configure() else {
@@ -114,7 +115,7 @@ final class ARCameraCapture: NSObject, AVCaptureVideoDataOutputSampleBufferDeleg
         let output = AVCaptureVideoDataOutput()
         output.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA]
         output.alwaysDiscardsLateVideoFrames = true
-        output.setSampleBufferDelegate(self, queue: queue)
+        output.setSampleBufferDelegate(self, queue: videoQueue)
 
         session.beginConfiguration()
         session.sessionPreset = .hd1280x720

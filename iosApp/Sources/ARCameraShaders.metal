@@ -47,7 +47,10 @@ static float4 gaussBlur(texture2d<float> tex, sampler smp, float2 uv, float2 ste
         c += (tex.sample(smp, uv + step * i) + tex.sample(smp, uv - step * i)) *
              exp(-i * i * kInvTwoSigmaSqr);
     }
-    return c / c.a;
+    // Android divides by alpha here, but its external OES texture always returns alpha 1, so the
+    // divide is a no-op. AVFoundation's BGRA camera buffers carry alpha 0, so the literal port
+    // divides by zero and blanks the feed (white). The camera is opaque: keep the RGB, force alpha.
+    return float4(c.rgb, 1.0);
 }
 
 static float4 applyContrast(float3 rgb, float alpha, constant ARShaderUniforms &u) {
