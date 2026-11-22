@@ -28,8 +28,8 @@ targets:
         TARGETED_DEVICE_FAMILY: "1"
         GENERATE_INFOPLIST_FILE: NO
         INFOPLIST_FILE: Support/Info.plist
-        CODE_SIGNING_ALLOWED: NO
-        CODE_SIGNING_REQUIRED: NO
+        CODE_SIGNING_ALLOWED: YES
+        CODE_SIGN_STYLE: Automatic
         ENABLE_USER_SCRIPT_SANDBOXING: NO
         FRAMEWORK_SEARCH_PATHS:
           - $(inherited)
