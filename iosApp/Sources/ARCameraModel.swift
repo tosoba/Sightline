@@ -184,6 +184,7 @@ final class ARCameraModel {
         isRunning = false
         motion.stop()
         capture.stop()
+        renderer?.clearCameraTexture()
         renderer?.setBlurEnabled(false, animated: false)
         Self.log.info("stop")
     }

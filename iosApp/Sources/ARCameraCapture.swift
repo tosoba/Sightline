@@ -21,6 +21,14 @@ final class ARCameraCapture: NSObject, AVCaptureVideoDataOutputSampleBufferDeleg
     private weak var renderer: ARCameraRenderer?
     private var isConfigured = false
 
+    deinit {
+        // Safety net: if the object is deallocated without an explicit stop (e.g. app termination),
+        // ensure the hardware is released so other apps can use the camera.
+        if session.isRunning {
+            session.stopRunning()
+        }
+    }
+
     static var isCameraAvailable: Bool {
         AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) != nil
     }
@@ -64,7 +72,11 @@ final class ARCameraCapture: NSObject, AVCaptureVideoDataOutputSampleBufferDeleg
 
     func stop() {
         Self.log.info("stop requested: session \(self.session.isRunning ? "running" : "idle", privacy: .public)")
-        sessionQueue.async { [session] in
+        // Stop synchronously on the session queue so the camera hardware is fully released before
+        // this method returns. This is critical on app background / termination: an async dispatch
+        // may never execute, leaving the AVCaptureSession attached to the camera device and
+        // corrupting the hardware pipeline device-wide (black / green frames in other apps).
+        sessionQueue.sync { [session] in
             guard session.isRunning else { return }
             session.stopRunning()
             Self.log.info("capture session stopped")

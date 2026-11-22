@@ -5,6 +5,7 @@ import UIKit
 
 struct ARCameraMetalView: UIViewRepresentable {
     let renderer: ARCameraRenderer
+    var isPaused: Bool = false
 
     func makeUIView(context: Context) -> MTKView {
         let view = MTKView(frame: .zero, device: renderer.device)
@@ -12,7 +13,9 @@ struct ARCameraMetalView: UIViewRepresentable {
         return view
     }
 
-    func updateUIView(_ uiView: MTKView, context: Context) {}
+    func updateUIView(_ uiView: MTKView, context: Context) {
+        uiView.isPaused = isPaused
+    }
 }
 
 /// The AR camera page. It takes the shared places model (owned by `MainScreen`) so the camera does
@@ -32,7 +35,7 @@ struct ARCameraScreen: View {
 
                 if let camera {
                     if let renderer = camera.renderer {
-                        ARCameraMetalView(renderer: renderer)
+                        ARCameraMetalView(renderer: renderer, isPaused: !camera.isRunning)
                             .ignoresSafeArea()
                     } else {
                         messagePanel(
@@ -87,8 +90,14 @@ struct ARCameraScreen: View {
                 camera?.setActive(active)
             }
             .onChange(of: scenePhase) { _, phase in
-                if phase == .active {
+                switch phase {
+                case .active:
                     camera?.resumeAfterSettings()
+                    if isActive { camera?.setActive(true) }
+                case .background:
+                    camera?.setActive(false)
+                default:
+                    break
                 }
             }
             .onChange(of: nearbyModel.places) { _, _ in

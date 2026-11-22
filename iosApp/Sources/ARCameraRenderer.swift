@@ -232,6 +232,15 @@ final class ARCameraRenderer: NSObject, MTKViewDelegate {
         cameraLock.unlock()
     }
 
+    /// Drops the held camera texture so the renderer stops presenting stale frames after the
+    /// capture session is torn down. The next `draw` will early-return until a new frame arrives.
+    func clearCameraTexture() {
+        cameraLock.lock()
+        latestCameraTexture = nil
+        latestCameraTextureRef = nil
+        cameraLock.unlock()
+    }
+
     private func currentSource() -> (MTLTexture, CVMetalTexture?)? {
         cameraLock.lock()
         defer { cameraLock.unlock() }
