@@ -292,3 +292,10 @@ Two Swift defects fixed while wiring it:
 
 Proof: `screenshots/ios_ar_slot_stacking.png`, captured with `-arSynthetic -arAttitude uprightNorth` where the two fixture markers are 24 degrees apart, inside the shared angular guard.
 The debug HUD in the same pose reports `vp 402x585 s3  m0 96,60  m1 306,164  markers 2`, which are the first two shared slots (`baseY` then `baseY + markerHeight + verticalSpacing`).
+
+### Superseded by `ios-parity-and-ipad`
+
+The remaining AR camera parity items (keeping the live camera feed sharp by default with frosted stencil blur inside AR Marker cards, full-frame blur only when pitch exceeds ±45° or an obscuring sheet covers the camera, landscape orientation with `ScreenRotation` and `AVCaptureConnection.videoRotationAngle`, Marker Slot pagination with the floating page picker, and 4-orientation iPad scaling) are specified in [Spec: iOS Feature, UX, and Orientation Parity + Native iPad Support](../../ios-parity-and-ipad/spec.md) and tracked in:
+
+- [06: iOS AR camera blur, landscape orientation, and slot pagination](../../ios-parity-and-ipad/issues/06-ios-ar-camera-blur-orientation-pagination.md)
+- [09: Native iPad adaptive support and 4-orientation AR scaling](../../ios-parity-and-ipad/issues/09-ipad-adaptive-support-and-ar-scaling.md)

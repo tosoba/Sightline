@@ -288,3 +288,11 @@ The root banner gained the third state the shared location API already supported
 `NearbyPlacesModel.refreshLocationServices()` starts the shared `locationEnabled` observation on launch and restarts it on every `scenePhase == .active`, because `CLLocationManager.locationServicesEnabled()` has no change notification; restarting the collection is the re-check.
 `IosLocationProvider` now caches the reading in a `StateFlow` and refreshes it from the delegate's `didFailWithError` when the error is `CLError.denied`, so a running observation also sees the change without a foreground round trip.
 The simulator always reports location services as enabled, so this branch is device-only; the three UI tests are unaffected and still pass.
+
+### Reworked by `ios-parity-and-ipad`
+
+The full-screen `TabView` layout (retiring the top header and `PreferencesView`), floating Search Radius `Menu` and Places & Location trigger pills, native system `.sheet` with independent multi-category toggles and zero selected categories on launch, and interactive map+list `CategoryPlacesScreen` (with Apple Maps handoff) are specified in [Spec: iOS Feature, UX, and Orientation Parity + Native iPad Support](../../ios-parity-and-ipad/spec.md) and tracked in:
+
+- [07: Shared PlacesCoordinator and address facade](../../ios-parity-and-ipad/issues/07-shared-places-coordinator-and-address-facade.md)
+- [08: iOS full-screen tabs, HIG places sheet, and custom location UI](../../ios-parity-and-ipad/issues/08-ios-fullscreen-tabs-places-sheet-and-custom-location.md)
+- [09: Native iPad adaptive support and 4-orientation AR scaling](../../ios-parity-and-ipad/issues/09-ipad-adaptive-support-and-ar-scaling.md)
