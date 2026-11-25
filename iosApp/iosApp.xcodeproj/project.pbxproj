@@ -7,30 +7,30 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		170BECB998A5F87CD8139741 /* NearbyPlacesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F9AE50F2B47D799F3203A3C /* NearbyPlacesView.swift */; };
 		1C81D6F669B7BB6D2FFCCEB3 /* MapLibre in Frameworks */ = {isa = PBXBuildFile; productRef = B26BDE9F5B50F285C10A6766 /* MapLibre */; };
 		26550A10558E67C2592D81C1 /* ARCameraMotion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52004BAF5A6A7CD040C9644A /* ARCameraMotion.swift */; };
 		318B7A34F36B639F09A0C8D3 /* ARCameraSyntheticFeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05A6FDE80D4F009784110F0D /* ARCameraSyntheticFeed.swift */; };
 		34B8A5325FA474110F6566AD /* ARCameraRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18A3A0B7164A80BB642ECA6C /* ARCameraRenderer.swift */; };
 		34E35379848E919FD0600664 /* PlaceCategoryTitle.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5D18FDB4739848F99AC3737 /* PlaceCategoryTitle.swift */; };
 		3696B764EA42261BF9B2B6B5 /* ARCameraShaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = 858566E65BCB9127E10B6580 /* ARCameraShaders.metal */; };
-		39AD527C05BE8B5C33D3EC90 /* LocationAccessBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 471EDBC3A49C04036B00131F /* LocationAccessBanner.swift */; };
 		3AECDADE4D165A4D4A4E8F93 /* SightlineApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0B8CB6AC9CE9D17AF4DFA1B /* SightlineApp.swift */; };
 		45228537D1FB75C2794D02E6 /* MapPageUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C0BE0BD2C453896E01CBEBB /* MapPageUITests.swift */; };
 		496C9FEC4B353DE50AA10ADC /* MainScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E4CA9E699DDB96F8B8D04BF /* MainScreen.swift */; };
 		4F678C7B905D65845A4BDB51 /* UITestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93DFF26DEB51A16FAA6F6F6F /* UITestSupport.swift */; };
 		5A9B4F58E0455E26653776D1 /* ARCameraOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3D89A6AF9DD24F20C627DD8 /* ARCameraOverlay.swift */; };
-		5EA692BB3210D4DB210A0690 /* PreferencesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC3720161BF4115BE5FF4375 /* PreferencesView.swift */; };
 		6AD776884F44D9355F045FE0 /* light_style.json in Resources */ = {isa = PBXBuildFile; fileRef = F954F8A9CC4247902BFD7B5A /* light_style.json */; };
 		7AC8305FF41ED484BF8B4C31 /* dark_style.json in Resources */ = {isa = PBXBuildFile; fileRef = 7E89613391F5E3CE7C3B793B /* dark_style.json */; };
 		7EE8D75A6AD779D1DEE89DCD /* ARCameraModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8A77545BAA043D35B5F6B4F /* ARCameraModel.swift */; };
 		81D14EF0A3E009D87CB7787D /* ARCameraScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BB2E5A3F4E9E142A1C2CA65 /* ARCameraScreen.swift */; };
 		940905A6CF514EA14B1C4647 /* MapLibreMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F197093DA6B407F8BCCDF0F6 /* MapLibreMapView.swift */; };
 		98E3B4B4EF460CBC53BC71FF /* ARCameraCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3D483AFA425ECB609380159 /* ARCameraCapture.swift */; };
+		9F371DD552AC57450E3AA582 /* DistanceFormat.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88660B8E5D6902865CC22DF5 /* DistanceFormat.swift */; };
 		B6D5E6AE08FF0D56B28DDC5D /* CategoryRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2B843400E82490086A9D7F3 /* CategoryRoute.swift */; };
 		BBBBC3C12B21C55DEA565F00 /* SmokeUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77D34269A33BF6BF1E601530 /* SmokeUITests.swift */; };
 		DA13F1CEE97C74F908A08790 /* MapScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C60CB2DA6FF7C01D784C063 /* MapScreen.swift */; };
 		E2CF276D1A2EC5BC1F2008F5 /* NearbyPlacesModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D07A51E4E9017DC595E1DC10 /* NearbyPlacesModel.swift */; };
+		F0D4FE7C5BF601587032B52F /* PlacesSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF177D6494DE6F369743FA53 /* PlacesSheet.swift */; };
+		F99A8C88577CB7B434DD0BA1 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C0151E72A1E67E459C8D72D /* AppSettings.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -46,9 +46,8 @@
 /* Begin PBXFileReference section */
 		05A6FDE80D4F009784110F0D /* ARCameraSyntheticFeed.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARCameraSyntheticFeed.swift; sourceTree = "<group>"; };
 		18A3A0B7164A80BB642ECA6C /* ARCameraRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARCameraRenderer.swift; sourceTree = "<group>"; };
-		1F9AE50F2B47D799F3203A3C /* NearbyPlacesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearbyPlacesView.swift; sourceTree = "<group>"; };
+		1C0151E72A1E67E459C8D72D /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 		323906AFB18147ABEDEBDB38 /* iosAppUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = iosAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		471EDBC3A49C04036B00131F /* LocationAccessBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationAccessBanner.swift; sourceTree = "<group>"; };
 		52004BAF5A6A7CD040C9644A /* ARCameraMotion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARCameraMotion.swift; sourceTree = "<group>"; };
 		6C0BE0BD2C453896E01CBEBB /* MapPageUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapPageUITests.swift; sourceTree = "<group>"; };
 		77D34269A33BF6BF1E601530 /* SmokeUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmokeUITests.swift; sourceTree = "<group>"; };
@@ -57,12 +56,13 @@
 		7E89613391F5E3CE7C3B793B /* dark_style.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = dark_style.json; sourceTree = "<group>"; };
 		858566E65BCB9127E10B6580 /* ARCameraShaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = ARCameraShaders.metal; sourceTree = "<group>"; };
 		86038AE1032E284E79B32AD6 /* iosApp.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = iosApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		88660B8E5D6902865CC22DF5 /* DistanceFormat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistanceFormat.swift; sourceTree = "<group>"; };
 		93DFF26DEB51A16FAA6F6F6F /* UITestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITestSupport.swift; sourceTree = "<group>"; };
 		9E4CA9E699DDB96F8B8D04BF /* MainScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainScreen.swift; sourceTree = "<group>"; };
 		A8A77545BAA043D35B5F6B4F /* ARCameraModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARCameraModel.swift; sourceTree = "<group>"; };
-		BC3720161BF4115BE5FF4375 /* PreferencesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesView.swift; sourceTree = "<group>"; };
 		D07A51E4E9017DC595E1DC10 /* NearbyPlacesModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearbyPlacesModel.swift; sourceTree = "<group>"; };
 		D0B8CB6AC9CE9D17AF4DFA1B /* SightlineApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SightlineApp.swift; sourceTree = "<group>"; };
+		DF177D6494DE6F369743FA53 /* PlacesSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlacesSheet.swift; sourceTree = "<group>"; };
 		E3D89A6AF9DD24F20C627DD8 /* ARCameraOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARCameraOverlay.swift; sourceTree = "<group>"; };
 		F197093DA6B407F8BCCDF0F6 /* MapLibreMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapLibreMapView.swift; sourceTree = "<group>"; };
 		F2B843400E82490086A9D7F3 /* CategoryRoute.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryRoute.swift; sourceTree = "<group>"; };
@@ -114,6 +114,7 @@
 		B53BB82DD7780F3657A03A11 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				1C0151E72A1E67E459C8D72D /* AppSettings.swift */,
 				F3D483AFA425ECB609380159 /* ARCameraCapture.swift */,
 				A8A77545BAA043D35B5F6B4F /* ARCameraModel.swift */,
 				52004BAF5A6A7CD040C9644A /* ARCameraMotion.swift */,
@@ -123,14 +124,13 @@
 				858566E65BCB9127E10B6580 /* ARCameraShaders.metal */,
 				05A6FDE80D4F009784110F0D /* ARCameraSyntheticFeed.swift */,
 				F2B843400E82490086A9D7F3 /* CategoryRoute.swift */,
-				471EDBC3A49C04036B00131F /* LocationAccessBanner.swift */,
+				88660B8E5D6902865CC22DF5 /* DistanceFormat.swift */,
 				9E4CA9E699DDB96F8B8D04BF /* MainScreen.swift */,
 				F197093DA6B407F8BCCDF0F6 /* MapLibreMapView.swift */,
 				7C60CB2DA6FF7C01D784C063 /* MapScreen.swift */,
 				D07A51E4E9017DC595E1DC10 /* NearbyPlacesModel.swift */,
-				1F9AE50F2B47D799F3203A3C /* NearbyPlacesView.swift */,
 				F5D18FDB4739848F99AC3737 /* PlaceCategoryTitle.swift */,
-				BC3720161BF4115BE5FF4375 /* PreferencesView.swift */,
+				DF177D6494DE6F369743FA53 /* PlacesSheet.swift */,
 				D0B8CB6AC9CE9D17AF4DFA1B /* SightlineApp.swift */,
 			);
 			path = Sources;
@@ -285,15 +285,15 @@
 				81D14EF0A3E009D87CB7787D /* ARCameraScreen.swift in Sources */,
 				3696B764EA42261BF9B2B6B5 /* ARCameraShaders.metal in Sources */,
 				318B7A34F36B639F09A0C8D3 /* ARCameraSyntheticFeed.swift in Sources */,
+				F99A8C88577CB7B434DD0BA1 /* AppSettings.swift in Sources */,
 				B6D5E6AE08FF0D56B28DDC5D /* CategoryRoute.swift in Sources */,
-				39AD527C05BE8B5C33D3EC90 /* LocationAccessBanner.swift in Sources */,
+				9F371DD552AC57450E3AA582 /* DistanceFormat.swift in Sources */,
 				496C9FEC4B353DE50AA10ADC /* MainScreen.swift in Sources */,
 				940905A6CF514EA14B1C4647 /* MapLibreMapView.swift in Sources */,
 				DA13F1CEE97C74F908A08790 /* MapScreen.swift in Sources */,
 				E2CF276D1A2EC5BC1F2008F5 /* NearbyPlacesModel.swift in Sources */,
-				170BECB998A5F87CD8139741 /* NearbyPlacesView.swift in Sources */,
 				34E35379848E919FD0600664 /* PlaceCategoryTitle.swift in Sources */,
-				5EA692BB3210D4DB210A0690 /* PreferencesView.swift in Sources */,
+				F0D4FE7C5BF601587032B52F /* PlacesSheet.swift in Sources */,
 				3AECDADE4D165A4D4A4E8F93 /* SightlineApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

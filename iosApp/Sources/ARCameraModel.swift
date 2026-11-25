@@ -104,9 +104,6 @@ final class ARCameraModel {
         }
     }
 
-    /// Floating controls fade out when the user taps empty camera space and back in on the next tap.
-    var toolbarsVisible = true
-
     private var viewport: CGSize = .zero
     private var safeAreaInsets = EdgeInsets()
     private var displayScale: CGFloat = 3
@@ -304,14 +301,6 @@ final class ARCameraModel {
         recompute()
     }
 
-    func setToolbarsVisible(_ visible: Bool) {
-        toolbarsVisible = visible
-    }
-
-    func toggleToolbars() {
-        toolbarsVisible.toggle()
-    }
-
     /// Debug HUD affordance: forces full-frame blur the same way `-arForceBlur` does.
     func toggleBlur() {
         debugBlurForced.toggle()
@@ -490,7 +479,7 @@ final class ARCameraModel {
             screenRotation: screenRotation
         )
 
-        let places: [Place] = isSynthetic ? Self.syntheticPlaces() : nearby.places
+        let places: [Place] = isSynthetic ? Self.syntheticPlaces() : nearby.allPlaces
         let candidates = places.map { Self.candidate(for: $0, camera: location) }
         let assignment = slotAssignment(
             for: candidates,

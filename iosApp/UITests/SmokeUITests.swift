@@ -1,100 +1,210 @@
 import XCTest
 
-/// End-to-end smoke pass for the iOS app: camera page, map with places, category push/pop,
-/// a location fix, and preferences surviving a relaunch.
+/// End-to-end smoke passes for the full-screen tabs, Places & Location sheet, custom location
+/// search, category drill-down, and persistence across a relaunch.
 ///
-/// Every run starts by resetting the shared preferences through `-resetPreferences`, so the
-/// pass does not depend on state left by an earlier run. A UI test cannot call `simctl`; the
-/// simulator's location scenario is part of the environment.
+/// Every run starts by resetting the shared preferences through `-resetPreferences`, so the pass
+/// does not depend on state left by an earlier run. A UI test cannot call `simctl`; the simulator's
+/// location scenario and the live places/address network are part of the environment.
 final class SmokeUITests: XCTestCase {
     private enum Timeout {
         static let element: TimeInterval = 25
-        static let loaded: TimeInterval = 60
+        static let loaded: TimeInterval = 90
     }
 
     override func setUp() {
         continueAfterFailure = false
     }
 
-    func testFullSmokePass() {
-        let app = XCUIApplication.launchedForUITest(arguments: ["-arCamera", "-mapDebug"])
+    func testLaunchesWithNoPlacesBeforeCategoryToggle() {
+        let app = XCUIApplication.launchedForUITest(arguments: ["-arCamera"])
 
         XCTAssertTrue(
-            app.staticTexts["Synthetic feed - no camera on this device"]
-                .waitForExistence(timeout: Timeout.element),
-            "The camera page did not render its synthetic feed state."
+            app.tabBars.buttons["Camera"].waitForExistence(timeout: Timeout.element),
+            "The Camera tab did not render."
         )
-        attachScreenshot(named: "smoke-camera")
-
-        openPreferences(in: app)
-        XCTAssertEqual(
-            app.switches["user-location-toggle"].value as? String,
-            "0",
-            "The preferences were not reset to their defaults at launch."
-        )
-        XCTAssertTrue(
-            app.segmentedControls.buttons["1 km"].isSelected,
-            "The search radius was not reset to its default at launch."
-        )
-        setUserLocationToggle(true, in: app, answeringPrompt: { LocationPrompt.allow() })
-
-        let radius = app.segmentedControls.buttons["2 km"]
-        XCTAssertTrue(radius.waitForExistence(timeout: Timeout.element))
-        radius.tap()
-
-        app.buttons["Done"].tap()
-
-        let mapButton = app.segmentedControls.buttons["Map"]
-        XCTAssertTrue(mapButton.waitForExistence(timeout: Timeout.element))
-        mapButton.tap()
+        app.tabBars.buttons["Map"].tap()
 
         let map = app.otherElements["nearby-map"]
         XCTAssertTrue(map.waitForExistence(timeout: Timeout.element), "The map page did not render.")
+        XCTAssertEqual(map.label, "Nearby places map, 0 places")
+
+        Thread.sleep(forTimeInterval: 3)
+        XCTAssertEqual(
+            map.label,
+            "Nearby places map, 0 places",
+            "The app fetched places before any Place Category was toggled."
+        )
+        attachScreenshot(named: "smoke-launch-zero-places")
+
+        openPlacesSheet(in: app)
+        let card = app.buttons["category-card-SightsLandmarks"]
+        XCTAssertTrue(card.waitForExistence(timeout: Timeout.element))
+        XCTAssertEqual(card.label, "Open Sights & landmarks, Not selected")
+        XCTAssertFalse(
+            app.buttons["category-toggle-SightsLandmarks"].isEnabled,
+            "A category toggle was enabled without an Active Location."
+        )
+
+        app.swipeUp()
+        app.swipeUp()
+        let attribution = app.descendants(matching: .any).matching(
+            NSPredicate(format: "label CONTAINS %@", "OpenStreetMap contributors")
+        ).firstMatch
+        XCTAssertTrue(
+            attribution.waitForExistence(timeout: 10),
+            "The OpenStreetMap attribution footer is missing."
+        )
+        attachScreenshot(named: "smoke-places-grid")
+    }
+
+    func testCustomLocationSearchEnablesCategoryToggles() {
+        let app = XCUIApplication.launchedForUITest(arguments: ["-arCamera"])
+
+        openPlacesSheet(in: app)
+        XCTAssertEqual(
+            app.buttons["use-my-location-button"].value as? String,
+            "Off",
+            "Use my location was not off at launch."
+        )
+
+        let field = app.textFields["location-search-field"]
+        XCTAssertTrue(field.waitForExistence(timeout: Timeout.element))
+        field.tap()
+        field.typeText("Wa")
+        XCTAssertTrue(
+            app.staticTexts["Your query must be at least 3 characters long."]
+                .waitForExistence(timeout: 15),
+            "The query-too-short prompt did not appear."
+        )
+        attachScreenshot(named: "smoke-custom-location-too-short")
+
+        field.typeText("wel")
+        XCTAssertTrue(
+            waitForValue(of: field, equals: "Wawel", timeout: 15),
+            "The search field text did not settle; its value is \(String(describing: field.value))."
+        )
+        let firstResult = app.buttons["custom-location-row-0"]
+        XCTAssertTrue(
+            firstResult.waitForExistence(timeout: Timeout.loaded),
+            "The custom location search returned no results."
+        )
+        firstResult.tap()
+        attachScreenshot(named: "smoke-custom-location-selected")
+
+        let toggle = app.buttons["category-toggle-SightsLandmarks"]
+        XCTAssertTrue(toggle.waitForExistence(timeout: Timeout.element))
+        XCTAssertTrue(
+            waitForEnabled(toggle, timeout: Timeout.element),
+            "The category toggle stayed disabled after picking a Custom Location."
+        )
+        toggle.tap()
+        waitForCategoryPlaces(
+            named: "SightsLandmarks",
+            title: "Sights & landmarks",
+            in: app
+        )
+        attachScreenshot(named: "smoke-custom-location-category-loaded")
+
+        app.buttons["places-done"].tap()
+        app.tabBars.buttons["Map"].tap()
+
+        let map = app.otherElements["nearby-map"]
+        XCTAssertTrue(map.waitForExistence(timeout: Timeout.element))
         waitForPlaces(on: map)
-        attachScreenshot(named: "smoke-map")
+        attachScreenshot(named: "smoke-custom-location-map")
+    }
 
-        let category = app.buttons["Sights & landmarks"]
-        XCTAssertTrue(category.waitForExistence(timeout: Timeout.element))
-        category.tap()
+    func testUserLocationRadiusAndCategoryDrillDown() {
+        let app = XCUIApplication.launchedForUITest(arguments: ["-arCamera"])
 
-        let categoryTitle = app.navigationBars["Sights & landmarks"]
-        XCTAssertTrue(
-            categoryTitle.waitForExistence(timeout: Timeout.loaded),
-            "Tapping a category did not push the category screen."
-        )
-        XCTAssertTrue(
-            app.cells.firstMatch.waitForExistence(timeout: Timeout.loaded),
-            "The category screen did not show any place rows."
-        )
-        attachScreenshot(named: "smoke-category")
+        openPlacesSheet(in: app)
+        setUserLocationButton(true, in: app, answeringPrompt: { LocationPrompt.allow() })
+        app.buttons["places-done"].tap()
 
-        categoryTitle.buttons.firstMatch.tap()
+        chooseRadius("2 km", in: app)
+
+        openPlacesSheet(in: app)
+        toggleCategory("SightsLandmarks", in: app)
+        waitForCategoryPlaces(
+            named: "SightsLandmarks",
+            title: "Sights & landmarks",
+            in: app
+        )
+
+        app.buttons["category-card-SightsLandmarks"].tap()
         XCTAssertTrue(
-            app.segmentedControls.buttons["Map"].waitForExistence(timeout: Timeout.element),
-            "Back navigation did not return to the pager."
+            app.navigationBars["Sights & landmarks"].waitForExistence(timeout: Timeout.element),
+            "Tapping a loaded category did not push CategoryPlacesScreen."
+        )
+
+        let categoryMap = app.otherElements["category-map"]
+        XCTAssertTrue(
+            categoryMap.waitForExistence(timeout: Timeout.element),
+            "The category map did not render."
+        )
+
+        let placeRow = app.buttons
+            .matching(NSPredicate(format: "identifier BEGINSWITH 'place-row-'"))
+            .firstMatch
+        XCTAssertTrue(
+            placeRow.waitForExistence(timeout: Timeout.loaded),
+            "The category place list stayed empty."
         )
         XCTAssertTrue(
-            app.buttons["Sights & landmarks"].exists,
-            "The selected category was not preserved after back navigation."
+            app.buttons
+                .matching(NSPredicate(format: "identifier BEGINSWITH 'open-in-maps-'"))
+                .firstMatch
+                .exists,
+            "The place rows are missing their open-in-maps button."
         )
+        attachScreenshot(named: "smoke-category-places")
+
+        app.navigationBars["Sights & landmarks"].buttons.firstMatch.tap()
+        XCTAssertTrue(
+            app.buttons["places-done"].waitForExistence(timeout: Timeout.element),
+            "Back navigation did not return to the category grid."
+        )
+    }
+
+    func testMapCameraAndPreferencesSurviveRelaunch() {
+        let app = XCUIApplication.launchedForUITest(arguments: ["-arCamera", "-mapDebug"])
+
+        openPlacesSheet(in: app)
+        setUserLocationButton(true, in: app, answeringPrompt: { LocationPrompt.allow() })
+        toggleCategory("FoodDrink", in: app)
+        app.buttons["places-done"].tap()
+
+        chooseRadius("2 km", in: app)
+
+        app.tabBars.buttons["Map"].tap()
+        let map = app.otherElements["nearby-map"]
+        XCTAssertTrue(map.waitForExistence(timeout: Timeout.element))
+        waitForPlaces(on: map)
 
         let debugCamera = app.staticTexts["map-camera"]
         XCTAssertTrue(debugCamera.waitForExistence(timeout: Timeout.element))
-        let fittedCamera = debugCamera.label
+        let fittedCamera = stableValue(of: debugCamera, timeout: 20, differingFrom: "none")
         XCTAssertNotEqual(fittedCamera, "none", "The map camera was not recorded after the fit.")
+
         map.pinch(withScale: 1.8, velocity: 1)
-        let savedCamera = stableValue(of: debugCamera, timeout: 15, differingFrom: fittedCamera)
-        XCTAssertNotEqual(savedCamera, fittedCamera, "Changing the map camera did not persist a new value.")
-        print("SIGHTLINE_TEST map camera fitted=\(fittedCamera) saved=\(savedCamera)")
+        let savedCamera = stableValue(of: debugCamera, timeout: 20, differingFrom: fittedCamera)
+        XCTAssertNotEqual(
+            savedCamera,
+            fittedCamera,
+            "Changing the map camera did not persist a new value."
+        )
         attachScreenshot(named: "smoke-map-panned")
 
         app.terminate()
         app.launchArguments = ["-arCamera", "-mapDebug"]
         app.launch()
 
-        let mapButtonAfterRelaunch = app.segmentedControls.buttons["Map"]
-        XCTAssertTrue(mapButtonAfterRelaunch.waitForExistence(timeout: Timeout.element))
-        mapButtonAfterRelaunch.tap()
+        XCTAssertTrue(
+            app.tabBars.buttons["Map"].waitForExistence(timeout: Timeout.element),
+            "The tabs did not render after relaunch."
+        )
+        app.tabBars.buttons["Map"].tap()
 
         let restoredCamera = app.staticTexts["map-camera"]
         XCTAssertTrue(restoredCamera.waitForExistence(timeout: Timeout.element))
@@ -109,93 +219,47 @@ final class SmokeUITests: XCTestCase {
         )
         attachScreenshot(named: "smoke-map-restored")
 
-        openPreferences(in: app)
-        XCTAssertTrue(
-            app.segmentedControls.buttons["2 km"].waitForExistence(timeout: Timeout.element)
-        )
-        XCTAssertTrue(
-            app.segmentedControls.buttons["2 km"].isSelected,
-            "The search radius did not survive a relaunch."
-        )
+        openPlacesSheet(in: app)
         XCTAssertEqual(
-            app.switches["user-location-toggle"].value as? String,
-            "1",
-            "The user-location toggle did not survive a relaunch."
+            app.buttons["use-my-location-button"].value as? String,
+            "On",
+            "Use my location did not survive a relaunch."
         )
-        attachScreenshot(named: "smoke-preferences-restored")
-        app.buttons["Done"].tap()
+        attachScreenshot(named: "smoke-places-restored")
+        app.buttons["places-done"].tap()
 
-        openPreferences(in: app)
-        app.segmentedControls.buttons["1 km"].tap()
-        app.buttons["Done"].tap()
+        XCTAssertTrue(
+            waitForLabelContains(app.buttons["radius-menu"], text: "2 km", timeout: Timeout.element),
+            "The Search Radius did not survive a relaunch."
+        )
+
+        chooseRadius("1 km", in: app)
     }
 
-    /// User story 10: a denied location permission offers the app's Settings deep link, the same
-    /// affordance the camera denial uses.
-    func testLocationDenialOffersSettings() {
-        let app = XCUIApplication.launchedForUITest()
+    func testDeniedLocationShowsOpenSettingsAlert() {
+        let app = XCUIApplication.launchedForUITest(arguments: ["-arCamera"])
 
-        openPreferences(in: app)
-        XCTAssertEqual(
-            app.switches["user-location-toggle"].value as? String,
-            "0",
-            "The preferences were not reset to their defaults at launch."
-        )
-        setUserLocationToggle(true, in: app, answeringPrompt: { LocationPrompt.deny() })
-        app.buttons["Done"].tap()
-
-        XCTAssertTrue(
-            app.buttons["Settings"].waitForExistence(timeout: Timeout.element),
-            "A denied location permission did not offer the Settings deep link."
-        )
-        attachScreenshot(named: "smoke-location-denied")
-    }
-
-    private func openPreferences(in app: XCUIApplication) {
-        let button = app.buttons["Preferences"]
+        openPlacesSheet(in: app)
+        let button = app.buttons["use-my-location-button"]
         XCTAssertTrue(button.waitForExistence(timeout: Timeout.element))
+        XCTAssertEqual(button.value as? String, "Off")
+
         button.tap()
-        XCTAssertTrue(app.navigationBars["Preferences"].waitForExistence(timeout: Timeout.element))
-    }
-
-    /// Waits for a positive place count, not merely a value other than the empty placeholder.
-    private func waitForPlaces(on map: XCUIElement) {
-        let populated = NSPredicate(
-            format: "label MATCHES %@",
-            "^Nearby places map, [1-9][0-9]* places?$"
+        LocationPrompt.deny()
+        XCTAssertTrue(
+            waitForValue(of: button, equals: "Off", timeout: 30),
+            "Use my location did not reset after the permission was denied; its value is \(String(describing: button.value))."
         )
-        let expectation = XCTNSPredicateExpectation(predicate: populated, object: map)
-        XCTAssertEqual(
-            XCTWaiter().wait(for: [expectation], timeout: Timeout.loaded),
-            .completed,
-            "The map never received nearby places; its label is \(map.label)."
+
+        button.tap()
+        let alert = app.alerts.firstMatch
+        XCTAssertTrue(
+            alert.waitForExistence(timeout: 10),
+            "Tapping Use my location after denial did not present the Settings alert."
         )
-    }
-
-    /// Waits for a debug label to settle on a new value, so the assertion compares the debounced
-    /// camera that was actually persisted instead of a value mid-gesture.
-    private func stableValue(
-        of element: XCUIElement,
-        timeout: TimeInterval,
-        differingFrom initial: String
-    ) -> String {
-        let deadline = Date().addingTimeInterval(timeout)
-        var last = element.label
-        while Date() < deadline {
-            RunLoop.current.run(until: Date().addingTimeInterval(0.5))
-            let current = element.label
-            if current != initial, current == last, current != "none" {
-                return current
-            }
-            last = current
-        }
-        return last
-    }
-
-    private func attachScreenshot(named name: String) {
-        let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
-        screenshot.name = name
-        screenshot.lifetime = .keepAlways
-        add(screenshot)
+        XCTAssertTrue(alert.buttons["Open Settings"].exists)
+        XCTAssertTrue(alert.buttons["Cancel"].exists)
+        attachScreenshot(named: "smoke-location-denied")
+        alert.buttons["Cancel"].tap()
     }
 }
