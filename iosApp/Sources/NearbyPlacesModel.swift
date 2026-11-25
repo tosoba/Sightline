@@ -150,6 +150,7 @@ final class NearbyPlacesModel {
     func observePreferences() async {
         await withTaskGroup(of: Void.self) { group in
             group.addTask { await self.observePlaces() }
+            group.addTask { await self.observeAllPlaces() }
             group.addTask { await self.observeActiveLocation() }
             group.addTask { await self.observeUserLocation() }
             group.addTask { await self.observeUserLocationAddress() }
@@ -182,10 +183,24 @@ final class NearbyPlacesModel {
         }
     }
 
+    private func observeAllPlaces() async {
+        for await places in coordinator.allPlaces {
+            allPlaces = places
+        }
+    }
+
     private func observeActiveLocation() async {
         for await location in coordinator.activeLocation {
             activeLocation = location
+            activateLegacyCategoryIfNeeded()
         }
+    }
+
+    /// The pre-tabs `MainScreen` relied on the old model auto-fetching its single
+    /// `selectedCategory` as soon as a location arrived. Removed with that screen in ticket 08.
+    private func activateLegacyCategoryIfNeeded() {
+        guard activeLocation != nil, categoryStates.isEmpty else { return }
+        coordinator.onTogglePlaceCategory(category: selectedCategory)
     }
 
     private func observeUserLocation() async {
