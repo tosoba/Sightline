@@ -151,7 +151,7 @@ final class ARCameraModel {
                 self?.handle(failure)
             }
             capture.start(renderer: renderer)
-            cameraLocation = nearby.currentLocation
+            cameraLocation = nearby.activeLocation
             statusText = "Live camera"
         }
         Self.log.info(
@@ -200,7 +200,7 @@ final class ARCameraModel {
         Self.log.notice("camera unavailable: \(self.statusText, privacy: .public)")
         isSynthetic = false
         renderer?.setSyntheticTexture(nil)
-        cameraLocation = nearby.currentLocation
+        cameraLocation = nearby.activeLocation
         recompute()
     }
 
@@ -216,7 +216,7 @@ final class ARCameraModel {
         Self.log.info("camera access granted while in Settings")
         unavailability = nil
         capture.start(renderer: renderer)
-        cameraLocation = nearby.currentLocation
+        cameraLocation = nearby.activeLocation
         statusText = "Live camera"
         recompute()
     }
@@ -233,14 +233,14 @@ final class ARCameraModel {
 
     func placesChanged() {
         if !isSynthetic {
-            cameraLocation = nearby.currentLocation
+            cameraLocation = nearby.activeLocation
         }
         recompute()
     }
 
     func locationChanged() {
         guard !isSynthetic else { return }
-        cameraLocation = nearby.currentLocation
+        cameraLocation = nearby.activeLocation
         recompute()
     }
 
