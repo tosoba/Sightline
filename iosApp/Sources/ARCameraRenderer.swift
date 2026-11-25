@@ -344,17 +344,20 @@ final class ARCameraRenderer: NSObject, MTKViewDelegate {
         scale.columns.3.x = (1 - uScale) / 2
         scale.columns.3.y = (1 - vScale) / 2
 
-        // `videoRotationAngle = 90` normally delivers portrait buffers. If a device hands back the
-        // sensor-native landscape buffer instead, rotate the UVs as a fallback (device-unverified).
+        // `videoRotationAngle` normally delivers buffers matching the interface orientation. If a
+        // device hands back the sensor-native buffer instead, the two aspect orientations disagree
+        // and a 90 degree UV rotation keeps the preview upright.
+        let sourceIsLandscape = sourceSize.width > sourceSize.height
+        let drawableIsLandscape = intermediateSize.width > intermediateSize.height
         var rotation = matrix_identity_float4x4
-        if sourceSize.width > sourceSize.height && intermediateSize.height > intermediateSize.width {
+        if sourceIsLandscape != drawableIsLandscape {
             rotation = simd_float4x4(columns: (
                 SIMD4<Float>(0, 1, 0, 0),
                 SIMD4<Float>(-1, 0, 0, 0),
                 SIMD4<Float>(0, 0, 1, 0),
                 SIMD4<Float>(0, 0, 0, 1)
             ))
-            Self.log.warning("camera buffer is landscape; applying the device-pending 90 degree UV fallback")
+            Self.log.warning("camera buffer orientation disagrees with the drawable; applying the 90 degree UV fallback")
         }
         texTransform = rotation * scale
     }
