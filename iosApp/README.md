@@ -68,8 +68,9 @@ Without any of them the page uses the live camera, Core Motion, the default mark
   The simulator has no magnetometer, so the scripted poses are how alignment is checked there.
 - `-arBlur <strength>` - freezes the blur ramp at a strength in `[0, 1]`, which makes a single blur step reproducible for screenshots.
 - `-arHoleFill <style>` - picks how the marker holes are filled: `frosted` (the default, matching the Android GL draw order) or `sharp`.
-- `-arNoBlur` - starts with blur off.
-- `-arDebug` - shows the HUD: feed state, orientation, layout metrics, lod, frame timings, marker count, and the blur toggle.
+- `-arForceBlur` - forces full-frame blur during normal viewing, as if the device were tilted past the pitch limit.
+- `-arNoBlur` - forces full-frame blur off, including the pitch and sheet triggers.
+- `-arDebug` - shows the HUD: feed state, orientation, layout metrics, lod, frame timings, marker count, and the forced-blur toggle.
 - `-arUnavailable <reason>` - injects a camera failure the simulator cannot trigger: `permission` or `configuration`.
 
 ## Run on a simulator

@@ -20,6 +20,9 @@ final class ARCameraCapture: NSObject, AVCaptureVideoDataOutputSampleBufferDeleg
     private let videoQueue = DispatchQueue(label: "com.trm.sightline.arcamera.video")
     private weak var renderer: ARCameraRenderer?
     private var isConfigured = false
+    private var videoConnection: AVCaptureConnection?
+    /// Touched on `sessionQueue` only; the default matches `UIInterfaceOrientation.portrait`.
+    private var requestedVideoRotationAngle: CGFloat = 90
 
     deinit {
         // Safety net: if the object is deallocated without an explicit stop (e.g. app termination),
@@ -68,6 +71,30 @@ final class ARCameraCapture: NSObject, AVCaptureVideoDataOutputSampleBufferDeleg
             Self.log.notice("camera access is \(Self.describe(status), privacy: .public)")
             report(.permissionDenied)
         }
+    }
+
+    /// Keeps the delivered buffers aligned with the interface orientation. Safe to call before the
+    /// session is configured: the angle is stored and applied once the output exists.
+    func setVideoRotationAngle(_ angle: CGFloat) {
+        sessionQueue.async { [weak self] in
+            guard let self else { return }
+            self.requestedVideoRotationAngle = angle
+            self.applyVideoRotationAngle()
+        }
+    }
+
+    private func applyVideoRotationAngle() {
+        guard let connection = videoConnection else { return }
+        guard connection.isVideoRotationAngleSupported(requestedVideoRotationAngle) else {
+            Self.log.notice(
+                "video rotation angle \(self.requestedVideoRotationAngle, privacy: .public) is unsupported"
+            )
+            return
+        }
+        guard connection.videoRotationAngle != requestedVideoRotationAngle else { return }
+        session.beginConfiguration()
+        connection.videoRotationAngle = requestedVideoRotationAngle
+        session.commitConfiguration()
     }
 
     func stop() {
@@ -140,10 +167,11 @@ final class ARCameraCapture: NSObject, AVCaptureVideoDataOutputSampleBufferDeleg
         session.addOutput(output)
         if let connection = output.connection(with: .video) {
             connection.isVideoMirrored = false
-            // Portrait-only app: ask AVFoundation for upright buffers instead of rotating in the
-            // shader. The renderer keeps a landscape fallback for devices that ignore this.
-            if connection.isVideoRotationAngleSupported(90) {
-                connection.videoRotationAngle = 90
+            videoConnection = connection
+            // Ask AVFoundation for upright buffers instead of rotating in the shader. The renderer
+            // keeps a UV fallback for devices that ignore this.
+            if connection.isVideoRotationAngleSupported(requestedVideoRotationAngle) {
+                connection.videoRotationAngle = requestedVideoRotationAngle
             }
         }
         session.commitConfiguration()
