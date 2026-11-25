@@ -152,7 +152,7 @@ struct ARCameraScreen: View {
             .onChange(of: nearbyModel.places) { _, _ in
                 camera?.placesChanged()
             }
-            .onChange(of: nearbyModel.currentLocation) { _, _ in
+            .onChange(of: nearbyModel.activeLocation) { _, _ in
                 camera?.locationChanged()
             }
         }
