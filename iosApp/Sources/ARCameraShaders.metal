@@ -43,11 +43,17 @@ static float2 transformedTexCoord(ARVertexOut in, constant ARShaderUniforms &u) 
 
 static float4 gaussBlur(texture2d<float> tex, sampler smp, float2 uv, float2 step) {
     float4 c = tex.sample(smp, uv);
+    float w = 1.0;
     for (float i = 1.0; i < kRadius; i += 1.0) {
-        c += (tex.sample(smp, uv + step * i) + tex.sample(smp, uv - step * i)) *
-             exp(-i * i * kInvTwoSigmaSqr);
+        float weight = exp(-i * i * kInvTwoSigmaSqr);
+        c += (tex.sample(smp, uv + step * i) + tex.sample(smp, uv - step * i)) * weight;
+        w += 2.0 * weight;
     }
-    return c / c.a;
+    // Normalize by the explicit weight sum instead of relying on the source alpha channel.
+    // Android's external OES texture always returns alpha 1, so the original `c / c.a` worked
+    // there (alpha accumulated the same weight sum). AVFoundation's BGRA camera buffers may
+    // carry alpha 0 on some devices, breaking that approach.
+    return float4(c.rgb / w, 1.0);
 }
 
 static float4 applyContrast(float3 rgb, float alpha, constant ARShaderUniforms &u) {

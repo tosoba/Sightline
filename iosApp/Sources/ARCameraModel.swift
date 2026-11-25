@@ -28,12 +28,16 @@ struct ARCameraLaunchOptions {
     let forceSynthetic: Bool
     let attitude: ARScriptedAttitude?
     let blurStrength: Float?
-    let blurEnabled: Bool
+    let forceBlur: Bool
+    let forceNoBlur: Bool
     let holeFill: ARHoleFillStyle
     let debugHUD: Bool
     let simulatedUnavailability: ARSimulatedUnavailability?
 
     static var current: ARCameraLaunchOptions { ARCameraLaunchOptions(arguments: ProcessInfo.processInfo.arguments) }
+
+    /// Normal viewing starts sharp; only the debug blur flags override the pitch and sheet triggers.
+    var forcesBlur: Bool { forceBlur || (blurStrength ?? 0) > 0 }
 
     /// `-arCamera` pins scripted launches to the AR page; without it the pager keeps its own default.
     var requestedPage: MainPage? { isArEntry ? .camera : nil }
@@ -50,7 +54,8 @@ struct ARCameraLaunchOptions {
         forceSynthetic = arguments.contains("-arSynthetic")
         attitude = value(after: "-arAttitude").flatMap(ARScriptedAttitude.init(rawValue:))
         blurStrength = value(after: "-arBlur").flatMap(Float.init)
-        blurEnabled = !arguments.contains("-arNoBlur")
+        forceBlur = arguments.contains("-arForceBlur")
+        forceNoBlur = arguments.contains("-arNoBlur")
         holeFill = value(after: "-arHoleFill").flatMap(ARHoleFillStyle.init(rawValue:)) ?? .frosted
         debugHUD = arguments.contains("-arDebug")
         simulatedUnavailability = value(after: "-arUnavailable").flatMap(ARSimulatedUnavailability.init(rawValue:))
@@ -84,19 +89,44 @@ final class ARCameraModel {
     private(set) var unavailability: ARCameraUnavailability?
     private(set) var errorMessage: String?
 
-    var blurEnabled: Bool = true
+    private(set) var blurEnabled = false
+    private(set) var debugBlurForced = false
+    private(set) var screenRotation: ScreenRotation = .rotation0
+    private(set) var currentPage = 0
+    private(set) var totalPages = 1
+
+    /// Set by the Places & Location sheet owner whenever the sheet obscures the camera viewport.
+    var sheetObscuresCamera = false {
+        didSet {
+            guard sheetObscuresCamera != oldValue else { return }
+            updateBlurState()
+            recompute()
+        }
+    }
 
     private var viewport: CGSize = .zero
+    private var safeAreaInsets = EdgeInsets()
+    private var overlayOrigin: CGPoint = .zero
     private var displayScale: CGFloat = 3
     private var orientation: Orientation?
     private var cameraLocation: GeoLocation?
     private var lastHoleRects: [ARHoleRect] = []
+    private var lastDrawnIDs: Set<String> = []
     private var cachedSlots: CachedSlots?
+    private var contrastingColor: (red: Float, green: Float, blue: Float)?
+    private var orientationObservers: [NSObjectProtocol] = []
+    private var isGeneratingOrientationNotifications = false
 
-    private static let markerHeight: CGFloat = 88
+    private static let minMarkerHeight: CGFloat = 72
+    private static let maxMarkerHeight: CGFloat = 88
+    private static let minMarkerWidth: CGFloat = 150
+    private static let maxMarkerWidth: CGFloat = 220
+    private static let markerTargetWidth: CGFloat = 160
+    private static let minMarkerWidthDivisor = 2
+    private static let maxMarkerWidthDivisor = 6
     private static let markerVerticalSpacing: CGFloat = 16
     private static let markerOverlapGuardFraction: CGFloat = 0.5
-    private static let markerTopPadding: CGFloat = 16
+    private static let markerTopPadding: CGFloat = 12
     private static let minMarkerRows = 1
     private static let maxMarkerRows = 6
     private static let cornerRadius: CGFloat = 16
@@ -118,7 +148,7 @@ final class ARCameraModel {
         if renderer == nil {
             errorMessage = "Metal is unavailable on this device."
         }
-        blurEnabled = options.blurEnabled
+        blurEnabled = resolvedBlur
     }
 
     // MARK: - Lifecycle
@@ -137,7 +167,8 @@ final class ARCameraModel {
         isRunning = true
         unavailability = nil
         renderer.holeFillStyle = options.holeFill
-        renderer.setContrastingColor(red: 0.22, green: 0.22, blue: 0.26)
+        observeOrientationChanges()
+        beginGeneratingOrientationNotifications()
 
         let useSynthetic = options.forceSynthetic || !ARCameraCapture.isCameraAvailable
         isSynthetic = useSynthetic
@@ -151,7 +182,7 @@ final class ARCameraModel {
                 self?.handle(failure)
             }
             capture.start(renderer: renderer)
-            cameraLocation = nearby.currentLocation
+            cameraLocation = nearby.activeLocation
             statusText = "Live camera"
         }
         Self.log.info(
@@ -170,10 +201,17 @@ final class ARCameraModel {
         motion.onRotationMatrix = { [weak self] matrix in
             self?.apply(matrix)
         }
+        motion.screenRotation = screenRotation
         motion.start(scripted: options.attitude)
+        refreshScreenRotation()
 
+        blurEnabled = resolvedBlur
         if let strength = options.blurStrength {
-            renderer.freezeBlur(strength: strength)
+            renderer.freezeBlur(strength: options.forceNoBlur ? 0 : strength)
+            // `freezeBlur` resets the animator, so restore the appearance-derived tint.
+            if let color = contrastingColor {
+                renderer.setContrastingColor(red: color.red, green: color.green, blue: color.blue)
+            }
         } else {
             renderer.setBlurEnabled(blurEnabled, animated: true)
         }
@@ -184,6 +222,9 @@ final class ARCameraModel {
         isRunning = false
         motion.stop()
         capture.stop()
+        removeOrientationObservers()
+        endGeneratingOrientationNotifications()
+        renderer?.clearCameraTexture()
         renderer?.setBlurEnabled(false, animated: false)
         Self.log.info("stop")
     }
@@ -199,7 +240,7 @@ final class ARCameraModel {
         Self.log.notice("camera unavailable: \(self.statusText, privacy: .public)")
         isSynthetic = false
         renderer?.setSyntheticTexture(nil)
-        cameraLocation = nearby.currentLocation
+        cameraLocation = nearby.activeLocation
         recompute()
     }
 
@@ -215,37 +256,85 @@ final class ARCameraModel {
         Self.log.info("camera access granted while in Settings")
         unavailability = nil
         capture.start(renderer: renderer)
-        cameraLocation = nearby.currentLocation
+        cameraLocation = nearby.activeLocation
         statusText = "Live camera"
         recompute()
     }
 
     // MARK: - Inputs
 
-    func updateViewport(_ size: CGSize, displayScale: CGFloat) {
+    func updateViewport(
+        _ size: CGSize,
+        displayScale: CGFloat,
+        safeAreaInsets: EdgeInsets = EdgeInsets(),
+        overlayOrigin: CGPoint = .zero
+    ) {
         guard size.width > 0, size.height > 0 else { return }
         self.displayScale = displayScale
-        guard size != viewport else { return }
+        let geometryChanged =
+            size != viewport
+            || safeAreaInsets != self.safeAreaInsets
+            || overlayOrigin != self.overlayOrigin
         viewport = size
-        recompute()
+        self.safeAreaInsets = safeAreaInsets
+        self.overlayOrigin = overlayOrigin
+        if geometryChanged {
+            cachedSlots = nil
+        }
+        refreshScreenRotation()
+        if geometryChanged {
+            recompute()
+        }
     }
 
     func placesChanged() {
         if !isSynthetic {
-            cameraLocation = nearby.currentLocation
+            cameraLocation = nearby.activeLocation
         }
         recompute()
     }
 
     func locationChanged() {
         guard !isSynthetic else { return }
-        cameraLocation = nearby.currentLocation
+        cameraLocation = nearby.activeLocation
         recompute()
     }
 
+    func selectPage(_ page: Int) {
+        let clamped = min(max(page, 0), max(totalPages - 1, 0))
+        guard clamped != currentPage else { return }
+        currentPage = clamped
+        recompute()
+    }
+
+    /// Debug HUD affordance: forces full-frame blur the same way `-arForceBlur` does.
     func toggleBlur() {
-        blurEnabled.toggle()
-        renderer?.setBlurEnabled(blurEnabled, animated: true)
+        debugBlurForced.toggle()
+        updateBlurState()
+        recompute()
+    }
+
+    /// `secondarySystemBackground` resolved for the active appearance, eased by `ArBlurAnimator`.
+    func updateContrastingColor(for colorScheme: ColorScheme) {
+        let style: UIUserInterfaceStyle = colorScheme == .dark ? .dark : .light
+        let color = UIColor.secondarySystemBackground.resolvedColor(
+            with: UITraitCollection(userInterfaceStyle: style)
+        )
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 1
+        guard color.getRed(&red, green: &green, blue: &blue, alpha: &alpha) else {
+            var white: CGFloat = 0
+            guard color.getWhite(&white, alpha: &alpha) else { return }
+            let component = Float(white)
+            contrastingColor = (red: component, green: component, blue: component)
+            renderer?.setContrastingColor(red: component, green: component, blue: component)
+            return
+        }
+        let resolved = (red: Float(red), green: Float(green), blue: Float(blue))
+        contrastingColor = resolved
+        renderer?.setContrastingColor(red: resolved.red, green: resolved.green, blue: resolved.blue)
     }
 
     private func apply(_ matrix: RotationMatrix) {
@@ -265,23 +354,124 @@ final class ARCameraModel {
                 + "  pitch \(degrees(pitchDegrees))"
                 + "  roll \(degrees(Double(next.roll) * 180 / .pi))"
         }
+        updateBlurState()
         recompute()
+    }
+
+    // MARK: - Blur
+
+    private var resolvedBlur: Bool {
+        guard !options.forceNoBlur else { return false }
+        return options.forcesBlur || debugBlurForced || pitchOutOfRange || sheetObscuresCamera
+    }
+
+    private func updateBlurState() {
+        let next = resolvedBlur
+        guard next != blurEnabled else { return }
+        blurEnabled = next
+        if options.blurStrength == nil {
+            renderer?.setBlurEnabled(next, animated: true)
+        }
+    }
+
+    // MARK: - Screen rotation
+
+    private func observeOrientationChanges() {
+        guard orientationObservers.isEmpty else { return }
+        let center = NotificationCenter.default
+        let names: [Notification.Name] = [
+            UIDevice.orientationDidChangeNotification,
+            UIApplication.didBecomeActiveNotification,
+            UIWindow.didBecomeKeyNotification,
+            UIScene.didActivateNotification,
+        ]
+        orientationObservers = names.map { name in
+            center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    self?.refreshScreenRotation()
+                }
+            }
+        }
+    }
+
+    private func removeOrientationObservers() {
+        let center = NotificationCenter.default
+        for observer in orientationObservers {
+            center.removeObserver(observer)
+        }
+        orientationObservers.removeAll()
+    }
+
+    private func beginGeneratingOrientationNotifications() {
+        guard !isGeneratingOrientationNotifications else { return }
+        UIDevice.current.beginGeneratingDeviceOrientationNotifications()
+        isGeneratingOrientationNotifications = true
+    }
+
+    private func endGeneratingOrientationNotifications() {
+        guard isGeneratingOrientationNotifications else { return }
+        UIDevice.current.endGeneratingDeviceOrientationNotifications()
+        isGeneratingOrientationNotifications = false
+    }
+
+    /// Reads the active window scene instead of the raw device orientation: the interface
+    /// orientation is what the SwiftUI viewport and the AR projection are laid out against.
+    func refreshScreenRotation() {
+        guard let scene = activeWindowScene(),
+              let mapping = Self.orientationMapping(
+                  for: scene.effectiveGeometry.interfaceOrientation
+              ) else {
+            capture.setVideoRotationAngle(Self.videoRotationAngle(for: screenRotation))
+            return
+        }
+        applyScreenRotation(mapping)
+    }
+
+    private func activeWindowScene() -> UIWindowScene? {
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        return scenes.first { $0.activationState == .foregroundActive }
+            ?? scenes.first { $0.activationState == .foregroundInactive }
+            ?? scenes.first
+    }
+
+    private func applyScreenRotation(_ rotation: ScreenRotation) {
+        capture.setVideoRotationAngle(Self.videoRotationAngle(for: rotation))
+        motion.screenRotation = rotation
+        guard rotation != screenRotation else { return }
+        screenRotation = rotation
+        cachedSlots = nil
+        recompute()
+    }
+
+    private static func orientationMapping(
+        for orientation: UIInterfaceOrientation
+    ) -> ScreenRotation? {
+        switch orientation {
+        case .portrait: .rotation0
+        case .landscapeRight: .rotation90
+        case .landscapeLeft: .rotation270
+        case .portraitUpsideDown: .rotation180
+        @unknown default: nil
+        }
+    }
+
+    private static func videoRotationAngle(for rotation: ScreenRotation) -> CGFloat {
+        switch rotation {
+        case .rotation0: 90
+        case .rotation90: 0
+        case .rotation180: 270
+        case .rotation270: 180
+        }
     }
 
     // MARK: - Layout
 
     private func recompute() {
         guard viewport.width > 0, viewport.height > 0 else { return }
-        guard let location = cameraLocation else {
-            placements = []
-            markerCount = 0
-            pushHoleRects([])
-            return
-        }
-        guard let orientation else {
-            placements = []
-            markerCount = 0
-            pushHoleRects([])
+        let layout = markerLayout()
+        guard let location = cameraLocation, let orientation else {
+            totalPages = 1
+            apply(placements: [], layout: layout)
             return
         }
 
@@ -292,33 +482,48 @@ final class ARCameraModel {
         projection.updateCamera(
             location: location,
             orientation: orientation,
-            screenRotation: .rotation0
+            screenRotation: screenRotation
         )
 
-        let markerWidth = max(min(viewport.width * 0.42, 240), 150)
-        let places: [Place] = isSynthetic ? Self.syntheticPlaces() : nearby.places
+        let places: [Place] = isSynthetic ? Self.syntheticPlaces() : nearby.allPlaces
         let candidates = places.map { Self.candidate(for: $0, camera: location) }
-        let slots = slotAssignment(
+        let assignment = slotAssignment(
             for: candidates,
             at: location,
-            markerWidth: markerWidth
+            layout: layout
         )
+
+        if assignment.didReassign, !lastDrawnIDs.isEmpty {
+            currentPage = Self.followedPage(
+                for: lastDrawnIDs,
+                slots: assignment.slots,
+                fallback: currentPage
+            )
+        }
+        let maxPage = assignment.slots.values.map { Int($0.page) }.max() ?? 0
+        currentPage = min(max(currentPage, 0), maxPage)
+        totalPages = maxPage + 1
+
+        guard !(pitchOutOfRange || sheetObscuresCamera) else {
+            apply(placements: [], layout: layout)
+            return
+        }
 
         var placements: [ARPlacement] = []
         for candidate in candidates {
-            // No marker pager on iOS: rows past the viewport are dropped instead of being paged.
-            guard let slot = slots[candidate.place.id], slot.page == 0 else { continue }
+            guard let slot = assignment.slots[candidate.place.id],
+                  Int(slot.page) == currentPage else { continue }
             let projected = projection.project(location: candidate.location)
             guard projected.isInFront, projected.isDrawn else { continue }
             let rect = projection.markerRect(
                 marker: projected,
-                widthPx: Float(markerWidth),
-                heightPx: Float(Self.markerHeight),
+                widthPx: Float(layout.markerWidth),
+                heightPx: Float(layout.markerHeight),
                 cornerRadiusPx: Float(Self.cornerRadius)
             )
             let frame = CGRect(
                 x: CGFloat(rect.left),
-                y: CGFloat(slot.y) - Self.markerHeight / 2,
+                y: CGFloat(slot.y) - layout.markerHeight / 2,
                 width: CGFloat(rect.width),
                 height: CGFloat(rect.height)
             )
@@ -336,24 +541,35 @@ final class ARCameraModel {
         }
 
         placements.sort { $0.distanceMeters < $1.distanceMeters }
-        if pitchOutOfRange {
-            placements = []
-        }
+        lastDrawnIDs = Set(placements.map(\.id))
+        apply(placements: placements, layout: layout)
+    }
+
+    private func apply(placements: [ARPlacement], layout: MarkerLayout) {
         self.placements = placements
         markerCount = placements.count
         if options.debugHUD {
             layoutDebugText = Self.debugLayoutText(
-                viewport: viewport,
+                layout: layout,
                 displayScale: displayScale,
+                screenRotation: screenRotation,
+                currentPage: currentPage,
+                totalPages: totalPages,
                 placements: placements
             )
         }
 
         let scale = displayScale
+        // The overlay lays cards out in the safe-area-respecting viewport, while the Metal view
+        // ignores the safe area and fills the window. Translate into the drawable's space so the
+        // stencil holes land exactly under the cards.
+        let origin = overlayOrigin
         pushHoleRects(
             placements.map { placement in
                 ARHoleRect(
-                    rect: placement.rect.applying(CGAffineTransform(scaleX: scale, y: scale)),
+                    rect: placement.rect
+                        .offsetBy(dx: origin.x, dy: origin.y)
+                        .applying(CGAffineTransform(scaleX: scale, y: scale)),
                     cornerRadius: Float(placement.cornerRadius * scale)
                 )
             }
@@ -372,44 +588,118 @@ final class ARCameraModel {
         let target: MarkerSlotTarget
     }
 
+    private struct MarkerLayout: Equatable {
+        let viewport: CGSize
+        let safeAreaInsets: EdgeInsets
+        let markerWidth: CGFloat
+        let markerHeight: CGFloat
+        let divisor: Int
+        let rows: Int
+        let baseY: CGFloat
+        let verticalSpacing: CGFloat
+    }
+
     private struct CachedSlots {
         let location: GeoLocation
-        let viewport: CGSize
+        let layout: MarkerLayout
+        let screenRotation: ScreenRotation
         let placeIDs: [String]
         let slots: [String: MarkerSlot]
+    }
+
+    private struct SlotAssignment {
+        let slots: [String: MarkerSlot]
+        let didReassign: Bool
+    }
+
+    private func markerLayout() -> MarkerLayout {
+        let usableWidth = max(0, viewport.width - safeAreaInsets.leading - safeAreaInsets.trailing)
+        let usableHeight = max(0, viewport.height - safeAreaInsets.top - safeAreaInsets.bottom)
+        let markerHeight = Self.clamped(
+            usableHeight / 6,
+            Self.minMarkerHeight...Self.maxMarkerHeight
+        )
+        let rows = Int((usableHeight + Self.markerVerticalSpacing) / (markerHeight + Self.markerVerticalSpacing))
+        let divisor = min(
+            max(Int(usableWidth / Self.markerTargetWidth), Self.minMarkerWidthDivisor),
+            Self.maxMarkerWidthDivisor
+        )
+        let markerWidth = Self.clamped(
+            usableWidth / CGFloat(divisor),
+            Self.minMarkerWidth...Self.maxMarkerWidth
+        )
+        return MarkerLayout(
+            viewport: viewport,
+            safeAreaInsets: safeAreaInsets,
+            markerWidth: markerWidth,
+            markerHeight: markerHeight,
+            divisor: divisor,
+            rows: min(max(rows, Self.minMarkerRows), Self.maxMarkerRows),
+            baseY: safeAreaInsets.top + Self.markerTopPadding + markerHeight / 2,
+            verticalSpacing: Self.markerVerticalSpacing
+        )
+    }
+
+    private static func clamped(_ value: CGFloat, _ range: ClosedRange<CGFloat>) -> CGFloat {
+        min(max(value, range.lowerBound), range.upperBound)
     }
 
     private func slotAssignment(
         for candidates: [MarkerCandidate],
         at location: GeoLocation,
-        markerWidth: CGFloat
-    ) -> [String: MarkerSlot] {
+        layout: MarkerLayout
+    ) -> SlotAssignment {
         let placeIDs = candidates.map(\.place.id)
         if let cached = cachedSlots,
-            cached.viewport == viewport,
+            cached.layout == layout,
+            cached.screenRotation == screenRotation,
             cached.placeIDs == placeIDs,
             cached.location.distanceTo(other: location) <= Self.locationReassignThresholdMeters {
-            return cached.slots
+            return SlotAssignment(slots: cached.slots, didReassign: false)
         }
 
         let slots = MarkerSlotAssignment.shared.assign(
             povLocation: location,
             targets: candidates.map(\.target),
-            geometry: Self.slotGeometry(
-                markerWidth: markerWidth,
-                markerHeight: Self.markerHeight,
-                viewportHeight: viewport.height
+            geometry: MarkerSlotGeometry(
+                markerWidthPx: Float(layout.markerWidth),
+                markerHeightPx: Float(layout.markerHeight),
+                overlapGuardPx: Float(layout.markerWidth * Self.markerOverlapGuardFraction),
+                verticalSpacingPx: Float(layout.verticalSpacing),
+                rows: Int32(layout.rows),
+                baseY: Float(layout.baseY)
             ),
             canvasWidth: Int32(viewport.width.rounded()),
             canvasHeight: Int32(viewport.height.rounded())
         )
         cachedSlots = CachedSlots(
             location: location,
-            viewport: viewport,
+            layout: layout,
+            screenRotation: screenRotation,
             placeIDs: placeIDs,
             slots: slots
         )
-        return slots
+        return SlotAssignment(slots: slots, didReassign: true)
+    }
+
+    /// Follows the reassigned markers that were on screen: the page holding the most of them wins,
+    /// and ties fall back to the lowest page so the result is deterministic.
+    private static func followedPage(
+        for previousIDs: Set<String>,
+        slots: [String: MarkerSlot],
+        fallback: Int
+    ) -> Int {
+        var counts: [Int: Int] = [:]
+        for id in previousIDs {
+            guard let slot = slots[id] else { continue }
+            counts[Int(slot.page), default: 0] += 1
+        }
+        guard let best = counts.sorted(by: { lhs, rhs in
+            lhs.value == rhs.value ? lhs.key < rhs.key : lhs.value > rhs.value
+        }).first else {
+            return fallback
+        }
+        return best.key
     }
 
     private static func candidate(for place: Place, camera: GeoLocation) -> MarkerCandidate {
@@ -431,33 +721,28 @@ final class ARCameraModel {
         )
     }
 
-    /// Mirrors `ARMarkerRenderer`'s pixel constants so both platforms feed the shared slot assignment
-    /// the same geometry: a row per marker height plus the vertical gap, half a marker of overlap
-    /// guard, and the first row at the top padding plus half a marker.
-    private static func slotGeometry(
-        markerWidth: CGFloat,
-        markerHeight: CGFloat,
-        viewportHeight: CGFloat
-    ) -> MarkerSlotGeometry {
-        let rows = Int(viewportHeight / (markerHeight + markerVerticalSpacing))
-        return MarkerSlotGeometry(
-            markerWidthPx: Float(markerWidth),
-            markerHeightPx: Float(markerHeight),
-            overlapGuardPx: Float(markerWidth * markerOverlapGuardFraction),
-            verticalSpacingPx: Float(markerVerticalSpacing),
-            rows: Int32(min(max(rows, minMarkerRows), maxMarkerRows)),
-            baseY: Float(markerTopPadding + markerHeight / 2)
-        )
-    }
-
-    /// Metrics are blanked when no placement survives, which is exactly the pitch-out-of-range and
-    /// no-location states; formatting a missing rect would otherwise print a sentinel or `nan`.
+    /// Metrics are blanked when no placement survives, which is exactly the pitch-out-of-range,
+    /// sheet-obscured and no-location states; formatting a missing rect would otherwise print a
+    /// sentinel or `nan`. The marker geometry stays in the text so a debug run can check the sizing
+    /// even when there is nothing to place.
     private static func debugLayoutText(
-        viewport: CGSize,
+        layout: MarkerLayout,
         displayScale: CGFloat,
+        screenRotation: ScreenRotation,
+        currentPage: Int,
+        totalPages: Int,
         placements: [ARPlacement]
     ) -> String {
-        let viewportText = String(format: "vp %.0fx%.0f s%.0f", viewport.width, viewport.height, displayScale)
+        let viewportText =
+            String(
+                format: "vp %.0fx%.0f s%.0f mw %.0f d%d",
+                layout.viewport.width,
+                layout.viewport.height,
+                displayScale,
+                layout.markerWidth,
+                layout.divisor
+            )
+            + " r\(rotationLabel(screenRotation)) p\(currentPage + 1)/\(totalPages)"
         guard !placements.isEmpty else { return "\(viewportText)  no placements" }
 
         func centre(_ placement: ARPlacement?) -> String {
@@ -468,6 +753,15 @@ final class ARCameraModel {
         }
 
         return "\(viewportText)  m0 \(centre(placements.first))  m1 \(centre(placements.dropFirst().first))"
+    }
+
+    private static func rotationLabel(_ rotation: ScreenRotation) -> String {
+        switch rotation {
+        case .rotation0: "0"
+        case .rotation90: "90"
+        case .rotation180: "180"
+        case .rotation270: "270"
+        }
     }
 
     // MARK: - Synthetic fixtures

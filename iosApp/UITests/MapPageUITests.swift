@@ -3,60 +3,47 @@ import XCTest
 final class MapPageUITests: XCTestCase {
     private enum Timeout {
         static let element: TimeInterval = 25
-        static let loaded: TimeInterval = 60
+        static let loaded: TimeInterval = 90
     }
 
     override func setUp() {
         continueAfterFailure = false
     }
 
-    func testMapPageRendersPlaces() {
-        let app = XCUIApplication.launchedForUITest()
+    func testMapPageRendersToggledCategoryPlaces() {
+        let app = XCUIApplication.launchedForUITest(arguments: ["-arCamera", "-mapDebug"])
 
-        let preferences = app.buttons["Preferences"]
-        XCTAssertTrue(preferences.waitForExistence(timeout: Timeout.element))
-        preferences.tap()
-
-        XCTAssertEqual(
-            app.switches["user-location-toggle"].value as? String,
-            "0",
-            "The preferences were not reset to their defaults at launch."
+        XCTAssertTrue(
+            app.mainTabButton("Map").waitForExistence(timeout: Timeout.element)
         )
-        setUserLocationToggle(true, in: app, answeringPrompt: { LocationPrompt.allow() })
-        app.buttons["Done"].tap()
-
-        let mapButton = app.segmentedControls.buttons["Map"]
-        XCTAssertTrue(mapButton.waitForExistence(timeout: Timeout.element))
-        mapButton.tap()
+        app.mainTabButton("Map").tap()
 
         let map = app.otherElements["nearby-map"]
         XCTAssertTrue(map.waitForExistence(timeout: Timeout.element))
+        XCTAssertEqual(
+            placeCount(on: map),
+            0,
+            "The map page loaded places before any Place Category was toggled."
+        )
+
+        openPlacesSheet(in: app)
+        setUserLocationButton(true, in: app, answeringPrompt: { LocationPrompt.allow() })
+        toggleCategory("FoodDrink", in: app)
+        app.buttons["places-done"].tap()
 
         waitForNoAlerts(in: app)
-
-        let populated = NSPredicate(
-            format: "label MATCHES %@",
-            "^Nearby places map, [1-9][0-9]* places?$"
-        )
-        let expectation = XCTNSPredicateExpectation(predicate: populated, object: map)
-        XCTAssertEqual(
-            XCTWaiter().wait(for: [expectation], timeout: Timeout.loaded),
-            .completed,
-            "The map page did not load any places; its label is \(map.label)."
-        )
+        waitForPlaces(on: map)
         XCTAssertGreaterThan(placeCount(on: map), 0, "The map page reported an empty place count.")
 
+        let debugCamera = app.staticTexts["map-camera"]
+        XCTAssertTrue(debugCamera.waitForExistence(timeout: Timeout.element))
+        XCTAssertNotEqual(
+            stableValue(of: debugCamera, timeout: 20, differingFrom: "none"),
+            "none",
+            "The map camera was not recorded after the fit."
+        )
+
         waitForNoAlerts(in: app)
-
-        let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
-        screenshot.name = "map-page"
-        screenshot.lifetime = .keepAlways
-        add(screenshot)
-    }
-
-    private func placeCount(on map: XCUIElement) -> Int {
-        let value = map.label.replacingOccurrences(of: "Nearby places map, ", with: "")
-        guard let count = value.split(separator: " ").first else { return 0 }
-        return Int(count) ?? 0
+        attachScreenshot(named: "map-page")
     }
 }

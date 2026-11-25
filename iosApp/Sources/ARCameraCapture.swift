@@ -16,9 +16,21 @@ final class ARCameraCapture: NSObject, AVCaptureVideoDataOutputSampleBufferDeleg
     private static let log = Logger(subsystem: "com.trm.sightline", category: "arcamera.capture")
 
     private let session = AVCaptureSession()
-    private let queue = DispatchQueue(label: "com.trm.sightline.arcamera.capture")
+    private let sessionQueue = DispatchQueue(label: "com.trm.sightline.arcamera.session")
+    private let videoQueue = DispatchQueue(label: "com.trm.sightline.arcamera.video")
     private weak var renderer: ARCameraRenderer?
     private var isConfigured = false
+    private var videoConnection: AVCaptureConnection?
+    /// Touched on `sessionQueue` only; the default matches `UIInterfaceOrientation.portrait`.
+    private var requestedVideoRotationAngle: CGFloat = 90
+
+    deinit {
+        // Safety net: if the object is deallocated without an explicit stop (e.g. app termination),
+        // ensure the hardware is released so other apps can use the camera.
+        if session.isRunning {
+            session.stopRunning()
+        }
+    }
 
     static var isCameraAvailable: Bool {
         AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) != nil
@@ -61,9 +73,37 @@ final class ARCameraCapture: NSObject, AVCaptureVideoDataOutputSampleBufferDeleg
         }
     }
 
+    /// Keeps the delivered buffers aligned with the interface orientation. Safe to call before the
+    /// session is configured: the angle is stored and applied once the output exists.
+    func setVideoRotationAngle(_ angle: CGFloat) {
+        sessionQueue.async { [weak self] in
+            guard let self else { return }
+            self.requestedVideoRotationAngle = angle
+            self.applyVideoRotationAngle()
+        }
+    }
+
+    private func applyVideoRotationAngle() {
+        guard let connection = videoConnection else { return }
+        guard connection.isVideoRotationAngleSupported(requestedVideoRotationAngle) else {
+            Self.log.notice(
+                "video rotation angle \(self.requestedVideoRotationAngle, privacy: .public) is unsupported"
+            )
+            return
+        }
+        guard connection.videoRotationAngle != requestedVideoRotationAngle else { return }
+        session.beginConfiguration()
+        connection.videoRotationAngle = requestedVideoRotationAngle
+        session.commitConfiguration()
+    }
+
     func stop() {
         Self.log.info("stop requested: session \(self.session.isRunning ? "running" : "idle", privacy: .public)")
-        queue.async { [session] in
+        // Stop synchronously on the session queue so the camera hardware is fully released before
+        // this method returns. This is critical on app background / termination: an async dispatch
+        // may never execute, leaving the AVCaptureSession attached to the camera device and
+        // corrupting the hardware pipeline device-wide (black / green frames in other apps).
+        sessionQueue.sync { [session] in
             guard session.isRunning else { return }
             session.stopRunning()
             Self.log.info("capture session stopped")
@@ -87,7 +127,7 @@ final class ARCameraCapture: NSObject, AVCaptureVideoDataOutputSampleBufferDeleg
     }
 
     private func startSession() {
-        queue.async { [weak self] in
+        sessionQueue.async { [weak self] in
             guard let self else { return }
             if !self.isConfigured {
                 guard self.configure() else {
@@ -114,7 +154,7 @@ final class ARCameraCapture: NSObject, AVCaptureVideoDataOutputSampleBufferDeleg
         let output = AVCaptureVideoDataOutput()
         output.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA]
         output.alwaysDiscardsLateVideoFrames = true
-        output.setSampleBufferDelegate(self, queue: queue)
+        output.setSampleBufferDelegate(self, queue: videoQueue)
 
         session.beginConfiguration()
         session.sessionPreset = .hd1280x720
@@ -127,10 +167,11 @@ final class ARCameraCapture: NSObject, AVCaptureVideoDataOutputSampleBufferDeleg
         session.addOutput(output)
         if let connection = output.connection(with: .video) {
             connection.isVideoMirrored = false
-            // Portrait-only app: ask AVFoundation for upright buffers instead of rotating in the
-            // shader. The renderer keeps a landscape fallback for devices that ignore this.
-            if connection.isVideoRotationAngleSupported(90) {
-                connection.videoRotationAngle = 90
+            videoConnection = connection
+            // Ask AVFoundation for upright buffers instead of rotating in the shader. The renderer
+            // keeps a UV fallback for devices that ignore this.
+            if connection.isVideoRotationAngleSupported(requestedVideoRotationAngle) {
+                connection.videoRotationAngle = requestedVideoRotationAngle
             }
         }
         session.commitConfiguration()

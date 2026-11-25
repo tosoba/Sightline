@@ -3,29 +3,45 @@ import Observation
 import Shared
 import os
 
+/// Thin `@MainActor @Observable` adapter over the shared `PlacesCoordinator`.
+///
+/// Every piece of places, location, and custom-location-search state lives in the coordinator; this
+/// type mirrors the coordinator's `StateFlow`s into observable properties and forwards user intents.
 @MainActor
 @Observable
 final class NearbyPlacesModel {
     private static let logger = Logger(subsystem: "com.trm.sightline", category: "places")
 
     private let shared: SightlineShared
-    private(set) var currentLocation: GeoLocation?
+    private let coordinator: PlacesCoordinator
 
-    var selectedCategory: PlaceCategory = .sightsLandmarks
-    private(set) var places: [Place] = []
-    private(set) var isLoading = false
+    private(set) var activeLocation: GeoLocation?
+    private(set) var userLocation: GeoLocation?
+    private(set) var allPlaces: [Place] = []
+    private(set) var categoryStates: [PlaceCategory: any CategoryPlacesState] = [:]
+    private(set) var userLocationAddress: any LocationAddressState = LocationAddressStateLoaded(
+        address: "")
+    private(set) var customLocationAddress = ""
+    private(set) var customLocationSearchResults: any CustomLocationSearchState =
+        CustomLocationSearchStateIdle.shared
+    private(set) var userLocationEnabled = false
+    private(set) var searchRadius: PlaceSearchRadius = .oneKilometer
+    private(set) var lastMapPosition: MapCameraPosition?
     private(set) var errorMessage: String?
     private(set) var authorization: LocationAuthorization = .notDetermined
-    private(set) var hasLocation = false
-
-    private(set) var searchRadius: PlaceSearchRadius = .oneKilometer
-    private(set) var userLocationEnabled = false
     private(set) var isLocationServicesDisabled = false
-    private(set) var lastMapPosition: MapCameraPosition?
 
-    private var locationTask: Task<Void, Never>?
-    private var mapPositionTask: Task<Void, Never>?
     private var locationEnabledTask: Task<Void, Never>?
+
+    var hasLocation: Bool { activeLocation != nil }
+
+    var isLoading: Bool {
+        categoryStates.keys.contains(where: isLoading)
+    }
+
+    var activeCategories: [PlaceCategory] {
+        PlaceCategory.allCases.filter { categoryStates[$0] != nil }
+    }
 
     var isLocationDenied: Bool {
         authorization == .denied || authorization == .restricted
@@ -33,20 +49,87 @@ final class NearbyPlacesModel {
 
     init(shared: SightlineShared) {
         self.shared = shared
+        coordinator = shared.placesCoordinator
     }
+
+    func isActive(_ category: PlaceCategory) -> Bool {
+        categoryStates[category] != nil
+    }
+
+    func isLoading(_ category: PlaceCategory) -> Bool {
+        guard let state = categoryStates[category] else { return false }
+        if case .loading = onEnum(of: state) { return true }
+        return false
+    }
+
+    func isLoaded(_ category: PlaceCategory) -> Bool {
+        guard let state = categoryStates[category] else { return false }
+        if case .loaded = onEnum(of: state) { return true }
+        return false
+    }
+
+    func places(in category: PlaceCategory) -> [Place] {
+        guard let state = categoryStates[category] else { return [] }
+        if case .loaded(let loaded) = onEnum(of: state) { return loaded.places }
+        return []
+    }
+
+    // MARK: - Intents
+
+    func onTogglePlaceCategory(_ category: PlaceCategory) {
+        coordinator.onTogglePlaceCategory(category: category)
+    }
+
+    func setCustomLocationAddress(_ query: String) {
+        coordinator.setCustomLocationAddress(query: query)
+    }
+
+    func onCustomLocationSearchResultClick(_ location: CustomLocation) {
+        coordinator.onCustomLocationSearchResultClick(location: location)
+    }
+
+    func cancelCustomLocationSearch() {
+        coordinator.cancelCustomLocationSearch()
+    }
+
+    func setUserLocationEnabled(_ enabled: Bool) {
+        coordinator.setUserLocationEnabled(enabled: enabled)
+    }
+
+    func setSearchRadius(_ radius: PlaceSearchRadius) {
+        guard radius != searchRadius else { return }
+        coordinator.setSearchRadius(radius: radius)
+    }
+
+    func saveMapPosition(_ position: MapCameraPosition) {
+        coordinator.saveMapPosition(position: position)
+    }
+
+    // MARK: - Observation
 
     func observeAuthorization() async {
         for await state in shared.authorizationState {
             authorization = state
+            if state == .denied || state == .restricted, userLocationEnabled {
+                coordinator.setUserLocationEnabled(enabled: false)
+            }
             Self.logger.info("authorization changed to \(state.name, privacy: .public)")
         }
     }
 
     func observePreferences() async {
         await withTaskGroup(of: Void.self) { group in
+            group.addTask { await self.observePlaces() }
+            group.addTask { await self.observeAllPlaces() }
+            group.addTask { await self.observeActiveLocation() }
+            group.addTask { await self.observeUserLocation() }
+            group.addTask { await self.observeUserLocationAddress() }
+            group.addTask { await self.observeCustomLocationAddress() }
+            group.addTask { await self.observeCustomLocationSearch() }
             group.addTask { await self.observeUserLocationEnabled() }
             group.addTask { await self.observeSearchRadius() }
             group.addTask { await self.observeLastMapPosition() }
+            group.addTask { await self.observeErrors() }
         }
     }
 
@@ -63,147 +146,80 @@ final class NearbyPlacesModel {
         }
     }
 
-    func select(_ category: PlaceCategory) async {
-        selectedCategory = category
-        await reload()
-    }
-
-    func setSearchRadius(_ radius: PlaceSearchRadius) {
-        guard radius != searchRadius else { return }
-        searchRadius = radius
-        Task {
-            do {
-                try await shared.preferences.setSearchRadius(radius: radius)
-            } catch {
-                Self.logger.error("saving the search radius failed: \(error.localizedDescription, privacy: .public)")
-            }
-        }
-        if hasLocation {
-            Task { await reload() }
+    private func observePlaces() async {
+        for await states in coordinator.places {
+            categoryStates = states
         }
     }
 
-    func setUserLocationEnabled(_ enabled: Bool) {
-        guard enabled != userLocationEnabled else { return }
-        userLocationEnabled = enabled
-        restartLocationUpdates()
-        Task {
-            do {
-                try await shared.preferences.setUserLocationEnabled(enabled: enabled)
-            } catch {
-                Self.logger.error("saving the user-location toggle failed: \(error.localizedDescription, privacy: .public)")
-            }
+    private func observeAllPlaces() async {
+        for await places in coordinator.allPlaces {
+            allPlaces = places
         }
     }
 
-    func saveMapPosition(_ position: MapCameraPosition) {
-        mapPositionTask?.cancel()
-        mapPositionTask = Task { [weak self] in
-            do {
-                try await Task.sleep(for: .seconds(1))
-            } catch {
-                return
-            }
-            guard let self, !Task.isCancelled else { return }
-            do {
-                try await self.shared.preferences.setLastMapPosition(position: position)
-                Self.logger.info(
-                    "saved map camera \(position.latitude, privacy: .public), \(position.longitude, privacy: .public), zoom \(position.zoom, privacy: .public)"
-                )
-            } catch {
-                Self.logger.error("saving the map camera failed: \(error.localizedDescription, privacy: .public)")
-            }
+    private func observeActiveLocation() async {
+        for await location in coordinator.activeLocation {
+            activeLocation = location
         }
     }
 
-    func reload() async {
-        guard let currentLocation else {
-            places = []
-            hasLocation = false
-            errorMessage = userLocationEnabled ? "Waiting for a location fix." : nil
-            return
+    private func observeUserLocation() async {
+        for await location in coordinator.userLocation {
+            userLocation = location
         }
+    }
 
-        isLoading = true
-        errorMessage = nil
-
-        do {
-            let fetched = try await shared.nearbyPlaces(
-                category: selectedCategory,
-                location: currentLocation,
-                radiusMeters: Float(searchRadius.meters)
-            )
-            places = fetched
-            Self.logger.info(
-                "fetched \(fetched.count, privacy: .public) places for \(self.selectedCategory.name, privacy: .public) within \(self.searchRadius.meters, privacy: .public) m"
-            )
-            print("SIGHTLINE fetched \(fetched.count) places for \(selectedCategory.name)")
-        } catch {
-            places = []
-            errorMessage = error.localizedDescription
-            Self.logger.error("places request failed: \(error.localizedDescription, privacy: .public)")
-            print("SIGHTLINE places request failed: \(error)")
+    private func observeUserLocationAddress() async {
+        for await state in coordinator.userLocationAddress {
+            userLocationAddress = state
         }
+    }
 
-        isLoading = false
+    private func observeCustomLocationAddress() async {
+        for await address in coordinator.customLocationAddress {
+            customLocationAddress = address
+        }
+    }
+
+    private func observeCustomLocationSearch() async {
+        for await state in coordinator.customLocationSearchResults {
+            customLocationSearchResults = state
+        }
     }
 
     private func observeUserLocationEnabled() async {
-        for await enabledValue in shared.preferences.userLocationEnabled {
-            let enabled = enabledValue.boolValue
-            guard enabled != userLocationEnabled || locationTask == nil else { continue }
-            userLocationEnabled = enabled
-            Self.logger.info("user location enabled: \(enabled, privacy: .public)")
-            restartLocationUpdates()
+        for await enabled in coordinator.userLocationEnabled {
+            userLocationEnabled = enabled.boolValue
+            Self.logger.info("user location enabled: \(enabled.boolValue, privacy: .public)")
         }
     }
 
     private func observeSearchRadius() async {
-        for await radius in shared.preferences.searchRadius {
+        for await radius in coordinator.searchRadius {
             guard radius != searchRadius else { continue }
             searchRadius = radius
             Self.logger.info("search radius changed to \(radius.meters, privacy: .public) m")
-            if hasLocation {
-                await reload()
-            }
         }
     }
 
     private func observeLastMapPosition() async {
-        for await position in shared.preferences.lastMapPosition {
-            if position != lastMapPosition {
-                lastMapPosition = position
-            }
+        for await position in coordinator.lastMapPosition {
+            lastMapPosition = position
         }
     }
 
-    private func restartLocationUpdates() {
-        locationTask?.cancel()
-        locationTask = nil
-
-        guard userLocationEnabled else {
-            currentLocation = nil
-            hasLocation = false
-            places = []
-            errorMessage = nil
-            return
-        }
-
-        locationTask = Task { [weak self] in
-            guard let self else { return }
-            await self.consumeLocationUpdates()
+    private func observeErrors() async {
+        for await error in coordinator.error {
+            errorMessage = error.map { message(for: $0) }
         }
     }
 
-    private func consumeLocationUpdates() async {
-        for await location in shared.locationUpdates {
-            guard !Task.isCancelled else { return }
-            currentLocation = location
-            hasLocation = true
-            Self.logger.info(
-                "location fix \(location.latitude, privacy: .public), \(location.longitude, privacy: .public)"
-            )
-            await reload()
+    private func message(for error: any RequestError) -> String {
+        switch onEnum(of: error) {
+        case .iO: "A connection error occurred."
+        case .http: "A server error occurred - try again later."
+        case .other: "An unknown error occurred - try again later."
         }
     }
 }

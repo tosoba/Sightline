@@ -16,7 +16,7 @@ enum MainPage: String, CaseIterable, Identifiable {
 
     var systemImage: String {
         switch self {
-        case .camera: "camera"
+        case .camera: "camera.viewfinder"
         case .map: "map"
         }
     }
@@ -25,129 +25,200 @@ enum MainPage: String, CaseIterable, Identifiable {
 struct MainScreen: View {
     @State private var model: NearbyPlacesModel
     @State private var page: MainPage = ARCameraLaunchOptions.current.requestedPage ?? .camera
-    @State private var path: [CategoryRoute] = []
-    @State private var showsPreferences = false
+    @State private var showsPlacesSheet = false
+    @State private var sheetDetent: PresentationDetent = .medium
+    @State private var categoryPath: [CategoryRoute] = []
+    @State private var toolbarsVisible = true
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
 
     init(shared: SightlineShared) {
         _model = State(initialValue: NearbyPlacesModel(shared: shared))
     }
 
+    private var sheetObscuresCamera: Bool {
+        showsPlacesSheet
+            && (horizontalSizeClass == .regular
+                || verticalSizeClass == .compact
+                || sheetDetent == .large)
+    }
+
     var body: some View {
-        NavigationStack(path: $path) {
-            VStack(spacing: 0) {
-                header
-                Divider()
-                locationStatus
-                TabView(selection: $page) {
-                    ARCameraScreen(nearbyModel: model, isActive: page == .camera)
-                        .tag(MainPage.camera)
-                    MapScreen(model: model)
-                        .tag(MainPage.map)
-                }
-                .tabViewStyle(.page(indexDisplayMode: .never))
+        TabView(selection: $page) {
+            tabContent(showsControls: toolbarsVisible) {
+                ARCameraScreen(
+                    nearbyModel: model,
+                    isActive: page == .camera,
+                    toolbarsVisible: toolbarsVisible,
+                    sheetObscuresCamera: sheetObscuresCamera,
+                    onCanvasTap: toggleToolbars
+                )
             }
-            .navigationTitle("Nearby places")
-            .navigationDestination(for: CategoryRoute.self) { route in
-                CategoryPlacesScreen(route: route)
+            .tag(MainPage.camera)
+            .tabItem {
+                Label(MainPage.camera.title, systemImage: MainPage.camera.systemImage)
             }
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showsPreferences = true
-                    } label: {
-                        Label("Preferences", systemImage: "gearshape")
-                    }
-                }
+
+            tabContent(showsControls: true) {
+                MapScreen(model: model)
             }
-            .sheet(isPresented: $showsPreferences) {
-                PreferencesView(model: model)
+            .tag(MainPage.map)
+            .tabItem {
+                Label(MainPage.map.title, systemImage: MainPage.map.systemImage)
             }
-            .task {
+        }
+        .sheet(isPresented: $showsPlacesSheet, onDismiss: resetSheetState) {
+            PlacesSheet(model: model, sheetDetent: $sheetDetent, path: $categoryPath)
+        }
+        .task {
+            model.refreshLocationServices()
+            await withTaskGroup(of: Void.self) { group in
+                group.addTask { await model.observeAuthorization() }
+                group.addTask { await model.observePreferences() }
+            }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
                 model.refreshLocationServices()
-                await withTaskGroup(of: Void.self) { group in
-                    group.addTask { await model.observeAuthorization() }
-                    group.addTask { await model.observePreferences() }
-                }
-            }
-            .onChange(of: scenePhase) { _, phase in
-                if phase == .active {
-                    model.refreshLocationServices()
-                }
             }
         }
-    }
-
-    private var header: some View {
-        VStack(spacing: 10) {
-            categoryRow
-
-            Picker("Page", selection: $page) {
-                ForEach(MainPage.allCases) { page in
-                    Label(page.title, systemImage: page.systemImage).tag(page)
-                }
-            }
-            .pickerStyle(.segmented)
-            .fixedSize()
-        }
-        .padding(.vertical, 8)
-    }
-
-    private var categoryRow: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(PlaceCategory.allCases, id: \.self) { category in
-                    Button {
-                        open(category)
-                    } label: {
-                        Text(category.title)
-                            .font(.subheadline.weight(.medium))
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .foregroundStyle(
-                                category == model.selectedCategory ? Color.accentColor : .primary
-                            )
-                            .background(
-                                category == model.selectedCategory
-                                    ? Color.accentColor.opacity(0.16)
-                                    : Color.secondary.opacity(0.12),
-                                in: Capsule()
-                            )
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(.horizontal)
+        .onChange(of: page) { _, _ in
+            toolbarsVisible = true
         }
     }
 
     @ViewBuilder
-    private var locationStatus: some View {
-        if model.isLocationDenied {
-            LocationAccessBanner(
-                message: "Location access is off. Enable it in Settings to see nearby places.",
-                actionTitle: "Settings",
-                action: AppSettings.open
-            )
-        } else if model.isLocationServicesDisabled && model.userLocationEnabled {
-            LocationAccessBanner(
-                message: "Location services are off. Enable them in Settings to see nearby places.",
-                actionTitle: "Settings",
-                action: AppSettings.open
-            )
-        } else if !model.userLocationEnabled {
-            LocationAccessBanner(
-                message: "Location is off.",
-                actionTitle: "Turn on",
-                action: { model.setUserLocationEnabled(true) }
-            )
+    private func tabContent<Content: View>(
+        showsControls: Bool,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        content()
+            .overlay(alignment: .bottomLeading) {
+                if showsControls {
+                    floatingControls
+                        .transition(.opacity)
+                }
+            }
+            .overlay(alignment: .top) {
+                errorBanner
+            }
+            .animation(.easeInOut(duration: 0.2), value: showsControls)
+            .animation(.easeInOut(duration: 0.2), value: model.errorMessage)
+    }
+
+    private var floatingControls: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            radiusMenu
+            placesTrigger
+        }
+        .padding(.leading, 16)
+        .safeAreaPadding(.bottom, 12)
+    }
+
+    private var radiusMenu: some View {
+        Menu {
+            ForEach(PlaceSearchRadius.allCases, id: \.self) { radius in
+                Button {
+                    model.setSearchRadius(radius)
+                } label: {
+                    if radius == model.searchRadius {
+                        Label(radius.title, systemImage: "checkmark")
+                    } else {
+                        Text(radius.title)
+                    }
+                }
+                .accessibilityIdentifier("radius-option-\(radius.meters)")
+            }
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "scope")
+                Text(model.searchRadius.title)
+            }
+            .font(.subheadline.weight(.medium))
+            .padding(.horizontal, 12)
+            .frame(height: 40)
+            .background(.regularMaterial, in: Capsule())
+        }
+        .accessibilityIdentifier("radius-menu")
+        .accessibilityLabel("Search radius, \(model.searchRadius.title)")
+    }
+
+    private var placesTrigger: some View {
+        Button {
+            showsPlacesSheet = true
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: model.userLocationEnabled ? "location.fill" : "location")
+                Text(locationSummary)
+                    .lineLimit(1)
+            }
+            .font(.subheadline.weight(.medium))
+            .padding(.horizontal, 12)
+            .frame(height: 40)
+            .frame(maxWidth: 260, alignment: .leading)
+            .background(.regularMaterial, in: Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("places-trigger")
+        .accessibilityLabel("Places & Location, \(locationSummary)")
+    }
+
+    private var locationSummary: String {
+        let categoryCount = model.activeCategories.count
+        if categoryCount > 0 {
+            return categoryCount == 1 ? "1 category" : "\(categoryCount) categories"
+        }
+        if model.userLocationEnabled {
+            return "My location"
+        }
+        if !model.customLocationAddress.isEmpty {
+            return model.customLocationAddress
+        }
+        return "Set location"
+    }
+
+    @ViewBuilder
+    private var errorBanner: some View {
+        if let message = model.errorMessage {
+            HStack(spacing: 8) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.red)
+                Text(message)
+                    .font(.footnote.weight(.medium))
+                    .foregroundStyle(.primary)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(.regularMaterial, in: Capsule())
+            .padding(.horizontal, 16)
+            .safeAreaPadding(.top, 8)
+            .transition(.move(edge: .top).combined(with: .opacity))
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("error-banner")
         }
     }
 
-    private func open(_ category: PlaceCategory) {
-        Task {
-            await model.select(category)
-            path.append(CategoryRoute(category: category, places: model.places))
+    private func toggleToolbars() {
+        guard !showsPlacesSheet else { return }
+        withAnimation(.easeInOut(duration: 0.2)) {
+            toolbarsVisible.toggle()
+        }
+    }
+
+    private func resetSheetState() {
+        sheetDetent = .medium
+        categoryPath.removeAll()
+    }
+}
+
+extension PlaceSearchRadius {
+    var title: String {
+        switch self {
+        case .fiveHundred: "500 m"
+        case .oneKilometer: "1 km"
+        case .twoKilometers: "2 km"
+        case .fiveKilometers: "5 km"
         }
     }
 }

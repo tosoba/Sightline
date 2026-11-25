@@ -13,6 +13,16 @@ extension XCUIApplication {
         app.launch()
         return app
     }
+
+    /// iPhone renders the tabs in a bottom tab bar; iPad renders them as a floating top bar that
+    /// XCUITest exposes as plain buttons, so match the label rather than the container type.
+    func mainTabButton(_ title: String) -> XCUIElement {
+        let inTabBar = tabBars.buttons[title]
+        if inTabBar.exists {
+            return inTabBar
+        }
+        return buttons.matching(NSPredicate(format: "label == %@", title)).firstMatch
+    }
 }
 
 enum LocationPrompt {
@@ -48,33 +58,122 @@ enum LocationPrompt {
 }
 
 extension XCTestCase {
-    /// A tap on a `Form` row's label does not move its switch, so tap the knob at the trailing
-    /// edge and wait for the accessibility value to prove the state actually changed.
-    func setUserLocationToggle(
+    // MARK: - Places & Location sheet
+
+    func openPlacesSheet(in app: XCUIApplication, timeout: TimeInterval = 25) {
+        let trigger = app.buttons["places-trigger"]
+        XCTAssertTrue(
+            trigger.waitForExistence(timeout: timeout),
+            "The Places & Location trigger pill is missing."
+        )
+        trigger.tap()
+        XCTAssertTrue(
+            app.buttons["places-done"].waitForExistence(timeout: timeout),
+            "The Places & Location sheet did not present."
+        )
+    }
+
+    func setUserLocationButton(
         _ enabled: Bool,
         in app: XCUIApplication,
         answeringPrompt answer: () -> Void,
-        timeout: TimeInterval = 25
+        timeout: TimeInterval = 40
     ) {
-        let toggle = app.switches["user-location-toggle"]
+        let button = app.buttons["use-my-location-button"]
         XCTAssertTrue(
-            toggle.waitForExistence(timeout: timeout),
-            "The user-location toggle is missing from the preferences sheet."
+            button.waitForExistence(timeout: 25),
+            "The Use my location button is missing from the sheet."
         )
 
-        let wanted = enabled ? "1" : "0"
-        if (toggle.value as? String) == wanted { return }
+        let wanted = enabled ? "On" : "Off"
+        if (button.value as? String) == wanted { return }
 
-        for offset in [0.92, 0.98] {
-            toggle.coordinate(withNormalizedOffset: CGVector(dx: offset, dy: 0.5)).tap()
-            answer()
-            if waitForValue(of: toggle, equals: wanted, timeout: 5) { return }
-        }
-
-        XCTFail(
-            "The user-location toggle did not change to \(wanted); its value is \(String(describing: toggle.value))."
+        button.tap()
+        answer()
+        XCTAssertTrue(
+            waitForValue(of: button, equals: wanted, timeout: timeout),
+            "Use my location did not change to \(wanted); its value is \(String(describing: button.value))."
         )
     }
+
+    func chooseRadius(_ title: String, in app: XCUIApplication) {
+        let menu = app.buttons["radius-menu"]
+        XCTAssertTrue(menu.waitForExistence(timeout: 25), "The Search Radius menu is missing.")
+        menu.tap()
+
+        let option = app.buttons[title]
+        XCTAssertTrue(option.waitForExistence(timeout: 10), "The \(title) radius option is missing.")
+        option.tap()
+
+        XCTAssertTrue(
+            waitForLabelContains(menu, text: title, timeout: 10),
+            "The Search Radius menu did not select \(title); its label is \(menu.label)."
+        )
+    }
+
+    func toggleCategory(_ name: String, in app: XCUIApplication) {
+        let toggle = app.buttons["category-toggle-\(name)"]
+        XCTAssertTrue(toggle.waitForExistence(timeout: 25), "The \(name) category toggle is missing.")
+        XCTAssertTrue(waitForEnabled(toggle, timeout: 40), "The \(name) category toggle never enabled.")
+        toggle.tap()
+    }
+
+    // MARK: - Map
+
+    /// Waits for a positive place count, not merely a value other than the empty placeholder.
+    func waitForPlaces(
+        on map: XCUIElement,
+        prefix: String = "Nearby places map",
+        timeout: TimeInterval = 90
+    ) {
+        let populated = NSPredicate(
+            format: "label MATCHES %@",
+            "^\(prefix), [1-9][0-9]* places?$"
+        )
+        let expectation = XCTNSPredicateExpectation(predicate: populated, object: map)
+        XCTAssertEqual(
+            XCTWaiter().wait(for: [expectation], timeout: timeout),
+            .completed,
+            "The map never received nearby places; its label is \(map.label)."
+        )
+    }
+
+    func placeCount(on map: XCUIElement, prefix: String = "Nearby places map") -> Int {
+        let value = map.label.replacingOccurrences(of: "\(prefix), ", with: "")
+        guard let count = value.split(separator: " ").first else { return 0 }
+        return Int(count) ?? 0
+    }
+
+    /// A loaded category card reads `Open <title>, N places`; `Not selected` and `Loading...` fail it.
+    func categoryCardShowsCount(_ card: XCUIElement, title: String) -> Bool {
+        card.label.range(
+            of: "^Open \(NSRegularExpression.escapedPattern(for: title)), [1-9][0-9]* places?$",
+            options: .regularExpression
+        ) != nil
+    }
+
+    func waitForCategoryPlaces(
+        named name: String,
+        title: String,
+        in app: XCUIApplication,
+        timeout: TimeInterval = 90
+    ) {
+        let card = app.buttons["category-card-\(name)"]
+        let loaded = NSPredicate(
+            format: "label MATCHES %@",
+            "Open \(title), [1-9][0-9]* places?"
+        )
+        XCTAssertEqual(
+            XCTWaiter().wait(
+                for: [XCTNSPredicateExpectation(predicate: loaded, object: card)],
+                timeout: timeout
+            ),
+            .completed,
+            "The \(name) category never loaded places; its label is \(card.label)."
+        )
+    }
+
+    // MARK: - Waiting
 
     func waitForValue(
         of element: XCUIElement,
@@ -83,6 +182,26 @@ extension XCTestCase {
     ) -> Bool {
         let expectation = XCTNSPredicateExpectation(
             predicate: NSPredicate(format: "value == %@", value),
+            object: element
+        )
+        return XCTWaiter().wait(for: [expectation], timeout: timeout) == .completed
+    }
+
+    func waitForEnabled(_ element: XCUIElement, timeout: TimeInterval) -> Bool {
+        let expectation = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "enabled == true"),
+            object: element
+        )
+        return XCTWaiter().wait(for: [expectation], timeout: timeout) == .completed
+    }
+
+    func waitForLabelContains(
+        _ element: XCUIElement,
+        text: String,
+        timeout: TimeInterval
+    ) -> Bool {
+        let expectation = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "label CONTAINS %@", text),
             object: element
         )
         return XCTWaiter().wait(for: [expectation], timeout: timeout) == .completed
@@ -101,5 +220,32 @@ extension XCTestCase {
                 "A system alert is blocking the UI."
             )
         }
+    }
+
+    /// Waits for a debug label to settle on a new value, so the assertion compares the debounced
+    /// camera that was actually persisted instead of a value mid-gesture.
+    func stableValue(
+        of element: XCUIElement,
+        timeout: TimeInterval,
+        differingFrom initial: String
+    ) -> String {
+        let deadline = Date().addingTimeInterval(timeout)
+        var last = element.label
+        while Date() < deadline {
+            RunLoop.current.run(until: Date().addingTimeInterval(0.5))
+            let current = element.label
+            if current != initial, current == last, current != "none" {
+                return current
+            }
+            last = current
+        }
+        return last
+    }
+
+    func attachScreenshot(named name: String) {
+        let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        screenshot.name = name
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
     }
 }

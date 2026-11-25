@@ -3,6 +3,7 @@ package com.trm.sightline.shared
 import com.trm.sightline.core.common.location.LocationAuthorization
 import com.trm.sightline.core.common.location.LocationProvider
 import com.trm.sightline.core.common.location.LocationSettingsState
+import com.trm.sightline.core.domain.AddressRepository
 import com.trm.sightline.core.domain.PlacesRepository
 import com.trm.sightline.core.domain.UserPreferencesRepository
 import com.trm.sightline.core.model.CustomLocation
@@ -40,10 +41,12 @@ class SightlineSharedTest {
     )
 
   private val placesRepository = FakePlacesRepository(listOf(farPlace, nearPlace))
+  private val addressRepository = FakeAddressRepository()
   private val userPreferencesRepository = FakeUserPreferencesRepository()
   private val shared =
     SightlineShared(
       placesRepository = placesRepository,
+      addressRepository = addressRepository,
       locationProvider = FakeLocationProvider(),
       userPreferencesRepository = userPreferencesRepository,
     )
@@ -104,6 +107,26 @@ class SightlineSharedTest {
     assertEquals(PlaceSearchRadius.OneKilometer, shared.preferences.searchRadius.first())
     assertNull(shared.preferences.lastMapPosition.first())
   }
+
+  @Test
+  fun reverseGeocodingIsDelegatedToTheAddressRepository() = runTest {
+    addressRepository.address = "Kraków, Poland"
+
+    val address = shared.reverseGeocode(krakow)
+
+    assertEquals("Kraków, Poland", address)
+    assertEquals(listOf(krakow.latitude to krakow.longitude), addressRepository.reverseQueries)
+  }
+
+  @Test
+  fun addressSearchDefaultsToOneHundredResults() = runTest {
+    shared.searchAddresses("Kraków")
+
+    assertEquals(
+      listOf(AddressSearchQuery(query = "Kraków", limit = 100)),
+      addressRepository.searchQueries,
+    )
+  }
 }
 
 private data class PlaceQuery(
@@ -124,6 +147,24 @@ private class FakePlacesRepository(private val places: List<Place>) : PlacesRepo
   ): List<Place> {
     queries += PlaceQuery(category, latitude, longitude, radiusMeters)
     return places
+  }
+}
+
+private data class AddressSearchQuery(val query: String, val limit: Int)
+
+private class FakeAddressRepository : AddressRepository {
+  val reverseQueries = mutableListOf<Pair<Double, Double>>()
+  val searchQueries = mutableListOf<AddressSearchQuery>()
+  var address: String? = null
+
+  override suspend fun getAddress(latitude: Double, longitude: Double): String? {
+    reverseQueries += latitude to longitude
+    return address
+  }
+
+  override suspend fun search(query: String, limit: Int): List<CustomLocation> {
+    searchQueries += AddressSearchQuery(query, limit)
+    return emptyList()
   }
 }
 

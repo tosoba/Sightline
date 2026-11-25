@@ -27,6 +27,10 @@ final class ARCameraMotion {
     private var timer: Timer?
     private var scriptedStart = CACurrentMediaTime()
 
+    /// Scripted poses describe a portrait hold; offsetting the roll by the Screen Rotation makes the
+    /// simulator feed the same rolled orientation a physically rotated device would report.
+    var screenRotation: ScreenRotation = .rotation0
+
     var onRotationMatrix: ((RotationMatrix) -> Void)?
     var onScriptedPose: ((String) -> Void)?
 
@@ -83,21 +87,26 @@ final class ARCameraMotion {
 
     private func emitScripted(_ pose: ARScriptedAttitude) {
         let elapsed = CACurrentMediaTime() - scriptedStart
+        let rollOffset = Double(screenRotation.rollOffsetRadians)
         let matrix: RotationMatrix
         switch pose {
         case .uprightNorth:
-            matrix = Self.pose(bearing: 0, pitchDown: 0, roll: 0)
+            matrix = Self.pose(bearing: 0, pitchDown: 0, roll: rollOffset)
         case .uprightLeft:
-            matrix = Self.pose(bearing: -.pi / 18, pitchDown: 0, roll: 0)
+            matrix = Self.pose(bearing: -.pi / 18, pitchDown: 0, roll: rollOffset)
         case .uprightRight:
-            matrix = Self.pose(bearing: .pi / 18, pitchDown: 0, roll: 0)
+            matrix = Self.pose(bearing: .pi / 18, pitchDown: 0, roll: rollOffset)
         case .tilted:
-            matrix = Self.pose(bearing: 0, pitchDown: 0.30, roll: 0.14)
+            matrix = Self.pose(bearing: 0, pitchDown: 0.30, roll: 0.14 + rollOffset)
         case .flat:
             matrix = Self.flat()
         case .sweep:
             // Oscillate inside the marker field so the alignment can be watched live.
-            matrix = Self.pose(bearing: sin(elapsed * 0.8) * (25.0 * .pi / 180.0), pitchDown: 0, roll: 0)
+            matrix = Self.pose(
+                bearing: sin(elapsed * 0.8) * (25.0 * .pi / 180.0),
+                pitchDown: 0,
+                roll: rollOffset
+            )
         }
         onRotationMatrix?(matrix)
     }
