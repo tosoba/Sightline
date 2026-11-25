@@ -1,5 +1,6 @@
 package com.trm.sightline.shared
 
+import com.trm.sightline.core.ar.math.ScreenRotation
 import kotlin.math.PI
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -111,12 +112,21 @@ class ArOrientationTrackerTest {
 
   private fun trackerReads(matrix: RotationMatrix) = ArOrientationTracker().update(matrix)
 
+  @Test
+  fun `each screen rotation reports the roll offset of a physically rotated device`() {
+    assertEquals(0f, ScreenRotation.ROTATION_0.rollOffsetRadians, ROLL_TOLERANCE)
+    assertEquals(-1.5707964f, ScreenRotation.ROTATION_90.rollOffsetRadians, ROLL_TOLERANCE)
+    assertEquals(3.1415927f, ScreenRotation.ROTATION_180.rollOffsetRadians, ROLL_TOLERANCE)
+    assertEquals(1.5707964f, ScreenRotation.ROTATION_270.rollOffsetRadians, ROLL_TOLERANCE)
+  }
+
   private fun assertAngle(expected: Double, actual: Float) {
     assertEquals(expected % (2 * PI), actual.toDouble() % (2 * PI), ANGLE_TOLERANCE)
   }
 
   private companion object {
     private const val ANGLE_TOLERANCE = 1e-5
+    private const val ROLL_TOLERANCE = 1e-6f
   }
 }
 

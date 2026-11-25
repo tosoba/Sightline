@@ -462,15 +462,13 @@ final class ARCameraModel {
 
     private func recompute() {
         guard viewport.width > 0, viewport.height > 0 else { return }
+        let layout = markerLayout()
         guard let location = cameraLocation, let orientation else {
-            lastDrawnIDs = []
-            currentPage = 0
             totalPages = 1
-            apply(placements: [])
+            apply(placements: [], layout: layout)
             return
         }
 
-        let layout = markerLayout()
         projection.updateViewport(
             widthPx: Int32(viewport.width.rounded()),
             heightPx: Int32(viewport.height.rounded())
@@ -501,7 +499,7 @@ final class ARCameraModel {
         totalPages = maxPage + 1
 
         guard !(pitchOutOfRange || sheetObscuresCamera) else {
-            apply(placements: [])
+            apply(placements: [], layout: layout)
             return
         }
 
@@ -538,15 +536,15 @@ final class ARCameraModel {
 
         placements.sort { $0.distanceMeters < $1.distanceMeters }
         lastDrawnIDs = Set(placements.map(\.id))
-        apply(placements: placements)
+        apply(placements: placements, layout: layout)
     }
 
-    private func apply(placements: [ARPlacement]) {
+    private func apply(placements: [ARPlacement], layout: MarkerLayout) {
         self.placements = placements
         markerCount = placements.count
         if options.debugHUD {
             layoutDebugText = Self.debugLayoutText(
-                viewport: viewport,
+                layout: layout,
                 displayScale: displayScale,
                 screenRotation: screenRotation,
                 currentPage: currentPage,
@@ -583,6 +581,7 @@ final class ARCameraModel {
         let safeAreaInsets: EdgeInsets
         let markerWidth: CGFloat
         let markerHeight: CGFloat
+        let divisor: Int
         let rows: Int
         let baseY: CGFloat
         let verticalSpacing: CGFloat
@@ -609,9 +608,12 @@ final class ARCameraModel {
             Self.minMarkerHeight...Self.maxMarkerHeight
         )
         let rows = Int((usableHeight + Self.markerVerticalSpacing) / (markerHeight + Self.markerVerticalSpacing))
-        let divisor = Int(usableWidth / Self.markerTargetWidth)
+        let divisor = min(
+            max(Int(usableWidth / Self.markerTargetWidth), Self.minMarkerWidthDivisor),
+            Self.maxMarkerWidthDivisor
+        )
         let markerWidth = Self.clamped(
-            usableWidth / CGFloat(min(max(divisor, Self.minMarkerWidthDivisor), Self.maxMarkerWidthDivisor)),
+            usableWidth / CGFloat(divisor),
             Self.minMarkerWidth...Self.maxMarkerWidth
         )
         return MarkerLayout(
@@ -619,6 +621,7 @@ final class ARCameraModel {
             safeAreaInsets: safeAreaInsets,
             markerWidth: markerWidth,
             markerHeight: markerHeight,
+            divisor: divisor,
             rows: min(max(rows, Self.minMarkerRows), Self.maxMarkerRows),
             baseY: safeAreaInsets.top + Self.markerTopPadding + markerHeight / 2,
             verticalSpacing: Self.markerVerticalSpacing
@@ -708,9 +711,10 @@ final class ARCameraModel {
 
     /// Metrics are blanked when no placement survives, which is exactly the pitch-out-of-range,
     /// sheet-obscured and no-location states; formatting a missing rect would otherwise print a
-    /// sentinel or `nan`.
+    /// sentinel or `nan`. The marker geometry stays in the text so a debug run can check the sizing
+    /// even when there is nothing to place.
     private static func debugLayoutText(
-        viewport: CGSize,
+        layout: MarkerLayout,
         displayScale: CGFloat,
         screenRotation: ScreenRotation,
         currentPage: Int,
@@ -718,7 +722,14 @@ final class ARCameraModel {
         placements: [ARPlacement]
     ) -> String {
         let viewportText =
-            String(format: "vp %.0fx%.0f s%.0f", viewport.width, viewport.height, displayScale)
+            String(
+                format: "vp %.0fx%.0f s%.0f mw %.0f d%d",
+                layout.viewport.width,
+                layout.viewport.height,
+                displayScale,
+                layout.markerWidth,
+                layout.divisor
+            )
             + " r\(rotationLabel(screenRotation)) p\(currentPage + 1)/\(totalPages)"
         guard !placements.isEmpty else { return "\(viewportText)  no placements" }
 

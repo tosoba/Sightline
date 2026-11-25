@@ -4,6 +4,10 @@ import Shared
 import SwiftUI
 import os
 
+private enum MapFitPadding {
+    static let standard = UIEdgeInsets(top: 64, left: 40, bottom: 120, right: 40)
+}
+
 /// One MapLibre wrapper for both the full-screen map and the Places sheet's category map.
 ///
 /// The main purpose restores and persists the camera and fits the given places. The category purpose
@@ -24,7 +28,7 @@ struct MapLibreMapView: UIViewRepresentable {
     var focusedCoordinate: GeoLocation? = nil
     var onCameraChanged: ((MapCameraPosition) -> Void)? = nil
     var accessibilityIdentifier = "nearby-map"
-    var fitPadding = UIEdgeInsets(top: 64, left: 40, bottom: 120, right: 40)
+    var fitPadding = MapFitPadding.standard
 
     func makeCoordinator() -> Coordinator {
         Coordinator(purpose: purpose, onCameraChanged: onCameraChanged)
@@ -243,7 +247,7 @@ struct MapLibreMapView: UIViewRepresentable {
                 return
             }
 
-            let fingerprint = Self.fitFingerprint(places)
+            let fingerprint = Self.placesFingerprint(places)
             if !hasFittedPlaces && hasAppliedInitialCamera {
                 hasFittedPlaces = true
                 lastFittedFingerprint = fingerprint
@@ -287,7 +291,7 @@ struct MapLibreMapView: UIViewRepresentable {
 
             mapView.setVisibleCoordinateBounds(
                 coordinateBounds,
-                edgePadding: fitPadding ?? UIEdgeInsets(top: 64, left: 40, bottom: 120, right: 40),
+                edgePadding: fitPadding ?? MapFitPadding.standard,
                 animated: true,
                 completionHandler: nil
             )
@@ -297,10 +301,6 @@ struct MapLibreMapView: UIViewRepresentable {
             places
                 .map { "\($0.id)|\($0.latitude)|\($0.longitude)|\($0.name)" }
                 .joined(separator: "\n")
-        }
-
-        private static func fitFingerprint(_ places: [Place]) -> String {
-            places.map { "\($0.id)|\($0.latitude)|\($0.longitude)" }.joined(separator: "\n")
         }
     }
 }

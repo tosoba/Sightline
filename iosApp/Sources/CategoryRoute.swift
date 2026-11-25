@@ -27,13 +27,7 @@ struct CategoryPlacesScreen: View {
         else {
             return nil
         }
-        return GeoLocation(
-            latitude: place.latitude,
-            longitude: place.longitude,
-            altitude: 0,
-            horizontalAccuracyMeters: nil,
-            timestampMillis: 0
-        )
+        return place.geoLocation
     }
 
     var body: some View {
@@ -58,8 +52,8 @@ struct CategoryPlacesScreen: View {
         .navigationTitle(route.category.title)
         .navigationBarTitleDisplayMode(.inline)
         .onAppear(perform: popIfUnloaded)
-        .onChange(of: model.isActive(route.category)) { _, active in
-            if !active { dismiss() }
+        .onChange(of: model.isActive(route.category)) { _, _ in
+            popIfUnloaded()
         }
     }
 
@@ -122,8 +116,8 @@ struct CategoryPlacesScreen: View {
                             .lineLimit(2)
                         if let activeLocation = model.activeLocation {
                             Text(
-                                DistanceFormat.meters(
-                                    activeLocation.distanceTo(other: Self.geoLocation(of: place))
+                                DistanceFormat.formatted(
+                                    meters: activeLocation.distanceTo(other: place.geoLocation)
                                 )
                             )
                             .font(.caption)
@@ -162,19 +156,33 @@ struct CategoryPlacesScreen: View {
         _ = item.openInMaps(launchOptions: nil)
     }
 
-    private static func geoLocation(of place: Place) -> GeoLocation {
+    private func popIfUnloaded() {
+        if !model.isActive(route.category) {
+            dismiss()
+        }
+    }
+}
+
+private extension Place {
+    var geoLocation: GeoLocation {
         GeoLocation(
-            latitude: place.latitude,
-            longitude: place.longitude,
+            latitude: latitude,
+            longitude: longitude,
             altitude: 0,
             horizontalAccuracyMeters: nil,
             timestampMillis: 0
         )
     }
+}
 
-    private func popIfUnloaded() {
-        if !model.isActive(route.category) {
-            dismiss()
+private extension String {
+    /// Matches Android's `String.placeInitials()`: the first characters of the first two words.
+    var placeInitials: String {
+        let words = split(whereSeparator: \.isWhitespace)
+        guard let first = words.first, let character = first.first else { return "?" }
+        if words.count >= 2, let second = words[1].first {
+            return "\(character)\(second)".uppercased()
         }
+        return String(character).uppercased()
     }
 }

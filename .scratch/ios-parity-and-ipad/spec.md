@@ -54,8 +54,9 @@ Bring `iosApp` to full feature, UX, and orientation parity with Android while ad
 - When `blurEnabled == false` and the blur animator is settled (`!frame.isAnimatingLod`), `ARCameraRenderer` draws the sharp camera texture (`arNoBlurFragment`) as the base pass, punches stencil masks (`stencil = 1`) for each AR Marker in `holeRects` using `udRoundBox`, and runs the 8-pass Gaussian pyramid at max LOD (`lod = 2.0`, `contrastingColorMix = 0.025`) to paint frosted blur inside the marker cards (`holeFillStyle = .frosted`).
 - Full-frame blur (`blurEnabled = true`, animated over 18 frames via `ArBlurAnimator`) triggers only when:
   1. `pitchOutOfRange` is true (device pitch outside `±45°`).
-  2. `sheetObscuresCamera` is true (the Places & Location sheet obscures the camera viewport).
+  2. `sheetObscuresCamera` is true (the Places & Location sheet obscures the camera viewport, including iPhone landscape where the `.medium` detent is inactive and the sheet becomes a full-screen cover).
   3. Debug launch flags force blur (`-arForceBlur` or `-arBlur <0..1>`).
+- Debug launch flags override the derived triggers: `-arNoBlur` forces the sharp override and wins over every other trigger, while `-arForceBlur` / `-arBlur <0..1>` force full-frame blur.
 - Whenever `pitchOutOfRange || sheetObscuresCamera` is true, `ARCameraModel` clears `placements` and `holeRects` so AR Markers are hidden and `ARCameraRenderer` skips the second (hole-fill) pass.
 - During the 18-frame unblur transition (`!blurEnabled && frame.isAnimatingLod`), visible marker holes continue to render frosted so cards never flash transparent mid-ramp.
 - Sheet and floating UI backdrops over the camera use native SwiftUI materials (`.ultraThinMaterial` / `.regularMaterial`), so `ARCameraRenderer` only stencil-blurs `holeRects` for AR Marker cards.
@@ -70,7 +71,7 @@ Bring `iosApp` to full feature, UX, and orientation parity with Android while ad
   - `.landscapeLeft` (device rotated 90° clockwise, top on right) -> `ScreenRotation.rotation270`, `videoRotationAngle = 180`
   - `.portraitUpsideDown` -> `ScreenRotation.rotation180`, `videoRotationAngle = 270`
 - Include `screenRotation` and the usable viewport geometry in `cachedSlots` invalidation keys so rotating the device immediately recomputes Marker Slots for the new viewport dimensions.
-- Offset scripted simulator pose roll in `ARCameraMotion` by the active `ScreenRotation` (`0` for `.rotation0`, `-π/2` for `.rotation90`, `+π/2` for `.rotation270`, `π` for `.rotation180`) so simulator landscape verification exercises the exact same `Math3D.convert3dTo2d` projection path as physical hardware.
+- Offset scripted simulator pose roll in `ARCameraMotion` by `ScreenRotation.rollOffsetRadians` (`0` for `.rotation0`, `-π/2` for `.rotation90`, `+π/2` for `.rotation270`, `π` for `.rotation180`) so simulator landscape verification exercises the exact same `Math3D.convert3dTo2d` projection path as physical hardware.
 - In `ARCameraRenderer.updateTexTransform`, apply the 90° UV rotation fallback only when source pixel buffer and drawable aspect orientations disagree (`(sourceWidth > sourceHeight) != (drawableWidth > drawableHeight)`).
 
 #### Adaptive AR Marker sizing, Marker Slot pagination, and tap-to-toggle overlay
@@ -84,8 +85,9 @@ Bring `iosApp` to full feature, UX, and orientation parity with Android while ad
   - `baseY = topInset + 12 + markerHeight * 0.5`
 - Track `currentPage: Int` (0-based) and `totalPages: Int` (`maxPage + 1`) in `ARCameraModel`:
   - When slots are reassigned, if previously drawn marker IDs now live on a different page, follow the page containing the highest match count; otherwise clamp `currentPage` to `0...maxPage`.
+  - When no Active Location or orientation is available, clear placements and set `totalPages = 1` (so no picker shows) while preserving `currentPage` and the last drawn marker IDs, so the next assignment follows the page the user was on and clamps to `0...maxPage`.
   - Filter displayed `placements` and `holeRects` to markers where `slot.page == currentPage`.
-- Render a floating **AR Marker Page Picker** at the bottom-trailing corner of the Camera tab when `totalPages > 1` (displaying up to 3 page numbers at a time in 1-based numbering, mirroring Android's `CameraPreviewPagePicker` sliding window).
+- Render a floating **AR Marker Page Picker** at the bottom-trailing corner of the Camera tab when `totalPages > 1`, the toolbars are visible, and the frame is not fully blurred (displaying up to 3 page numbers at a time in 1-based numbering, mirroring Android's `CameraPreviewPagePicker` sliding window and its visibility condition).
 - Tapping empty space on the AR camera preview toggles `toolbarsVisible` with a fade animation, hiding or showing the floating bottom controls while keeping the system tab bar visible.
 - Switching tabs resets `toolbarsVisible = true`.
 
@@ -188,10 +190,11 @@ Bring `iosApp` to full feature, UX, and orientation parity with Android while ad
 #### Unified adaptive `.sheet` across compact and regular size classes
 
 - Read `@Environment(\.horizontalSizeClass) private var horizontalSizeClass` in `MainScreen`.
-- Reuse the single native `.sheet(isPresented: $showsPlacesSheet)` across iPhone and iPad:
-  - In `.compact` width (iPhone and narrow iPad Split View / Slide Over windows), apply `.presentationDetents([.medium, .large], selection: $sheetDetent)`, `.presentationDragIndicator(.visible)`, and `.presentationBackgroundInteraction(.enabled(upThrough: .medium))`.
-  - In `.regular` width (full-screen and wide iPad windows), iPadOS automatically presents the `.sheet` as a centered page sheet over a dimmed backdrop; add a top-trailing **"Done"** toolbar button on the sheet's root `NavigationStack` view for explicit one-tap/pointer dismissal.
-- Set `ARCameraModel.sheetObscuresCamera = showsPlacesSheet && (horizontalSizeClass == .regular || sheetDetent == .large)` so the live AR camera feed blurs whenever the centered iPad page sheet or `.large` compact sheet obscures the center of the camera viewport.
+- Reuse the single native `.sheet(isPresented: $showsPlacesSheet)` across iPhone and iPad with one unconditional presentation setup:
+  - Apply `.presentationDetents([.medium, .large], selection: $sheetDetent)`, `.presentationDragIndicator(.visible)`, `.presentationBackgroundInteraction(.enabled(upThrough: .medium))`, and a top-trailing **"Done"** toolbar button on the sheet's root `NavigationStack` view once, for both size classes.
+  - In `.compact` width (iPhone and narrow iPad Split View / Slide Over windows), the resizable `.medium`/`.large` bottom sheet, drag indicator, and Done button all apply.
+  - In `.regular` width (full-screen and wide iPad windows), iPadOS automatically presents the sheet as a centered page sheet over a dimmed backdrop and ignores the detents; the Done button remains the explicit one-tap and pointer dismissal.
+- Set `ARCameraModel.sheetObscuresCamera = showsPlacesSheet && (horizontalSizeClass == .regular || verticalSizeClass == .compact || sheetDetent == .large)` so the live AR camera feed blurs whenever the centered iPad page sheet, the `.large` compact sheet, or the iPhone landscape full-screen cover obscures the center of the camera viewport.
 
 #### iPad AR Marker scaling and top-level controls
 
@@ -203,9 +206,9 @@ Bring `iosApp` to full feature, UX, and orientation parity with Android while ad
 1. **Android correctness gate**:
    `./gradlew :app:assembleDebug test --console=plain` must remain green with zero changes to Android behavior or UI after every ticket.
 2. **Shared KMP unit tests (`:shared:iosSimulatorArm64Test`)**:
-   - Extend `ArProjectionTest` / `ArOrientationTrackerTest` for all four `ScreenRotation` values (`.rotation0`, `.rotation90`, `.rotation180`, `.rotation270`).
+   - Extend `ArProjectionTest` / `ArOrientationTrackerTest` for all four `ScreenRotation` values (`.rotation0`, `.rotation90`, `.rotation180`, `.rotation270`), including the four `ScreenRotation.rollOffsetRadians` scripted pose offsets.
    - Add `PlacesCoordinatorTest` using `kotlinx.coroutines.test.runTest` and `advanceTimeBy` covering:
-     - Zero initial categories and zero startup network calls.
+     - Zero initial categories and zero startup network calls, plus Loading on a toggle-on without an Active Location and Loading on a location or radius refetch of an already-loaded category.
      - 1-second debounced multi-category toggling, immediate cancellation on toggle-off, and distance sorting from `Active Location`.
      - 35-second fetch timeout mapping to `RequestError.IO` and 4-second auto-clear of `RequestError`.
      - `Active Location` precedence (`userLocationEnabled ? userLocation : customLocation`), preserving persisted `CustomLocation` across `"Use my location"` toggle switches, and clearing `places` when `activeLocation` becomes `null`.
@@ -214,7 +217,7 @@ Bring `iosApp` to full feature, UX, and orientation parity with Android while ad
      - Auto-disabling `userLocationEnabled` when `locationProvider.isLocationEnabled()` emits `false`.
 3. **iOS UI & Simulator tests (`iosAppUITests`)**:
    - Update `MapPageUITests` and `SmokeUITests` for the full-screen `TabView`, floating Search Radius `Menu`, Places & Location `.sheet`, independent multi-category toggles (verifying 0 places on launch before toggling a category), `CategoryPlacesScreen` drill-down with interactive map and place rows, Custom Location search flow (when `"Use my location"` is off), and map camera + preference persistence across relaunch.
-   - Verify iPad simulator build and layout (`iPad Pro 13-inch (M4)` or available iPad simulator destination) in both portrait and landscape orientations.
+   - Verify iPad simulator build and layout (`iPad Pro 13-inch (M4)` or available iPad simulator destination) in both portrait and landscape orientations, including the debug HUD marker width (`150...220 pt`) and divisor cap (`6`).
 
 ## Sequenced Implementation Tickets
 

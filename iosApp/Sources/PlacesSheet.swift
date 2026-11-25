@@ -310,17 +310,11 @@ private struct CategoryGridCard: View {
     let onOpen: () -> Void
 
     private var isActive: Bool { model.isActive(category) }
-    private var isLoading: Bool { model.isLoading(category) }
     private var places: [Place] { model.places(in: category) }
-    private var isLoaded: Bool {
-        guard let state = model.state(for: category) else { return false }
-        if case .loaded = onEnum(of: state) { return true }
-        return false
-    }
 
     private var subtitle: String {
         guard isActive else { return "Not selected" }
-        return isLoading ? "Loading..." : "\(places.count) places"
+        return model.isLoading(category) ? "Loading..." : "\(places.count) places"
     }
 
     var body: some View {
@@ -331,7 +325,7 @@ private struct CategoryGridCard: View {
                 ZStack {
                     RoundedRectangle(cornerRadius: 12)
                         .fill(isActive ? Color.accentColor : Color.secondary.opacity(0.15))
-                    if isLoading {
+                    if model.isLoading(category) {
                         ProgressView()
                             .tint(isActive ? .white : .accentColor)
                     } else {
@@ -361,7 +355,7 @@ private struct CategoryGridCard: View {
                             .foregroundStyle(.secondary)
                     }
                     Spacer(minLength: 0)
-                    if isLoaded {
+                    if model.isLoaded(category) {
                         Image(systemName: "chevron.right")
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(.tertiary)
@@ -370,7 +364,7 @@ private struct CategoryGridCard: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .disabled(!isLoaded)
+            .disabled(!model.isLoaded(category))
             .accessibilityIdentifier("category-card-\(category.name)")
             .accessibilityLabel("Open \(category.title), \(subtitle)")
         }

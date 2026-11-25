@@ -37,6 +37,7 @@ final class IPadAdaptiveUITests: XCTestCase {
             waitForLabelContains(layoutDebug, text: " r0 ", timeout: Timeout.rotation),
             "The camera projection did not start in portrait; its text is \(layoutDebug.label)."
         )
+        assertMarkerGeometry(layoutDebug, orientation: "portrait")
 
         let cameraTab = app.mainTabButton("Camera")
         let mapTab = app.mainTabButton("Map")
@@ -55,6 +56,7 @@ final class IPadAdaptiveUITests: XCTestCase {
             waitForLabelContains(layoutDebug, text: " r90 ", timeout: Timeout.rotation),
             "Landscape left did not map to Screen Rotation 90; its text is \(layoutDebug.label)."
         )
+        assertMarkerGeometry(layoutDebug, orientation: "landscape")
         attachScreenshot(named: "ipad-camera-landscape")
         XCTAssertTrue(
             waitForLandscapeViewport(layoutDebug, timeout: Timeout.rotation),
@@ -170,6 +172,39 @@ final class IPadAdaptiveUITests: XCTestCase {
             sheetBar.frame.minY,
             launchWindow.minY,
             "The sheet is flush with the window top instead of presenting as a page sheet."
+        )
+    }
+
+    private func markerGeometry(in text: String) -> (width: Double, divisor: Int)? {
+        let tokens = text.split(separator: " ")
+        guard let marker = tokens.firstIndex(of: "mw"),
+            tokens.count > marker + 2,
+            let width = Double(tokens[marker + 1])
+        else {
+            return nil
+        }
+        let divisorToken = tokens[marker + 2]
+        guard divisorToken.first == "d", let divisor = Int(divisorToken.dropFirst()) else {
+            return nil
+        }
+        return (width, divisor)
+    }
+
+    private func assertMarkerGeometry(_ layoutDebug: XCUIElement, orientation: String) {
+        guard let geometry = markerGeometry(in: layoutDebug.label) else {
+            XCTFail(
+                "The AR layout text is missing the marker geometry in \(orientation); its text is \(layoutDebug.label)."
+            )
+            return
+        }
+        XCTAssertTrue(
+            (150.0...220.0).contains(geometry.width),
+            "The iPad marker width is outside 150...220 pt in \(orientation); its text is \(layoutDebug.label)."
+        )
+        XCTAssertEqual(
+            geometry.divisor,
+            6,
+            "The iPad marker divisor did not cap at 6 in \(orientation); its text is \(layoutDebug.label)."
         )
     }
 
