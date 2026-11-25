@@ -6,7 +6,7 @@
 
 **Blocked by:** 06, 07
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 ## Acceptance Criteria
 
@@ -46,3 +46,18 @@ cd iosApp && xcodegen generate && cd ..
 xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp \
   -destination 'platform=iOS Simulator,name=iPhone 17' test
 ```
+
+## Answer
+
+Implemented on `ios-parity/08-ios-tabs-sheet` as commit `d78911c` and merged to `integration/ios-parity-and-ipad` as `51f8ec0`.
+
+- `MainScreen` is now a full-screen bottom `TabView` with Camera and Map tabs. The top stack, header, category strip, `PreferencesView`, `LocationAccessBanner`, and `NearbyPlacesView` are gone; `AppSettings` moved to its own file.
+- Floating material pills host the Search Radius `Menu` and the Places & Location trigger, with the AR page picker on the camera side; all fade with `toolbarsVisible` and anchor to the content's safe area. A top transient error banner mirrors the coordinator's message.
+- One native sheet hosts the Location Header Row, loop-guarded custom-location search modes, the 13-category adaptive grid with separate toggle and body hit zones, the OSM attribution link, and a `NavigationStack` pushing the live `CategoryPlacesScreen`.
+- `CategoryRoute` is now category-only. `CategoryPlacesScreen` renders a fitted category map, summary header, and interactive rows with initials, Android-parity distance, map centering, and an `MKMapItem` Apple Maps handoff.
+- `MapLibreMapView` is parameterized for main vs category use, never persists the category camera, guards zero-span bounds, and compares a place fingerprint when syncing annotations.
+- `sheetObscuresCamera` also accounts for compact height (iPhone landscape full-screen covers). Enabling User Location while denied/restricted now settles back to disabled so the Settings alert flow is coherent.
+
+Verification: 55 shared iOS tests and the Android gate pass, the iPhone 17 build succeeds, and the rewritten UI suite passes 6/6: no places before a toggle, custom location search plus category load, User Location with 2 km radius and category drill-down, map camera and preferences across relaunch, denied location Settings alert, and the map page with a toggled category.
+
+Deviations: the page picker UI remains hosted in `ARCameraScreen` with its visibility lifted to `MainScreen`; the custom-location UI test searches "Wawel" because Photon's first "Krakow" hit is a U.S. hamlet and spaces through the software keyboard are unreliable; the trigger pill pluralizes its category count; the open-in-Maps test asserts the control exists without launching Apple Maps.
