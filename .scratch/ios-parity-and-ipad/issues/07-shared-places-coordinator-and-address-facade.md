@@ -6,7 +6,7 @@
 
 **Blocked by:** None
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 ## Acceptance Criteria
 
@@ -38,3 +38,16 @@
 ./gradlew :shared:assembleSharedXCFramework :shared:iosSimulatorArm64Test --console=plain
 ./gradlew :app:assembleDebug test --console=plain
 ```
+
+## Answer
+
+Implemented on `ios-parity/07-places-coordinator` as commit `d132a78` and merged to `integration/ios-parity-and-ipad` as `82c920a`, with a follow-up adapter fix in `804f874`.
+
+- `IosAppGraph` exposes `addressRepository`; `SightlineShared` gains `reverseGeocode`, `searchAddresses` and `placesCoordinator`.
+- `CategoryPlacesState`, `LocationAddressState` and `CustomLocationSearchState` are concrete non-generic sealed types in `shared/commonMain`, bridged by SKIE with typed payloads.
+- `PlacesCoordinator` owns every listed `StateFlow` and reproduces the Android semantics: zero startup fetches, 1 s per-category debounce, immediate Loading and cancellation, 35 s timeout mapped to `RequestError.IO`, distance sorting, 4 s error auto-clear, active-location precedence, non-destructive Custom Location persistence across the User Location toggle, 1 s reverse geocode, custom-location validation/debounce/cancel restoration, 1 s map-position save, and auto-disable when location services turn off.
+- `PlacesCoordinatorTest` adds 23 virtual-time tests; the thin `@MainActor @Observable NearbyPlacesModel` collects the flows via SKIE and forwards intents, renaming `currentLocation` to `activeLocation` across the app.
+
+Verification: all 55 shared iOS tests pass, Android `assembleDebug`/`test` stays green, the iOS build succeeds, and the pre-tabs UI suite still passed 3/3 after the follow-up.
+
+Deviations: toggle-on always waits the specified 1 s before fetching (Android's very first toggle is immediate); clearing places when `activeLocation` is null also empties the visible map while preserving active toggles internally for refetch; a fix that only changes timestamp/accuracy does not refetch; disabling User Location clears the last fix; preference-write failures surface through `error`. Temporary legacy adapter members (`selectedCategory`, `select`, `places`, auto-activation) kept the old single-category UI alive and are removed by ticket 08.
