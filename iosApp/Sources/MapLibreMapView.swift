@@ -4,15 +4,30 @@ import Shared
 import SwiftUI
 import os
 
+/// One MapLibre wrapper for both the full-screen map and the Places sheet's category map.
+///
+/// The main purpose restores and persists the camera and fits the given places. The category purpose
+/// never reports camera changes (so panning it cannot overwrite the persisted main-map camera), can
+/// center on a selected place, and uses its own accessibility identifier so XCUITest can tell the two
+/// maps apart.
 struct MapLibreMapView: UIViewRepresentable {
+    enum Purpose {
+        case main
+        case category
+    }
+
+    var purpose: Purpose = .main
     let places: [Place]
     let colorScheme: ColorScheme
     let showsUserLocation: Bool
-    let lastMapPosition: MapCameraPosition?
-    let onCameraChanged: (MapCameraPosition) -> Void
+    var lastMapPosition: MapCameraPosition? = nil
+    var focusedCoordinate: GeoLocation? = nil
+    var onCameraChanged: ((MapCameraPosition) -> Void)? = nil
+    var accessibilityIdentifier = "nearby-map"
+    var fitPadding = UIEdgeInsets(top: 64, left: 40, bottom: 120, right: 40)
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(onCameraChanged: onCameraChanged)
+        Coordinator(purpose: purpose, onCameraChanged: onCameraChanged)
     }
 
     func makeUIView(context: Context) -> MLNMapView {
@@ -24,8 +39,10 @@ struct MapLibreMapView: UIViewRepresentable {
         mapView.isScrollEnabled = true
         mapView.isRotateEnabled = true
         mapView.isPitchEnabled = true
-        mapView.accessibilityIdentifier = "nearby-map"
-        mapView.accessibilityLabel = "Nearby places map, 0 places"
+        // The app's shared location provider owns the authorization prompt; this map only shows the dot.
+        mapView.shouldRequestAuthorizationToUseLocationServices = false
+        mapView.accessibilityIdentifier = accessibilityIdentifier
+        mapView.accessibilityLabel = "\(context.coordinator.labelPrefix), 0 places"
 
         context.coordinator.attach(mapView)
         context.coordinator.applyStyle(colorScheme, to: mapView)
@@ -38,26 +55,38 @@ struct MapLibreMapView: UIViewRepresentable {
             mapView.showsUserLocation = showsUserLocation
         }
         context.coordinator.applyStyle(colorScheme, to: mapView)
-        context.coordinator.update(lastMapPosition: lastMapPosition)
-        context.coordinator.update(places: places)
+        if purpose == .main {
+            context.coordinator.update(lastMapPosition: lastMapPosition)
+        }
+        context.coordinator.update(focusedCoordinate: focusedCoordinate)
+        context.coordinator.update(places: places, fitPadding: fitPadding)
     }
 
     final class Coordinator: NSObject, MLNMapViewDelegate {
         private static let log = Logger(subsystem: "com.trm.sightline", category: "map")
 
-        var onCameraChanged: (MapCameraPosition) -> Void
+        let purpose: Purpose
+        let labelPrefix: String
+
+        var onCameraChanged: ((MapCameraPosition) -> Void)?
 
         private weak var mapView: MLNMapView?
         private var colorScheme: ColorScheme?
         private var places: [Place] = []
         private var annotations: [MLNPointAnnotation] = []
         private var styleLoaded = false
-        private var lastFittedBounds: GeoBounds?
+        private var lastPlacesFingerprint = ""
+        private var lastFittedFingerprint: String?
         private var pendingLastMapPosition: MapCameraPosition?
         private var hasAppliedInitialCamera = false
         private var hasFittedPlaces = false
+        private var pendingFocus: GeoLocation?
+        private var lastAppliedFocus: GeoLocation?
+        private var fitPadding: UIEdgeInsets?
 
-        init(onCameraChanged: @escaping (MapCameraPosition) -> Void) {
+        init(purpose: Purpose, onCameraChanged: ((MapCameraPosition) -> Void)?) {
+            self.purpose = purpose
+            labelPrefix = purpose == .category ? "Category map" : "Nearby places map"
             self.onCameraChanged = onCameraChanged
         }
 
@@ -88,22 +117,41 @@ struct MapLibreMapView: UIViewRepresentable {
             applyRestoredCameraIfNeeded()
         }
 
-        func update(places: [Place]) {
-            guard places.map(\.id) != self.places.map(\.id) else { return }
+        func update(focusedCoordinate: GeoLocation?) {
+            guard let focusedCoordinate else { return }
+            if let lastAppliedFocus,
+                lastAppliedFocus.latitude == focusedCoordinate.latitude,
+                lastAppliedFocus.longitude == focusedCoordinate.longitude {
+                return
+            }
+            pendingFocus = focusedCoordinate
+            applyFocusIfNeeded()
+        }
+
+        func update(places: [Place], fitPadding: UIEdgeInsets) {
+            let fingerprint = Self.placesFingerprint(places)
+            guard fingerprint != lastPlacesFingerprint else { return }
+            lastPlacesFingerprint = fingerprint
             self.places = places
             syncAnnotations()
-            fitPlacesIfNeeded()
+            fitPlacesIfNeeded(padding: fitPadding)
         }
 
         func mapView(_: MLNMapView, didFinishLoading _: MLNStyle) {
             styleLoaded = true
             applyRestoredCameraIfNeeded()
             syncAnnotations()
-            fitPlacesIfNeeded()
+            fitPlacesIfNeeded(padding: nil)
+            applyFocusIfNeeded()
         }
 
         func mapView(_ mapView: MLNMapView, regionDidChangeAnimated _: Bool) {
-            guard styleLoaded, hasAppliedInitialCamera || hasFittedPlaces else { return }
+            guard purpose == .main,
+                styleLoaded,
+                hasAppliedInitialCamera || hasFittedPlaces,
+                let onCameraChanged else {
+                return
+            }
 
             let position = MapCameraPosition(
                 latitude: mapView.centerCoordinate.latitude,
@@ -123,7 +171,10 @@ struct MapLibreMapView: UIViewRepresentable {
         }
 
         private func applyRestoredCameraIfNeeded() {
-            guard let mapView, styleLoaded, !hasAppliedInitialCamera,
+            guard purpose == .main,
+                let mapView,
+                styleLoaded,
+                !hasAppliedInitialCamera,
                 let position = pendingLastMapPosition
             else {
                 return
@@ -142,6 +193,18 @@ struct MapLibreMapView: UIViewRepresentable {
 
             Self.log.info(
                 "restored map camera \(position.latitude, privacy: .public), \(position.longitude, privacy: .public), zoom \(position.zoom, privacy: .public), bearing \(position.bearing, privacy: .public), pitch \(position.pitch, privacy: .public)"
+            )
+        }
+
+        private func applyFocusIfNeeded() {
+            guard let mapView, styleLoaded, let focus = pendingFocus else { return }
+            pendingFocus = nil
+            lastAppliedFocus = focus
+            mapView.setCenter(
+                CLLocationCoordinate2D(latitude: focus.latitude, longitude: focus.longitude),
+                zoomLevel: max(15, mapView.zoomLevel),
+                direction: mapView.direction,
+                animated: true
             )
         }
 
@@ -167,30 +230,49 @@ struct MapLibreMapView: UIViewRepresentable {
                 mapView.addAnnotations(annotations)
             }
 
-            mapView.accessibilityLabel = places.count == 1
-                ? "Nearby places map, 1 place"
-                : "Nearby places map, \(places.count) places"
+            let count = places.count
+            mapView.accessibilityLabel = "\(labelPrefix), \(count) \(count == 1 ? "place" : "places")"
         }
 
-        private func fitPlacesIfNeeded() {
-            guard let mapView, styleLoaded else { return }
-
-            guard let bounds = GeoBounds.companion.paddedAround(
-                places: places,
-                percentageIncrease: 0.1
-            ) else {
-                lastFittedBounds = nil
+        private func fitPlacesIfNeeded(padding: UIEdgeInsets?) {
+            if let padding {
+                fitPadding = padding
+            }
+            guard let mapView, styleLoaded, let place = places.first else {
+                lastFittedFingerprint = nil
                 return
             }
 
+            let fingerprint = Self.fitFingerprint(places)
             if !hasFittedPlaces && hasAppliedInitialCamera {
                 hasFittedPlaces = true
+                lastFittedFingerprint = fingerprint
                 return
             }
 
-            guard bounds != lastFittedBounds else { return }
-            lastFittedBounds = bounds
+            guard fingerprint != lastFittedFingerprint else { return }
+            lastFittedFingerprint = fingerprint
             hasFittedPlaces = true
+
+            let bounds = GeoBounds.companion.paddedAround(
+                places: places,
+                percentageIncrease: 0.1
+            )
+
+            // A single place, or places sharing a coordinate, produce a zero-span box that zooms to
+            // maximum. Center on the place instead.
+            let isDegenerate = bounds.map {
+                $0.north - $0.south < 1e-5 && $0.east - $0.west < 1e-5
+            } ?? true
+            guard places.count > 1, let bounds, !isDegenerate else {
+                mapView.setCenter(
+                    CLLocationCoordinate2D(latitude: place.latitude, longitude: place.longitude),
+                    zoomLevel: 15,
+                    direction: mapView.direction,
+                    animated: false
+                )
+                return
+            }
 
             let coordinateBounds = MLNCoordinateBoundsMake(
                 CLLocationCoordinate2D(
@@ -205,10 +287,20 @@ struct MapLibreMapView: UIViewRepresentable {
 
             mapView.setVisibleCoordinateBounds(
                 coordinateBounds,
-                edgePadding: UIEdgeInsets(top: 64, left: 40, bottom: 120, right: 40),
+                edgePadding: fitPadding ?? UIEdgeInsets(top: 64, left: 40, bottom: 120, right: 40),
                 animated: true,
                 completionHandler: nil
             )
+        }
+
+        private static func placesFingerprint(_ places: [Place]) -> String {
+            places
+                .map { "\($0.id)|\($0.latitude)|\($0.longitude)|\($0.name)" }
+                .joined(separator: "\n")
+        }
+
+        private static func fitFingerprint(_ places: [Place]) -> String {
+            places.map { "\($0.id)|\($0.latitude)|\($0.longitude)" }.joined(separator: "\n")
         }
     }
 }

@@ -34,12 +34,6 @@ final class NearbyPlacesModel {
 
     private var locationEnabledTask: Task<Void, Never>?
 
-    /// Legacy single-category selection used by the pre-tabs `MainScreen`; removed with it.
-    var selectedCategory: PlaceCategory = .sightsLandmarks
-
-    /// Legacy alias for every loaded place, kept for the pre-tabs screens.
-    var places: [Place] { allPlaces }
-
     var hasLocation: Bool { activeLocation != nil }
 
     var isLoading: Bool {
@@ -113,36 +107,14 @@ final class NearbyPlacesModel {
         coordinator.saveMapPosition(position: position)
     }
 
-    // MARK: - Legacy selection
-
-    /// Selects one category for the pre-tabs detail screen, waiting until it settles.
-    /// Removed together with the single-category `MainScreen` in ticket 08.
-    func select(_ category: PlaceCategory) async {
-        selectedCategory = category
-        for active in Array(categoryStates.keys) where active != category {
-            coordinator.onTogglePlaceCategory(category: active)
-        }
-        if categoryStates[category] == nil {
-            coordinator.onTogglePlaceCategory(category: category)
-        }
-
-        for await states in coordinator.places {
-            categoryStates = states
-            guard let state = states[category] else { break }
-            if case .loaded = onEnum(of: state) { break }
-        }
-
-        for await places in coordinator.allPlaces {
-            allPlaces = places
-            break
-        }
-    }
-
     // MARK: - Observation
 
     func observeAuthorization() async {
         for await state in shared.authorizationState {
             authorization = state
+            if state == .denied || state == .restricted, userLocationEnabled {
+                coordinator.setUserLocationEnabled(enabled: false)
+            }
             Self.logger.info("authorization changed to \(state.name, privacy: .public)")
         }
     }
@@ -192,15 +164,7 @@ final class NearbyPlacesModel {
     private func observeActiveLocation() async {
         for await location in coordinator.activeLocation {
             activeLocation = location
-            activateLegacyCategoryIfNeeded()
         }
-    }
-
-    /// The pre-tabs `MainScreen` relied on the old model auto-fetching its single
-    /// `selectedCategory` as soon as a location arrived. Removed with that screen in ticket 08.
-    private func activateLegacyCategoryIfNeeded() {
-        guard activeLocation != nil, categoryStates.isEmpty else { return }
-        coordinator.onTogglePlaceCategory(category: selectedCategory)
     }
 
     private func observeUserLocation() async {

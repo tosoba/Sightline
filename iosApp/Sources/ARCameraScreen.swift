@@ -25,6 +25,9 @@ struct ARCameraMetalView: UIViewRepresentable {
 struct ARCameraScreen: View {
     let nearbyModel: NearbyPlacesModel
     let isActive: Bool
+    let toolbarsVisible: Bool
+    let sheetObscuresCamera: Bool
+    let onCanvasTap: () -> Void
 
     @State private var camera: ARCameraModel?
     @Environment(\.displayScale) private var displayScale
@@ -49,14 +52,10 @@ struct ARCameraScreen: View {
                     }
                     ARCameraOverlay(placements: camera.placements)
                         .allowsHitTesting(false)
-                    if camera.unavailability == nil {
+                    if camera.unavailability == nil && !sheetObscuresCamera {
                         Color.clear
                             .contentShape(Rectangle())
-                            .onTapGesture {
-                                withAnimation(.easeInOut(duration: 0.2)) {
-                                    camera.toggleToolbars()
-                                }
-                            }
+                            .onTapGesture(perform: onCanvasTap)
                     }
                     if let unavailability = camera.unavailability {
                         messagePanel(
@@ -74,7 +73,7 @@ struct ARCameraScreen: View {
                     if camera.pitchOutOfRange && camera.unavailability == nil {
                         holdUprightHint
                     }
-                    if camera.toolbarsVisible && !camera.blurEnabled && camera.totalPages > 1 {
+                    if toolbarsVisible && !camera.blurEnabled && camera.totalPages > 1 {
                         ARMarkerPagePicker(
                             currentPage: camera.currentPage,
                             totalPages: camera.totalPages,
@@ -82,7 +81,7 @@ struct ARCameraScreen: View {
                         )
                         .transition(.opacity)
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-                        .padding(16)
+                        .padding(12)
                     }
                 } else {
                     ProgressView("Starting camera...")
@@ -90,11 +89,13 @@ struct ARCameraScreen: View {
                         .foregroundStyle(.white)
                 }
             }
+            .animation(.easeInOut(duration: 0.2), value: toolbarsVisible)
             .task {
                 if camera == nil {
                     let model = ARCameraModel(nearby: nearbyModel)
                     camera = model
                     model.updateContrastingColor(for: colorScheme)
+                    model.sheetObscuresCamera = sheetObscuresCamera
                     model.updateViewport(
                         proxy.size,
                         displayScale: displayScale,
@@ -130,10 +131,10 @@ struct ARCameraScreen: View {
                 )
             }
             .onChange(of: isActive) { _, active in
-                if active {
-                    camera?.setToolbarsVisible(true)
-                }
                 camera?.setActive(active)
+            }
+            .onChange(of: sheetObscuresCamera) { _, obscured in
+                camera?.sheetObscuresCamera = obscured
             }
             .onChange(of: colorScheme) { _, scheme in
                 camera?.updateContrastingColor(for: scheme)
@@ -149,7 +150,7 @@ struct ARCameraScreen: View {
                     break
                 }
             }
-            .onChange(of: nearbyModel.places) { _, _ in
+            .onChange(of: nearbyModel.allPlaces) { _, _ in
                 camera?.placesChanged()
             }
             .onChange(of: nearbyModel.activeLocation) { _, _ in
@@ -263,6 +264,7 @@ private struct ARMarkerPagePicker: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("ar-page-\(page + 1)")
                 .accessibilityLabel("Page \(page + 1)")
                 .accessibilityAddTraits(page == currentPage ? .isSelected : [])
             }
@@ -271,6 +273,8 @@ private struct ARMarkerPagePicker: View {
         .padding(.vertical, 6)
         .background(.regularMaterial, in: Capsule())
         .overlay(Capsule().stroke(.white.opacity(0.18), lineWidth: 1))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("ar-page-picker")
     }
 
     static func pageWindow(currentPage: Int, totalPages: Int) -> [Int] {

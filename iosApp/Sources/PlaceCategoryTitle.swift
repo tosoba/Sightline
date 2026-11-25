@@ -19,4 +19,23 @@ extension PlaceCategory {
         case .practical: "Practical"
         }
     }
+
+    /// One SF Symbol per Place Category, shared by AR Marker cards, grid cards and detail headers.
+    var symbolName: String {
+        switch self {
+        case .sightsLandmarks: "building.columns"
+        case .artsCulture: "theatermasks"
+        case .foodDrink: "fork.knife"
+        case .nightlife: "moon.stars"
+        case .shopping: "bag"
+        case .natureOutdoors: "leaf"
+        case .library: "books.vertical"
+        case .accommodation: "bed.double"
+        case .gettingAround: "tram"
+        case .roadTrip: "car"
+        case .moneyBanking: "banknote"
+        case .health: "cross.case"
+        case .practical: "wrench.and.screwdriver"
+        }
+    }
 }

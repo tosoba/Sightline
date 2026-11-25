@@ -11,14 +11,14 @@ struct MapScreen: View {
 
     var body: some View {
         MapLibreMapView(
-            places: model.places,
+            places: model.allPlaces,
             colorScheme: colorScheme,
             showsUserLocation: model.userLocationEnabled,
             lastMapPosition: model.lastMapPosition,
             onCameraChanged: model.saveMapPosition
         )
         .overlay(alignment: .top) {
-            if model.isLoading || (model.hasLocation && model.places.isEmpty) {
+            if model.isLoading || (model.hasLocation && model.allPlaces.isEmpty) {
                 statusBadge
                     .padding(.top, 12)
             }

@@ -50,7 +50,7 @@ struct ARCameraOverlay: View {
         )
 
         var image = context.resolve(
-            Image(systemName: Self.symbolName(for: placement.category))
+            Image(systemName: placement.category.symbolName)
                 .symbolRenderingMode(.monochrome)
         )
         image.shading = .color(.white.opacity(0.92))
@@ -82,23 +82,5 @@ struct ARCameraOverlay: View {
             return String(format: "%.1f km", meters / 1_000)
         }
         return String(format: "%.0f m", meters)
-    }
-
-    private static func symbolName(for category: PlaceCategory) -> String {
-        switch category {
-        case .sightsLandmarks: "building.columns"
-        case .artsCulture: "theatermasks"
-        case .foodDrink: "fork.knife"
-        case .nightlife: "moon.stars"
-        case .shopping: "bag"
-        case .natureOutdoors: "leaf"
-        case .library: "books.vertical"
-        case .accommodation: "bed.double"
-        case .gettingAround: "tram"
-        case .roadTrip: "car"
-        case .moneyBanking: "banknote"
-        case .health: "cross.case"
-        case .practical: "wrench.and.screwdriver"
-        }
     }
 }
