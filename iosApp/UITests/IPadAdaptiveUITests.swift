@@ -91,6 +91,14 @@ final class IPadAdaptiveUITests: XCTestCase {
             app.buttons["category-toggle-SightsLandmarks"].exists,
             "The category grid is missing from the iPad page sheet."
         )
+        XCTAssertTrue(
+            app.staticTexts["blur on"].waitForExistence(timeout: Timeout.element),
+            "The AR camera did not blur behind the iPad page sheet."
+        )
+        XCTAssertTrue(
+            waitForLabelContains(layoutDebug, text: "no placements", timeout: Timeout.element),
+            "The AR camera kept its markers while the iPad page sheet was open."
+        )
         attachScreenshot(named: "ipad-places-portrait")
 
         XCUIDevice.shared.orientation = .landscapeRight
@@ -120,6 +128,10 @@ final class IPadAdaptiveUITests: XCTestCase {
         XCTAssertTrue(
             cameraTab.waitForExistence(timeout: Timeout.element),
             "The tabs are not reachable after dismissing the sheet on iPad."
+        )
+        XCTAssertTrue(
+            app.staticTexts["blur off"].waitForExistence(timeout: Timeout.element),
+            "The AR camera did not unblur after the iPad page sheet was dismissed."
         )
 
         XCUIDevice.shared.orientation = .portraitUpsideDown
