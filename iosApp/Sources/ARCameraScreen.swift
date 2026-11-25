@@ -96,39 +96,29 @@ struct ARCameraScreen: View {
                     camera = model
                     model.updateContrastingColor(for: colorScheme)
                     model.sheetObscuresCamera = sheetObscuresCamera
-                    model.updateViewport(
-                        proxy.size,
-                        displayScale: displayScale,
-                        safeAreaInsets: proxy.safeAreaInsets
-                    )
+                    syncViewport(model, size: proxy.size, insets: proxy.safeAreaInsets, proxy: proxy)
                     model.setActive(isActive)
                 }
             }
             .onAppear {
                 camera?.updateContrastingColor(for: colorScheme)
-                camera?.updateViewport(
-                    proxy.size,
-                    displayScale: displayScale,
-                    safeAreaInsets: proxy.safeAreaInsets
-                )
+                if let camera {
+                    syncViewport(camera, size: proxy.size, insets: proxy.safeAreaInsets, proxy: proxy)
+                }
                 camera?.setActive(isActive)
             }
             .onDisappear {
                 camera?.setActive(false)
             }
             .onChange(of: proxy.size) { _, size in
-                camera?.updateViewport(
-                    size,
-                    displayScale: displayScale,
-                    safeAreaInsets: proxy.safeAreaInsets
-                )
+                if let camera {
+                    syncViewport(camera, size: size, insets: proxy.safeAreaInsets, proxy: proxy)
+                }
             }
             .onChange(of: proxy.safeAreaInsets) { _, insets in
-                camera?.updateViewport(
-                    proxy.size,
-                    displayScale: displayScale,
-                    safeAreaInsets: insets
-                )
+                if let camera {
+                    syncViewport(camera, size: proxy.size, insets: insets, proxy: proxy)
+                }
             }
             .onChange(of: isActive) { _, active in
                 camera?.setActive(active)
@@ -157,6 +147,23 @@ struct ARCameraScreen: View {
                 camera?.locationChanged()
             }
         }
+    }
+
+    private func syncViewport(
+        _ camera: ARCameraModel,
+        size: CGSize,
+        insets: EdgeInsets,
+        proxy: GeometryProxy
+    ) {
+        // The Metal view ignores the safe area, so its drawable origin sits at the window corner
+        // while the overlay and marker layout live in the inset viewport. Hand the difference over
+        // so stencil holes can be moved into the drawable's space.
+        camera.updateViewport(
+            size,
+            displayScale: displayScale,
+            safeAreaInsets: insets,
+            overlayOrigin: proxy.frame(in: .global).origin
+        )
     }
 
     @ViewBuilder

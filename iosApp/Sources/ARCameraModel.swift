@@ -106,6 +106,7 @@ final class ARCameraModel {
 
     private var viewport: CGSize = .zero
     private var safeAreaInsets = EdgeInsets()
+    private var overlayOrigin: CGPoint = .zero
     private var displayScale: CGFloat = 3
     private var orientation: Orientation?
     private var cameraLocation: GeoLocation?
@@ -265,13 +266,18 @@ final class ARCameraModel {
     func updateViewport(
         _ size: CGSize,
         displayScale: CGFloat,
-        safeAreaInsets: EdgeInsets = EdgeInsets()
+        safeAreaInsets: EdgeInsets = EdgeInsets(),
+        overlayOrigin: CGPoint = .zero
     ) {
         guard size.width > 0, size.height > 0 else { return }
         self.displayScale = displayScale
-        let geometryChanged = size != viewport || safeAreaInsets != self.safeAreaInsets
+        let geometryChanged =
+            size != viewport
+            || safeAreaInsets != self.safeAreaInsets
+            || overlayOrigin != self.overlayOrigin
         viewport = size
         self.safeAreaInsets = safeAreaInsets
+        self.overlayOrigin = overlayOrigin
         if geometryChanged {
             cachedSlots = nil
         }
@@ -554,10 +560,16 @@ final class ARCameraModel {
         }
 
         let scale = displayScale
+        // The overlay lays cards out in the safe-area-respecting viewport, while the Metal view
+        // ignores the safe area and fills the window. Translate into the drawable's space so the
+        // stencil holes land exactly under the cards.
+        let origin = overlayOrigin
         pushHoleRects(
             placements.map { placement in
                 ARHoleRect(
-                    rect: placement.rect.applying(CGAffineTransform(scaleX: scale, y: scale)),
+                    rect: placement.rect
+                        .offsetBy(dx: origin.x, dy: origin.y)
+                        .applying(CGAffineTransform(scaleX: scale, y: scale)),
                     cornerRadius: Float(placement.cornerRadius * scale)
                 )
             }
