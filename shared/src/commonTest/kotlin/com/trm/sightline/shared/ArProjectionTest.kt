@@ -63,15 +63,7 @@ class ArProjectionTest {
 
   /** A physically rotated device reports the Screen Rotation as roll; both feed the projection. */
   private fun orientationFor(rotation: ScreenRotation): Orientation =
-    facingNorth.copy(roll = rollOffsetFor(rotation))
-
-  private fun rollOffsetFor(rotation: ScreenRotation): Float =
-    when (rotation) {
-      ScreenRotation.ROTATION_0 -> 0f
-      ScreenRotation.ROTATION_90 -> (-PI / 2).toFloat()
-      ScreenRotation.ROTATION_180 -> PI.toFloat()
-      ScreenRotation.ROTATION_270 -> (PI / 2).toFloat()
-    }
+    facingNorth.copy(roll = rotation.rollOffsetRadians)
 
   private fun project(location: GeoLocation, rotation: ScreenRotation): ProjectedMarker =
     projection(orientation = orientationFor(rotation), rotation = rotation).project(location)
