@@ -107,6 +107,27 @@ class PlacesCoordinatorTest {
   }
 
   @Test
+  fun togglingACategoryOnWithoutAnActiveLocationShowsLoadingThenDropsIt() = runTest {
+    val harness = harness()
+    runCurrent()
+    assertNull(harness.coordinator.activeLocation.value)
+
+    harness.coordinator.onTogglePlaceCategory(PlaceCategory.FoodDrink)
+
+    assertEquals(
+      CategoryPlacesState.Loading,
+      harness.coordinator.places.value[PlaceCategory.FoodDrink],
+    )
+
+    advanceTimeBy(1_000)
+    runCurrent()
+
+    assertNull(harness.coordinator.places.value[PlaceCategory.FoodDrink])
+    assertTrue(harness.coordinator.places.value.isEmpty())
+    assertEquals(emptyList(), harness.places.queries)
+  }
+
+  @Test
   fun togglingACategoryOffBeforeTheDebounceCancelsTheRequest() = runTest {
     val harness = harness(preferences = prefsWithKrakow())
     runCurrent()
@@ -294,6 +315,14 @@ class PlacesCoordinatorTest {
     assertEquals(1_000f, harness.places.queries.single().radiusMeters)
 
     harness.coordinator.setSearchRadius(PlaceSearchRadius.TwoKilometers)
+
+    assertEquals(
+      CategoryPlacesState.Loading,
+      harness.coordinator.places.value[PlaceCategory.FoodDrink],
+      "A radius refetch kept the stale loaded places on screen.",
+    )
+    assertEquals(emptyList(), harness.coordinator.allPlaces.value)
+
     runCurrent()
 
     assertEquals(PlaceSearchRadius.TwoKilometers, harness.coordinator.searchRadius.value)
@@ -322,6 +351,13 @@ class PlacesCoordinatorTest {
         timestamp = 2L,
       )
     )
+
+    assertEquals(
+      CategoryPlacesState.Loading,
+      harness.coordinator.places.value[PlaceCategory.FoodDrink],
+      "A location refetch kept the stale loaded places on screen.",
+    )
+
     runCurrent()
 
     assertEquals(warsaw, harness.coordinator.activeLocation.value)

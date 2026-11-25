@@ -87,7 +87,7 @@ final class ARCameraMotion {
 
     private func emitScripted(_ pose: ARScriptedAttitude) {
         let elapsed = CACurrentMediaTime() - scriptedStart
-        let rollOffset = Self.rollOffset(for: screenRotation)
+        let rollOffset = Double(screenRotation.rollOffsetRadians)
         let matrix: RotationMatrix
         switch pose {
         case .uprightNorth:
@@ -109,15 +109,6 @@ final class ARCameraMotion {
             )
         }
         onRotationMatrix?(matrix)
-    }
-
-    private static func rollOffset(for rotation: ScreenRotation) -> Double {
-        switch rotation {
-        case .rotation0: 0
-        case .rotation90: -.pi / 2
-        case .rotation180: .pi
-        case .rotation270: .pi / 2
-        }
     }
 
     // MARK: - Pose geometry (debug scaffolding)

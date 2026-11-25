@@ -144,6 +144,14 @@ extension XCTestCase {
         return Int(count) ?? 0
     }
 
+    /// A loaded category card reads `Open <title>, N places`; `Not selected` and `Loading...` fail it.
+    func categoryCardShowsCount(_ card: XCUIElement, title: String) -> Bool {
+        card.label.range(
+            of: "^Open \(NSRegularExpression.escapedPattern(for: title)), [1-9][0-9]* places?$",
+            options: .regularExpression
+        ) != nil
+    }
+
     func waitForCategoryPlaces(
         named name: String,
         title: String,

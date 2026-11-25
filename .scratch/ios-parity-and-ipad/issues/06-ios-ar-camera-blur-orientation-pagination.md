@@ -50,11 +50,19 @@ xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp \
 
 Implemented on `ios-parity/06-ar-camera` as commit `0ecf170` and merged to `integration/ios-parity-and-ipad` as `33c33f4`.
 
-- Normal viewing is sharp (`blurEnabled` defaults false); the renderer draws the sharp base pass, writes rounded stencil masks for AR Markers, and fills them with the max-LOD Gaussian chain (`lod = 2.0`, `contrastingColorMix = 0.025`, frosted style). Full-frame blur is derived only from pitch outside +/-45 degrees, `sheetObscuresCamera`, or the debug overrides, and markers are cleared whenever the frame blurs for those reasons.
+- Normal viewing is sharp (`blurEnabled` defaults false); the renderer draws the sharp base pass, writes rounded stencil masks for AR Markers, and fills them with the max-LOD Gaussian chain (`lod = 2.0`, `contrastingColorMix = 0.025`, frosted style).
+  Full-frame blur is derived only from pitch outside +/-45 degrees, `sheetObscuresCamera`, or the debug overrides, and markers are cleared whenever the frame blurs for those reasons.
 - `contrastingColor` is resolved from `UIColor.secondarySystemBackground` for the active `ColorScheme` and eased by `ArBlurAnimator`.
 - The active window scene orientation maps to `ScreenRotation` and `AVCaptureConnection.videoRotationAngle` per the ticket table, iPhone landscape is unlocked, scripted poses are rolled by the active rotation, and slot caches invalidate on rotation and usable geometry.
+  The scripted roll offsets live on the shared `ScreenRotation` enum as `rollOffsetRadians`, so `ARCameraMotion` and the four-rotation shared tests use one table.
 - Marker cards are sized from the usable camera region, Marker Slots page with a 3-window floating picker, and tapping empty camera space toggles the floating controls.
+  The debug HUD always reports the marker width and effective divisor (`mw 172 d6`), even with no placements, so simulator runs can check the adaptive sizing.
 
-Verification: `ArProjectionTest` covers all four rotations (5 tests), 30 shared iOS tests pass, Android `assembleDebug`/`test` stays green, and the iPhone 17 simulator build succeeds. A simulator smoke run with `SIMCTL_CHILD_MTL_DEBUG_LAYER=1` produced zero Metal validation errors.
+Verification: `ArProjectionTest` covers all four rotations (5 tests), and `ArOrientationTrackerTest` pins the four scripted roll offsets.
+30 shared iOS tests pass, Android `assembleDebug`/`test` stays green, and the iPhone 17 simulator build succeeds.
+A simulator smoke run with `SIMCTL_CHILD_MTL_DEBUG_LAYER=1` produced zero Metal validation errors.
 
-Deviation: this machine has headless simulator runtimes and `simctl` has no rotation command, so the landscape path is covered by the four-rotation projection tests and the orientation mapping rather than a landscape screenshot. The page picker is hidden when the toolbars are hidden or the frame is fully blurred, matching Android. `-arBlur 0` freezes sharp, `-arBlur > 0` and `-arForceBlur` force blur, and `-arNoBlur` wins over everything; the README documents the new semantics.
+Deviation: this machine has headless simulator runtimes and `simctl` has no rotation command, so the landscape path is covered by the four-rotation projection tests and the orientation mapping rather than a landscape screenshot.
+The page picker is hidden when the toolbars are hidden or the frame is fully blurred, matching Android.
+`-arBlur 0` freezes sharp, `-arBlur > 0` and `-arForceBlur` force blur, and `-arNoBlur` forces the sharp debug override and wins over every other trigger.
+The README documents the new semantics.

@@ -257,9 +257,7 @@ internal constructor(
 
   private fun activate(category: PlaceCategory) {
     activeCategories += category
-    if (_activeLocation.value != null) {
-      putCategory(category, CategoryPlacesState.Loading)
-    }
+    putCategory(category, CategoryPlacesState.Loading)
 
     fetchJobs.remove(category)?.cancel()
     fetchJobs[category] =
@@ -324,12 +322,8 @@ internal constructor(
     }
     if (activeCategories.isEmpty()) return
 
-    val missingCategories = activeCategories.filterNot { _places.value.containsKey(it) }
-    if (missingCategories.isNotEmpty()) {
-      _places.value =
-        _places.value + missingCategories.associateWith { CategoryPlacesState.Loading }
-      refreshAllPlaces()
-    }
+    _places.value = activeCategories.associateWith { CategoryPlacesState.Loading }
+    refreshAllPlaces()
 
     activeCategories.toList().forEach(::refetchCategory)
   }

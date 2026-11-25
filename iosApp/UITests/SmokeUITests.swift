@@ -104,7 +104,40 @@ final class SmokeUITests: XCTestCase {
             title: "Sights & landmarks",
             in: app
         )
-        attachScreenshot(named: "smoke-custom-location-category-loaded")
+
+        toggleCategory("FoodDrink", in: app)
+        waitForCategoryPlaces(named: "FoodDrink", title: "Food & drink", in: app)
+        XCTAssertTrue(
+            categoryCardShowsCount(
+                app.buttons["category-card-SightsLandmarks"],
+                title: "Sights & landmarks"
+            ),
+            "The first category card lost its count while a second category was active."
+        )
+        attachScreenshot(named: "smoke-custom-location-two-categories")
+
+        app.buttons["category-toggle-SightsLandmarks"].tap()
+        let sightsCard = app.buttons["category-card-SightsLandmarks"]
+        let deselected = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "label == %@", "Open Sights & landmarks, Not selected"),
+            object: sightsCard
+        )
+        XCTAssertEqual(
+            XCTWaiter().wait(for: [deselected], timeout: Timeout.element),
+            .completed,
+            "Toggling a category off did not clear it; its label is \(sightsCard.label)."
+        )
+
+        Thread.sleep(forTimeInterval: 2)
+        waitForCategoryPlaces(named: "FoodDrink", title: "Food & drink", in: app)
+        XCTAssertTrue(
+            categoryCardShowsCount(
+                app.buttons["category-card-FoodDrink"],
+                title: "Food & drink"
+            ),
+            "The remaining category lost its count after the other category was toggled off."
+        )
+        attachScreenshot(named: "smoke-custom-location-independent-categories")
 
         app.buttons["places-done"].tap()
         app.mainTabButton("Map").tap()

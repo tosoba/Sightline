@@ -24,10 +24,14 @@ The final implementation plan is ordered chronologically:
 
 ### Implemented
 
-- [06: iOS AR camera blur, landscape orientation, and slot pagination](issues/06-ios-ar-camera-blur-orientation-pagination.md): Resolved on `ios-parity/06-ar-camera` (`0ecf170`) and merged as `33c33f4`. Sharp feed by default with frosted max-LOD stencil marker fills; full-frame blur only on pitch, sheet, or debug overrides; landscape/ScreenRotation alignment; adaptive marker geometry and slot pagination.
-- [07: Shared PlacesCoordinator and address facade](issues/07-shared-places-coordinator-and-address-facade.md): Resolved on `ios-parity/07-places-coordinator` (`d132a78`) and merged as `82c920a`, plus adapter fix `804f874`. Shared SKIE-friendly state types, `PlacesCoordinator` with 23 virtual-time tests, and a thin Swift adapter.
-- [08: iOS full-screen tabs, HIG places sheet, and custom location UI](issues/08-ios-fullscreen-tabs-places-sheet-and-custom-location.md): Resolved on `ios-parity/08-ios-tabs-sheet` (`d78911c`) and merged as `51f8ec0`. Full-screen tabs, floating radius/places controls, native places sheet with custom location search, live category drill-down, and a rewritten UI suite.
-- [09: Native iPad adaptive support and 4-orientation AR scaling](issues/09-ipad-adaptive-support-and-ar-scaling.md): Resolved on `ios-parity/09-ipad` (`bf56d09`, `d6b389c`) and merged as `61341a8`. Universal target, four iPad orientations, adaptive page sheet verification, and six-column AR marker scaling.
+- [06: iOS AR camera blur, landscape orientation, and slot pagination](issues/06-ios-ar-camera-blur-orientation-pagination.md): Resolved on `ios-parity/06-ar-camera` (`0ecf170`) and merged as `33c33f4`.
+  Sharp feed by default with frosted max-LOD stencil marker fills; full-frame blur only on pitch, sheet, or debug overrides; landscape/ScreenRotation alignment; adaptive marker geometry and slot pagination.
+- [07: Shared PlacesCoordinator and address facade](issues/07-shared-places-coordinator-and-address-facade.md): Resolved on `ios-parity/07-places-coordinator` (`d132a78`) and merged as `82c920a`, plus adapter fix `804f874`.
+  Shared SKIE-friendly state types, `PlacesCoordinator` with 24 virtual-time tests, and a thin Swift adapter.
+- [08: iOS full-screen tabs, HIG places sheet, and custom location UI](issues/08-ios-fullscreen-tabs-places-sheet-and-custom-location.md): Resolved on `ios-parity/08-ios-tabs-sheet` (`d78911c`) and merged as `51f8ec0`.
+  Full-screen tabs, floating radius/places controls, native places sheet with custom location search, live category drill-down, and a rewritten UI suite with independent multi-category coverage.
+- [09: Native iPad adaptive support and 4-orientation AR scaling](issues/09-ipad-adaptive-support-and-ar-scaling.md): Resolved on `ios-parity/09-ipad` (`bf56d09`, `d6b389c`) and merged as `61341a8`.
+  Universal target, four iPad orientations, adaptive page sheet verification with marker geometry assertions, and six-column AR marker scaling.
 
 ## Not yet specified
 

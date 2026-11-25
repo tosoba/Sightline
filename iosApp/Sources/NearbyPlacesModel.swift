@@ -21,7 +21,6 @@ final class NearbyPlacesModel {
     private(set) var categoryStates: [PlaceCategory: any CategoryPlacesState] = [:]
     private(set) var userLocationAddress: any LocationAddressState = LocationAddressStateLoaded(
         address: "")
-    private(set) var customLocation: GeoLocation?
     private(set) var customLocationAddress = ""
     private(set) var customLocationSearchResults: any CustomLocationSearchState =
         CustomLocationSearchStateIdle.shared
@@ -37,10 +36,7 @@ final class NearbyPlacesModel {
     var hasLocation: Bool { activeLocation != nil }
 
     var isLoading: Bool {
-        categoryStates.values.contains { state in
-            if case .loading = onEnum(of: state) { return true }
-            return false
-        }
+        categoryStates.keys.contains(where: isLoading)
     }
 
     var activeCategories: [PlaceCategory] {
@@ -56,10 +52,6 @@ final class NearbyPlacesModel {
         coordinator = shared.placesCoordinator
     }
 
-    func state(for category: PlaceCategory) -> (any CategoryPlacesState)? {
-        categoryStates[category]
-    }
-
     func isActive(_ category: PlaceCategory) -> Bool {
         categoryStates[category] != nil
     }
@@ -67,6 +59,12 @@ final class NearbyPlacesModel {
     func isLoading(_ category: PlaceCategory) -> Bool {
         guard let state = categoryStates[category] else { return false }
         if case .loading = onEnum(of: state) { return true }
+        return false
+    }
+
+    func isLoaded(_ category: PlaceCategory) -> Bool {
+        guard let state = categoryStates[category] else { return false }
+        if case .loaded = onEnum(of: state) { return true }
         return false
     }
 
@@ -126,7 +124,6 @@ final class NearbyPlacesModel {
             group.addTask { await self.observeActiveLocation() }
             group.addTask { await self.observeUserLocation() }
             group.addTask { await self.observeUserLocationAddress() }
-            group.addTask { await self.observeCustomLocation() }
             group.addTask { await self.observeCustomLocationAddress() }
             group.addTask { await self.observeCustomLocationSearch() }
             group.addTask { await self.observeUserLocationEnabled() }
@@ -176,12 +173,6 @@ final class NearbyPlacesModel {
     private func observeUserLocationAddress() async {
         for await state in coordinator.userLocationAddress {
             userLocationAddress = state
-        }
-    }
-
-    private func observeCustomLocation() async {
-        for await location in coordinator.customLocation {
-            customLocation = location
         }
     }
 
