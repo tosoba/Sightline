@@ -14,9 +14,9 @@ final class MapPageUITests: XCTestCase {
         let app = XCUIApplication.launchedForUITest(arguments: ["-arCamera", "-mapDebug"])
 
         XCTAssertTrue(
-            app.tabBars.buttons["Map"].waitForExistence(timeout: Timeout.element)
+            app.mainTabButton("Map").waitForExistence(timeout: Timeout.element)
         )
-        app.tabBars.buttons["Map"].tap()
+        app.mainTabButton("Map").tap()
 
         let map = app.otherElements["nearby-map"]
         XCTAssertTrue(map.waitForExistence(timeout: Timeout.element))

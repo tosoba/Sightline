@@ -13,6 +13,16 @@ extension XCUIApplication {
         app.launch()
         return app
     }
+
+    /// iPhone renders the tabs in a bottom tab bar; iPad renders them as a floating top bar that
+    /// XCUITest exposes as plain buttons, so match the label rather than the container type.
+    func mainTabButton(_ title: String) -> XCUIElement {
+        let inTabBar = tabBars.buttons[title]
+        if inTabBar.exists {
+            return inTabBar
+        }
+        return buttons.matching(NSPredicate(format: "label == %@", title)).firstMatch
+    }
 }
 
 enum LocationPrompt {

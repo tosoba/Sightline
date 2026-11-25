@@ -122,7 +122,7 @@ final class ARCameraModel {
     private static let maxMarkerWidth: CGFloat = 220
     private static let markerTargetWidth: CGFloat = 160
     private static let minMarkerWidthDivisor = 2
-    private static let maxMarkerWidthDivisor = 5
+    private static let maxMarkerWidthDivisor = 6
     private static let markerVerticalSpacing: CGFloat = 16
     private static let markerOverlapGuardFraction: CGFloat = 0.5
     private static let markerTopPadding: CGFloat = 12
@@ -412,7 +412,9 @@ final class ARCameraModel {
     /// orientation is what the SwiftUI viewport and the AR projection are laid out against.
     func refreshScreenRotation() {
         guard let scene = activeWindowScene(),
-              let mapping = Self.orientationMapping(for: scene.interfaceOrientation) else {
+              let mapping = Self.orientationMapping(
+                  for: scene.effectiveGeometry.interfaceOrientation
+              ) else {
             capture.setVideoRotationAngle(Self.videoRotationAngle(for: screenRotation))
             return
         }

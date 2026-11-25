@@ -20,10 +20,10 @@ final class SmokeUITests: XCTestCase {
         let app = XCUIApplication.launchedForUITest(arguments: ["-arCamera"])
 
         XCTAssertTrue(
-            app.tabBars.buttons["Camera"].waitForExistence(timeout: Timeout.element),
+            app.mainTabButton("Camera").waitForExistence(timeout: Timeout.element),
             "The Camera tab did not render."
         )
-        app.tabBars.buttons["Map"].tap()
+        app.mainTabButton("Map").tap()
 
         let map = app.otherElements["nearby-map"]
         XCTAssertTrue(map.waitForExistence(timeout: Timeout.element), "The map page did not render.")
@@ -107,7 +107,7 @@ final class SmokeUITests: XCTestCase {
         attachScreenshot(named: "smoke-custom-location-category-loaded")
 
         app.buttons["places-done"].tap()
-        app.tabBars.buttons["Map"].tap()
+        app.mainTabButton("Map").tap()
 
         let map = app.otherElements["nearby-map"]
         XCTAssertTrue(map.waitForExistence(timeout: Timeout.element))
@@ -177,7 +177,7 @@ final class SmokeUITests: XCTestCase {
 
         chooseRadius("2 km", in: app)
 
-        app.tabBars.buttons["Map"].tap()
+        app.mainTabButton("Map").tap()
         let map = app.otherElements["nearby-map"]
         XCTAssertTrue(map.waitForExistence(timeout: Timeout.element))
         waitForPlaces(on: map)
@@ -201,10 +201,10 @@ final class SmokeUITests: XCTestCase {
         app.launch()
 
         XCTAssertTrue(
-            app.tabBars.buttons["Map"].waitForExistence(timeout: Timeout.element),
+            app.mainTabButton("Map").waitForExistence(timeout: Timeout.element),
             "The tabs did not render after relaunch."
         )
-        app.tabBars.buttons["Map"].tap()
+        app.mainTabButton("Map").tap()
 
         let restoredCamera = app.staticTexts["map-camera"]
         XCTAssertTrue(restoredCamera.waitForExistence(timeout: Timeout.element))

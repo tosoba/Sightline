@@ -165,6 +165,7 @@ struct ARCameraScreen: View {
             Text(camera.statusText)
             Text(camera.orientationText)
             Text(camera.layoutDebugText)
+                .accessibilityIdentifier("ar-layout-debug")
             TimelineView(.periodic(from: .now, by: 0.5)) { _ in
                 if let renderer = camera.renderer {
                     Text(String(
