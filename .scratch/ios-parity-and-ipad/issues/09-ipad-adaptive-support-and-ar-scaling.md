@@ -6,7 +6,7 @@
 
 **Blocked by:** 06, 08
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 ## Acceptance Criteria
 
@@ -34,3 +34,17 @@ xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp \
 xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp \
   -destination 'platform=iOS Simulator,name=iPad Pro 13-inch (M5)' build
 ```
+
+## Answer
+
+Implemented on `ios-parity/09-ipad` as commits `bf56d09` and `d6b389c`, merged to `integration/ios-parity-and-ipad` as `61341a8`.
+
+- `iosApp/project.yml` targets `TARGETED_DEVICE_FAMILY: "1,2"`; the regenerated project is committed and `xcodegen generate` is idempotent.
+- `Info.plist` keeps the three iPhone orientations and adds `UISupportedInterfaceOrientations~ipad` with all four; no `UIRequiresFullScreen`, and the built app reports `UIDeviceFamily = [1, 2]`.
+- AR marker geometry now caps the divisor at 6, so wide usable widths divide into up to six columns while height stays `72...88 pt`, rows `1...6`, and width clamps to `150...220 pt`.
+- Orientation reads the non-deprecated `scene.effectiveGeometry.interfaceOrientation`. The four-way `ScreenRotation` and `videoRotationAngle` mapping and cache invalidation were already in place; the iPad test now exercises all four orientations and live viewport changes.
+- The existing single `.sheet` works as a centered iPad page sheet with the Done button and `sheetObscuresCamera` blurring the camera; no product fix was needed.
+
+Verification: all 55 shared iOS tests and the Android gate pass; iPhone 17 / iOS 26.5 runs 7 tests with 1 skip (the iPad-only test) and 0 failures; iPad Pro 13-inch (M5) / iOS 26.5 runs 7 of 7 with 0 failures, covering page-sheet geometry, Done dismissal, camera blur behind the sheet, and `r0`/`r90`/`r180`/`r270` rotations with viewport-aspect assertions. Removing the `~ipad` orientation key makes the upside-down assertion fail, so the test is not vacuous. Portrait and landscape iPad screenshots were captured during verification.
+
+Limitations: Split View and Stage Manager cannot be driven by `simctl` and this Xcode install has no `Simulator.app`, so resize was verified through the same viewport-change path during rotation rather than by dragging. A reused iPad simulator can remember an iPhone-compat window frame (erase it before a run). Pre-existing ticket 06 behavior: a non-full-screen portrait iPad window that rotates reports landscape orientation while keeping its window aspect, so the AR projection rotates relative to the window; this is outside this ticket's acceptance criteria.
