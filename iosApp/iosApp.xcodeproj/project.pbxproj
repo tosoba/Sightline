@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		1C81D6F669B7BB6D2FFCCEB3 /* MapLibre in Frameworks */ = {isa = PBXBuildFile; productRef = B26BDE9F5B50F285C10A6766 /* MapLibre */; };
+		204AAC28538D800F54DC33B2 /* IPadAdaptiveUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84E08D53FE14521E864C1BC9 /* IPadAdaptiveUITests.swift */; };
 		26550A10558E67C2592D81C1 /* ARCameraMotion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52004BAF5A6A7CD040C9644A /* ARCameraMotion.swift */; };
 		318B7A34F36B639F09A0C8D3 /* ARCameraSyntheticFeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05A6FDE80D4F009784110F0D /* ARCameraSyntheticFeed.swift */; };
 		34B8A5325FA474110F6566AD /* ARCameraRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18A3A0B7164A80BB642ECA6C /* ARCameraRenderer.swift */; };
@@ -54,6 +55,7 @@
 		7BB2E5A3F4E9E142A1C2CA65 /* ARCameraScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARCameraScreen.swift; sourceTree = "<group>"; };
 		7C60CB2DA6FF7C01D784C063 /* MapScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapScreen.swift; sourceTree = "<group>"; };
 		7E89613391F5E3CE7C3B793B /* dark_style.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = dark_style.json; sourceTree = "<group>"; };
+		84E08D53FE14521E864C1BC9 /* IPadAdaptiveUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadAdaptiveUITests.swift; sourceTree = "<group>"; };
 		858566E65BCB9127E10B6580 /* ARCameraShaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = ARCameraShaders.metal; sourceTree = "<group>"; };
 		86038AE1032E284E79B32AD6 /* iosApp.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = iosApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		88660B8E5D6902865CC22DF5 /* DistanceFormat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistanceFormat.swift; sourceTree = "<group>"; };
@@ -139,6 +141,7 @@
 		F13ED58769885D2F4FFF934C /* UITests */ = {
 			isa = PBXGroup;
 			children = (
+				84E08D53FE14521E864C1BC9 /* IPadAdaptiveUITests.swift */,
 				6C0BE0BD2C453896E01CBEBB /* MapPageUITests.swift */,
 				77D34269A33BF6BF1E601530 /* SmokeUITests.swift */,
 				93DFF26DEB51A16FAA6F6F6F /* UITestSupport.swift */,
@@ -267,6 +270,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				204AAC28538D800F54DC33B2 /* IPadAdaptiveUITests.swift in Sources */,
 				45228537D1FB75C2794D02E6 /* MapPageUITests.swift in Sources */,
 				BBBBC3C12B21C55DEA565F00 /* SmokeUITests.swift in Sources */,
 				4F678C7B905D65845A4BDB51 /* UITestSupport.swift in Sources */,
@@ -507,7 +511,7 @@
 				PRODUCT_NAME = Sightline;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};
@@ -552,7 +556,7 @@
 				PRODUCT_NAME = Sightline;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
