@@ -2,8 +2,8 @@ package com.trm.sightline.core.data
 
 import android.content.Context
 import androidx.datastore.core.DataStore
-import com.trm.sightline.core.datastore.LegacyProtobufPreferencesMigration
 import com.trm.sightline.core.datastore.LEGACY_USER_PREFERENCES_FILE_NAME
+import com.trm.sightline.core.datastore.LegacyProtobufPreferencesMigration
 import com.trm.sightline.core.datastore.USER_PREFERENCES_DIRECTORY
 import com.trm.sightline.core.datastore.createUserPreferencesDataStore
 import com.trm.sightline.core.datastore.userPreferencesStorage
@@ -28,14 +28,14 @@ object DataModule {
       migrations =
         listOf(
           LegacyProtobufPreferencesMigration(
-            File(directory, LEGACY_USER_PREFERENCES_FILE_NAME)
-          )
+            File(directory, LEGACY_USER_PREFERENCES_FILE_NAME),
+          ),
         ),
     )
   }
 
   @Provides
   fun provideUserPreferencesRepository(
-    dataStore: DataStore<UserPreferences>
+    dataStore: DataStore<UserPreferences>,
   ): UserPreferencesRepository = UserPreferencesLocalRepository(dataStore)
 }

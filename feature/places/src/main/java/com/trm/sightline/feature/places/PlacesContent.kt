@@ -128,8 +128,7 @@ fun SharedTransitionScope.PlacesContent(
               when {
                 !userLocationEnabled -> R.string.enter_location_placeholder
                 activeLocation == null -> R.string.loading_location
-                locationAddress is LocationAddressState.Loading ->
-                  R.string.loading_location_address
+                locationAddress is LocationAddressState.Loading -> R.string.loading_location_address
                 else -> R.string.location_address_not_found
               },
             ),

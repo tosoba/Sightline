@@ -20,13 +20,21 @@ class GeoLocationTest {
   @Test
   fun `bearingTo north is zero degrees`() {
     val origin = GeoLocation(latitude = 0.0, longitude = 0.0)
-    assertEquals(0.0, origin.bearingTo(GeoLocation(latitude = 1.0, longitude = 0.0)).toDouble(), 0.001)
+    assertEquals(
+      0.0,
+      origin.bearingTo(GeoLocation(latitude = 1.0, longitude = 0.0)).toDouble(),
+      0.001,
+    )
   }
 
   @Test
   fun `bearingTo east is ninety degrees`() {
     val origin = GeoLocation(latitude = 0.0, longitude = 0.0)
-    assertEquals(90.0, origin.bearingTo(GeoLocation(latitude = 0.0, longitude = 1.0)).toDouble(), 0.001)
+    assertEquals(
+      90.0,
+      origin.bearingTo(GeoLocation(latitude = 0.0, longitude = 1.0)).toDouble(),
+      0.001,
+    )
   }
 
   @Test

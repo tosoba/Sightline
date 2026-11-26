@@ -7,9 +7,10 @@ plugins {
 android {
   namespace = "com.trm.sightline.feature.category"
   compileSdk {
-    version = release(libs.versions.compileSdk.get().toInt()) {
-      minorApiLevel = libs.versions.compileSdkMinor.get().toInt()
-    }
+    version =
+      release(libs.versions.compileSdk.get().toInt()) {
+        minorApiLevel = libs.versions.compileSdkMinor.get().toInt()
+      }
   }
 
   defaultConfig {

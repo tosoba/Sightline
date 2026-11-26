@@ -37,7 +37,7 @@ class AndroidLocationProvider(private val context: Context) : LocationProvider {
                 horizontalAccuracyMeters =
                   if (location.hasAccuracy()) location.accuracy.toDouble() else null,
                 timestampMillis = location.time,
-              )
+              ),
             )
           }
         }
@@ -62,19 +62,18 @@ class AndroidLocationProvider(private val context: Context) : LocationProvider {
     awaitClose { context.unregisterReceiver(receiver) }
   }
 
-  override val authorizationState: Flow<LocationAuthorization> =
-    flow {
-      emit(
-        if (
-          ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) ==
-            PackageManager.PERMISSION_GRANTED
-        ) {
-          LocationAuthorization.Granted
-        } else {
-          LocationAuthorization.Denied
-        }
-      )
-    }
+  override val authorizationState: Flow<LocationAuthorization> = flow {
+    emit(
+      if (
+        ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) ==
+          PackageManager.PERMISSION_GRANTED
+      ) {
+        LocationAuthorization.Granted
+      } else {
+        LocationAuthorization.Denied
+      },
+    )
+  }
 
   override suspend fun checkLocationSettings(): LocationSettingsState =
     when (context.checkLocationSettings()) {

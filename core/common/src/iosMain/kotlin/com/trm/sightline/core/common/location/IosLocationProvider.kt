@@ -6,8 +6,8 @@ import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeSource
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.useContents
-import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -47,8 +47,7 @@ class IosLocationProvider : LocationProvider {
 
   // `locationServicesEnabled()` has no change broadcast, so the last reading is cached here and
   // refreshed on every collection plus when CoreLocation reports a denial.
-  private val locationEnabled =
-    MutableStateFlow(CLLocationManager.locationServicesEnabled())
+  private val locationEnabled = MutableStateFlow(CLLocationManager.locationServicesEnabled())
 
   // CLLocationManager.delegate is weak; the provider must own the delegate for callbacks to arrive.
   private val delegate =
@@ -60,29 +59,27 @@ class IosLocationProvider : LocationProvider {
     locationManager.delegate = delegate
   }
 
-  override fun locationUpdates(): Flow<GeoLocation> =
-    callbackFlow {
-        val collector = updates.onEach { send(it) }.launchIn(this)
+  override fun locationUpdates(): Flow<GeoLocation> = callbackFlow {
+    val collector = updates.onEach { send(it) }.launchIn(this)
 
-        if (locationManager.authorizationStatus == kCLAuthorizationStatusNotDetermined) {
-          locationManager.requestWhenInUseAuthorization()
-        }
-        locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        locationManager.distanceFilter = DISTANCE_FILTER_METERS
-        locationManager.startUpdatingLocation()
+    if (locationManager.authorizationStatus == kCLAuthorizationStatusNotDetermined) {
+      locationManager.requestWhenInUseAuthorization()
+    }
+    locationManager.desiredAccuracy = kCLLocationAccuracyBest
+    locationManager.distanceFilter = DISTANCE_FILTER_METERS
+    locationManager.startUpdatingLocation()
 
-        awaitClose {
-          collector.cancel()
-          locationManager.stopUpdatingLocation()
-        }
-      }
-      .throttleFirst(UPDATE_THROTTLE)
+    awaitClose {
+      collector.cancel()
+      locationManager.stopUpdatingLocation()
+    }
+  }
+    .throttleFirst(UPDATE_THROTTLE)
 
-  override fun isLocationEnabled(): Flow<Boolean> =
-    flow {
-        locationEnabled.value = CLLocationManager.locationServicesEnabled()
-        emitAll(locationEnabled)
-      }
+  override fun isLocationEnabled(): Flow<Boolean> = flow {
+    locationEnabled.value = CLLocationManager.locationServicesEnabled()
+    emitAll(locationEnabled)
+  }
 
   override val authorizationState: Flow<LocationAuthorization> = authorization.asStateFlow()
 

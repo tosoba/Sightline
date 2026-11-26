@@ -67,7 +67,7 @@ fun BoxScope.MainPagerToolbar(
     modifier =
       Modifier.align(Alignment.BottomStart)
         .windowInsetsPadding(
-          WindowInsets.safeDrawing.only(WindowInsetsSides.Start + WindowInsetsSides.Bottom)
+          WindowInsets.safeDrawing.only(WindowInsetsSides.Start + WindowInsetsSides.Bottom),
         )
         .padding(
           top = 16.dp,
@@ -139,7 +139,7 @@ private fun MainPagerPlaceSearchRadiusMenu(
       TooltipBox(
         positionProvider =
           TooltipDefaults.rememberTooltipPositionProvider(
-            if (menuExpanded) TooltipAnchorPosition.Start else TooltipAnchorPosition.Above
+            if (menuExpanded) TooltipAnchorPosition.Start else TooltipAnchorPosition.Above,
           ),
         tooltip = { PlainTooltip { Text(text = stringResource(R.string.select_max_range)) } },
         state = rememberTooltipState(),

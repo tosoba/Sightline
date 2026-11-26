@@ -1,9 +1,9 @@
 package com.trm.sightline.core.data
 
 import com.trm.sightline.core.model.PlaceCategory
+import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
-import kotlin.test.Test
 
 class PlaceCategoryOsmTagsTest {
   @Test

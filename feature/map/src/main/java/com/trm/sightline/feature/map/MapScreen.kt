@@ -100,7 +100,7 @@ fun MapScreen(
             bearing = lastMapPosition.bearing,
             pitch = lastMapPosition.pitch,
             padding = padding.toCameraPadding(),
-          )
+          ),
         )
         initialPositionRestored = true
       }
@@ -117,7 +117,7 @@ fun MapScreen(
             zoom = zoom,
             bearing = bearing,
             pitch = pitch,
-          )
+          ),
         )
       }
     }
@@ -147,7 +147,7 @@ fun MapScreen(
                     bearing = mapState.cameraPosition.bearing,
                     pitch = mapState.cameraPosition.pitch,
                     padding = padding.toCameraPadding(),
-                  )
+                  ),
                 )
               }
             }
@@ -168,7 +168,7 @@ fun MapScreen(
                 )
               }
             }
-          }
+          },
         ) {
           Icon(imageVector = Icons.Default.FilterCenterFocus, contentDescription = null)
         }

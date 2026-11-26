@@ -113,24 +113,23 @@ internal class PreviewStreamStateObserver(
   private fun waitForCaptureResult(
     cameraInfo: CameraInfo,
     callbacksToClear: MutableList<CameraCaptureCallback>,
-  ): ListenableFuture<Unit> =
-    CallbackToFutureAdapter.getFuture { completer ->
-      // The callback will be invoked in camera executor thread.
-      val callback: CameraCaptureCallback =
-        object : CameraCaptureCallback() {
-          override fun onCaptureCompleted(
-            captureConfigId: Int,
-            cameraCaptureResult: CameraCaptureResult,
-          ) {
-            completer.set(null)
-            (cameraInfo as CameraInfoInternal).removeSessionCaptureCallback(this)
-          }
+  ): ListenableFuture<Unit> = CallbackToFutureAdapter.getFuture { completer ->
+    // The callback will be invoked in camera executor thread.
+    val callback: CameraCaptureCallback =
+      object : CameraCaptureCallback() {
+        override fun onCaptureCompleted(
+          captureConfigId: Int,
+          cameraCaptureResult: CameraCaptureResult,
+        ) {
+          completer.set(null)
+          (cameraInfo as CameraInfoInternal).removeSessionCaptureCallback(this)
         }
-      callbacksToClear.add(callback)
-      (cameraInfo as CameraInfoInternal).addSessionCaptureCallback(
-        CameraXExecutors.directExecutor(),
-        callback,
-      )
-      "waitForCaptureResult"
-    }
+      }
+    callbacksToClear.add(callback)
+    (cameraInfo as CameraInfoInternal).addSessionCaptureCallback(
+      CameraXExecutors.directExecutor(),
+      callback,
+    )
+    "waitForCaptureResult"
+  }
 }

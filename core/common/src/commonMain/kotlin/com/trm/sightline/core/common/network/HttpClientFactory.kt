@@ -17,7 +17,7 @@ internal fun HttpClientConfig<*>.configureSightlineClient(logRequests: Boolean) 
       Json {
         ignoreUnknownKeys = true
         explicitNulls = false
-      }
+      },
     )
   }
 

@@ -31,8 +31,8 @@ import androidx.compose.material3.SheetState
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableFloatState
-import androidx.compose.runtime.State
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,7 +45,8 @@ import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Stable
-class AdaptiveSheetScaffoldState internal constructor(
+class AdaptiveSheetScaffoldState
+internal constructor(
   val isCompactHeight: Boolean,
   val scaffoldState: BottomSheetScaffoldState,
   val expandedProgress: State<Float>,
@@ -156,8 +157,8 @@ fun AdaptiveSheetScaffold(
               modifier =
                 Modifier.height(
                   WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding() *
-                    state.expandedProgress.value
-                )
+                    state.expandedProgress.value,
+                ),
             )
             BottomSheetDefaults.DragHandle(color = MaterialTheme.colorScheme.onSurface)
           }

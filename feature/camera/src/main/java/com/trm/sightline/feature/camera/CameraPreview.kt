@@ -120,7 +120,7 @@ private fun CameraPreviewContent(
                       FrameLayout.LayoutParams.MATCH_PARENT,
                       FrameLayout.LayoutParams.MATCH_PARENT,
                     )
-                }
+                },
               )
             }
           },
@@ -176,7 +176,7 @@ private fun CameraPreviewContent(
 
         val streamState by
           openGLRenderer.previewStreamStates.collectAsStateWithLifecycle(
-            PreviewView.StreamState.IDLE
+            PreviewView.StreamState.IDLE,
           )
         val contrastingColor = MaterialTheme.colorScheme.surfaceContainer
         val previewBlurred = blurred || !pitchWithinLimit

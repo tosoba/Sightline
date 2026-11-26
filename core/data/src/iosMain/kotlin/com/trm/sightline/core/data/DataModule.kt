@@ -17,12 +17,12 @@ object DataModule {
   @Provides
   @SingleIn(AppScope::class)
   fun provideUserPreferencesDataStore(
-    directory: UserPreferencesDirectory
+    directory: UserPreferencesDirectory,
   ): DataStore<UserPreferences> =
     createUserPreferencesDataStore(storage = userPreferencesStorage(directory.path))
 
   @Provides
   fun provideUserPreferencesRepository(
-    dataStore: DataStore<UserPreferences>
+    dataStore: DataStore<UserPreferences>,
   ): UserPreferencesRepository = UserPreferencesLocalRepository(dataStore)
 }

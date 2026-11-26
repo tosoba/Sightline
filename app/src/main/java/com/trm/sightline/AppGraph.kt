@@ -14,6 +14,5 @@ interface AppGraph : ViewModelGraph {
     fun create(@Provides application: Application): AppGraph
   }
 
-  @Provides
-  fun provideContext(application: Application): Context = application
+  @Provides fun provideContext(application: Application): Context = application
 }

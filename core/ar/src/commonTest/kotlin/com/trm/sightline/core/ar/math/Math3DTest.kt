@@ -112,7 +112,11 @@ class Math3DTest {
     val drawn =
       Math3D.convert3dTo2d(
         inRelativePos = Vector3(x = 2.0, y = 1.0, z = 5.0),
-        inScreenSize = Vector2().apply { x = 1080.0; y = 2400.0 },
+        inScreenSize =
+          Vector2().apply {
+            x = 1080.0
+            y = 2400.0
+          },
         inScreenRatio = Vector3(x = 1740.0, y = 1740.0, z = 1.0),
         inScreenRotTrig = Trig1().apply { setVector1(Vector1().apply { v = 0.2 }) },
         outScreenPos = screenPos,
@@ -129,7 +133,11 @@ class Math3DTest {
     val drawn =
       Math3D.convert3dTo2d(
         inRelativePos = Vector3(x = 500.0, y = 1.0, z = 5.0),
-        inScreenSize = Vector2().apply { x = 1080.0; y = 2400.0 },
+        inScreenSize =
+          Vector2().apply {
+            x = 1080.0
+            y = 2400.0
+          },
         inScreenRatio = Vector3(x = 1740.0, y = 1740.0, z = 1.0),
         inScreenRotTrig = Trig1().apply { setVector1(Vector1().apply { v = 0.2 }) },
         outScreenPos = screenPos,
@@ -146,7 +154,11 @@ class Math3DTest {
     val drawn =
       Math3D.convert3dTo2d(
         inRelativePos = Vector3(x = 2.0, y = 1.0, z = 0.0),
-        inScreenSize = Vector2().apply { x = 1080.0; y = 2400.0 },
+        inScreenSize =
+          Vector2().apply {
+            x = 1080.0
+            y = 2400.0
+          },
         inScreenRatio = Vector3(x = 1740.0, y = 1740.0, z = 1.0),
         inScreenRotTrig = Trig1(),
         outScreenPos = screenPos,
@@ -163,7 +175,11 @@ class Math3DTest {
     val drawn =
       Math3D.convert3dTo2d(
         inRelativePos = Vector3(x = 2.0, y = 1.0, z = -5.0),
-        inScreenSize = Vector2().apply { x = 1080.0; y = 2400.0 },
+        inScreenSize =
+          Vector2().apply {
+            x = 1080.0
+            y = 2400.0
+          },
         inScreenRatio = Vector3(x = 1740.0, y = 1740.0, z = 1.0),
         inScreenRotTrig = Trig1(),
         outScreenPos = screenPos,

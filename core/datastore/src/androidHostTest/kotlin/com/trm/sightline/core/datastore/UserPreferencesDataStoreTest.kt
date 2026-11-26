@@ -2,13 +2,13 @@ package com.trm.sightline.core.datastore
 
 import com.trm.sightline.core.model.UserPreferences
 import java.io.File
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.test.runTest
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.runTest
 
 class UserPreferencesDataStoreTest {
   private val directory =
@@ -43,8 +43,8 @@ class UserPreferencesDataStoreTest {
         "08 01" + // user_location_enabled = true
           " 22 06 42 65 72 6C 69 6E" + // custom_location_address = "Berlin"
           " 28 E8 07" + // custom_location_timestamp = 1000
-          " 58 DC 0B" // search_radius = 1500
-      )
+          " 58 DC 0B", // search_radius = 1500
+      ),
     )
 
     val dataStore =

@@ -12,7 +12,7 @@ import androidx.compose.runtime.key
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun rememberBottomSheetScaffoldStateForScreenHeight(
-  isCompactHeight: Boolean
+  isCompactHeight: Boolean,
 ): BottomSheetScaffoldState {
   val sheetState =
     key(isCompactHeight) {

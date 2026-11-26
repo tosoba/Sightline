@@ -42,37 +42,39 @@ object MarkerSlotAssignment {
     val angularWidthDeg =
       degrees(
         2.0 *
-          atan((geometry.markerWidthPx + geometry.overlapGuardPx) / (2.0 * effectiveScreenRatioX))
+          atan((geometry.markerWidthPx + geometry.overlapGuardPx) / (2.0 * effectiveScreenRatioX)),
       )
 
     val assigned = mutableListOf<Pair<Float, SlotPosition>>()
     val slots = LinkedHashMap<String, MarkerSlot>(targets.size)
 
-    targets.sortedBy { it.distance }.forEach { target ->
-      val bearing = normalizeBearing(povLocation.bearingTo(target.location))
+    targets
+      .sortedBy { it.distance }
+      .forEach { target ->
+        val bearing = normalizeBearing(povLocation.bearingTo(target.location))
 
-      val conflicting =
-        assigned
-          .filter { (assignedBearing, _) ->
-            angularDistanceDeg(bearing, assignedBearing) < angularWidthDeg
+        val conflicting =
+          assigned
+            .filter { (assignedBearing, _) ->
+              angularDistanceDeg(bearing, assignedBearing) < angularWidthDeg
+            }
+            .map { (_, position) -> position }
+            .toSet()
+
+        val position = SlotPosition(geometry.baseY, 0)
+        var row = 0
+        while (conflicting.contains(position)) {
+          position.y += geometry.markerHeightPx + geometry.verticalSpacingPx
+          ++row
+          if (row >= geometry.rows) {
+            row = 0
+            position.y = geometry.baseY
+            ++position.page
           }
-          .map { (_, position) -> position }
-          .toSet()
-
-      val position = SlotPosition(geometry.baseY, 0)
-      var row = 0
-      while (conflicting.contains(position)) {
-        position.y += geometry.markerHeightPx + geometry.verticalSpacingPx
-        ++row
-        if (row >= geometry.rows) {
-          row = 0
-          position.y = geometry.baseY
-          ++position.page
         }
+        assigned.add(Pair(bearing, position))
+        slots[target.id] = MarkerSlot(bearing, position.y, position.page)
       }
-      assigned.add(Pair(bearing, position))
-      slots[target.id] = MarkerSlot(bearing, position.y, position.page)
-    }
 
     return slots
   }

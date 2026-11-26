@@ -7,8 +7,8 @@ import kotlin.test.assertTrue
 
 /**
  * Seam: the Swift-facing [ArBlurAnimator] that carries the Android renderer's animated-lod and
- * contrasting-colour state machine across the boundary.
- * These catch constant and transition regressions; the actual GPU blur is a separate concern.
+ * contrasting-color state machine across the boundary. These catch constant and transition
+ * regressions; the actual GPU blur is a separate concern.
  */
 class ArBlurAnimatorTest {
   private val animator = ArBlurAnimator()

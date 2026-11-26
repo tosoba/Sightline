@@ -41,9 +41,9 @@ import com.trm.sightline.core.ar.util.statusBarTopInsetPx
 import com.trm.sightline.core.common.util.formatMarkerDistance
 import com.trm.sightline.core.model.GeoLocation
 import com.trm.sightline.core.model.PlaceCategory
-import com.trm.sightline.core.ui.sideSheetWidthDp
 import com.trm.sightline.core.ui.R
 import com.trm.sightline.core.ui.icon
+import com.trm.sightline.core.ui.sideSheetWidthDp
 import java.util.Objects
 import kotlin.math.abs
 import kotlin.math.acos
@@ -322,7 +322,7 @@ class ARMarkerRenderer(private val context: Context) {
           right = markerRectF.right,
           bottom = markerRectF.bottom,
           cornerRadius = cornerRadiusPx,
-        )
+        ),
       )
     }
 
@@ -796,7 +796,7 @@ class ARMarkerRenderer(private val context: Context) {
   private data class BakedIcon(val viewportWidth: Float, val paths: List<Path>)
 
   private enum class SavedStateKeys {
-    LAST_DRAWN_MARKER_IDS
+    LAST_DRAWN_MARKER_IDS,
   }
 
   companion object {

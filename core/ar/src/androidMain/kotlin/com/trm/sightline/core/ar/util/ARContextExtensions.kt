@@ -88,7 +88,7 @@ fun Context.getScreenSize(
     val metrics = getSystemService(WindowManager::class.java).currentWindowMetrics
     val insets =
       metrics.windowInsets.getInsetsIgnoringVisibility(
-        WindowInsets.Type.navigationBars() or WindowInsets.Type.statusBars()
+        WindowInsets.Type.navigationBars() or WindowInsets.Type.statusBars(),
       )
     val bounds = metrics.bounds
     var width = bounds.width()

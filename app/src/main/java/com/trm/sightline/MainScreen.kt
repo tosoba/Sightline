@@ -117,7 +117,7 @@ fun SharedTransitionScope.MainScreen(
           onClick = {
             showLocationDisabledDialog = false
             context.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
-          }
+          },
         ) {
           Text(stringResource(commonR.string.open_settings))
         }
@@ -149,7 +149,7 @@ fun SharedTransitionScope.MainScreen(
           onClick = {
             showCameraPermissionSettingsDialog = false
             context.startAppSettingsActivity()
-          }
+          },
         ) {
           Text(stringResource(commonR.string.open_settings))
         }
@@ -190,7 +190,7 @@ fun SharedTransitionScope.MainScreen(
           onClick = {
             showLocationPermissionSettingsDialog = false
             context.startAppSettingsActivity()
-          }
+          },
         ) {
           Text(stringResource(commonR.string.open_settings))
         }
@@ -317,7 +317,7 @@ fun SharedTransitionScope.MainScreen(
                   cornerRadius = dpToPx(32f),
                 )
               }
-            }
+            },
           ),
         cameraPreviewOverlayVisible = toolbarsVisible,
         cameraPermissionGranted = cameraPermissionState.isGranted,

@@ -16,7 +16,7 @@ class LegacyUserPreferencesReaderTest {
           " 22 06 42 65 72 6C 69 6E" + // custom_location_address = "Berlin"
           " 28 E8 07" + // custom_location_timestamp = 1000
           " 31 00 00 00 00 00 00 29 40" + // last_map_lat = 12.5
-          " 58 DC 0B" // search_radius = 1500
+          " 58 DC 0B", // search_radius = 1500
       )
 
     assertEquals(
@@ -37,7 +37,10 @@ class LegacyUserPreferencesReaderTest {
   fun `skips fields it does not know`() {
     val bytes = hex("7A 03 61 62 63 08 01")
 
-    assertEquals(UserPreferences(userLocationEnabled = true), LegacyUserPreferencesReader.read(bytes))
+    assertEquals(
+      UserPreferences(userLocationEnabled = true),
+      LegacyUserPreferencesReader.read(bytes),
+    )
   }
 
   @Test

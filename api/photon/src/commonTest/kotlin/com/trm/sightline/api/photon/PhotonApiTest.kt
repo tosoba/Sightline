@@ -67,15 +67,14 @@ class PhotonApiTest {
 
   private fun api(): Pair<PhotonApi, List<Url>> {
     val requests = mutableListOf<Url>()
-    val engine =
-      MockEngine { request ->
-        requests += request.url
-        respond(
-          content = emptyFeatureCollection,
-          status = HttpStatusCode.OK,
-          headers = headersOf(HttpHeaders.ContentType, "application/json"),
-        )
-      }
+    val engine = MockEngine { request ->
+      requests += request.url
+      respond(
+        content = emptyFeatureCollection,
+        status = HttpStatusCode.OK,
+        headers = headersOf(HttpHeaders.ContentType, "application/json"),
+      )
+    }
     val client =
       HttpClient(engine) {
         install(ContentNegotiation) {
@@ -83,7 +82,7 @@ class PhotonApiTest {
             Json {
               ignoreUnknownKeys = true
               explicitNulls = false
-            }
+            },
           )
         }
       }

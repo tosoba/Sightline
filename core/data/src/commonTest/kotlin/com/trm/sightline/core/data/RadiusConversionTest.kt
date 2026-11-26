@@ -1,7 +1,7 @@
 package com.trm.sightline.core.data
 
-import kotlin.test.assertEquals
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 class RadiusConversionTest {
   @Test

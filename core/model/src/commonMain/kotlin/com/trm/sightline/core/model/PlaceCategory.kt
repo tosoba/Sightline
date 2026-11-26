@@ -16,5 +16,5 @@ enum class PlaceCategory {
   RoadTrip,
   MoneyBanking,
   Health,
-  Practical;
+  Practical,
 }

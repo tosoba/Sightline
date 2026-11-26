@@ -12,9 +12,10 @@ kotlin {
   android {
     namespace = "com.trm.sightline.core.ar"
     compileSdk {
-      version = release(libs.versions.compileSdk.get().toInt()) {
-        minorApiLevel = libs.versions.compileSdkMinor.get().toInt()
-      }
+      version =
+        release(libs.versions.compileSdk.get().toInt()) {
+          minorApiLevel = libs.versions.compileSdkMinor.get().toInt()
+        }
     }
     minSdk = libs.versions.minSdk.get().toInt()
 

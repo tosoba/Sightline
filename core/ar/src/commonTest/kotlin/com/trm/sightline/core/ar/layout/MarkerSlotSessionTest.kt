@@ -1,7 +1,7 @@
 package com.trm.sightline.core.ar.layout
 
-import com.trm.sightline.core.ar.math.ScreenRotation
 import com.trm.sightline.core.ar.math.MarkerSlotTarget
+import com.trm.sightline.core.ar.math.ScreenRotation
 import com.trm.sightline.core.model.GeoLocation
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -172,9 +172,10 @@ class MarkerSlotSessionTest {
 
     val update =
       session.update(
-        targets = listOf("p", "q", "r", "s", "t", "u").mapIndexed { index, id ->
-          target(id, 10.0 + index)
-        },
+        targets =
+          listOf("p", "q", "r", "s", "t", "u").mapIndexed { index, id ->
+            target(id, 10.0 + index)
+          },
         screenRotation = ScreenRotation.ROTATION_90,
         previouslyVisibleIds = setOf("a", "b"),
       )

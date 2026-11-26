@@ -60,7 +60,7 @@ private fun CameraPreviewPagePickerItem(pageNumber: Int, isSelected: Boolean, on
 @Composable
 private fun CameraPreviewPagePickerPreview(
   @PreviewParameter(CameraPreviewPagePickerParamsProvider::class)
-  params: CameraPreviewPagePickerParams
+  params: CameraPreviewPagePickerParams,
 ) {
   CameraPreviewPagePicker(
     currentPage = params.currentPage,

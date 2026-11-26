@@ -36,7 +36,7 @@ internal class SurfaceViewRenderSurface : RenderSurface {
         override fun surfaceDestroyed(holder: SurfaceHolder) {
           renderer.detachOutputSurface()
         }
-      }
+      },
     )
     return surfaceView
   }

@@ -40,7 +40,9 @@ class UserPreferencesLocalRepository(private val userPreferencesStore: DataStore
       val zoom = preferences.lastMapZoom
       val bearing = preferences.lastMapBearing
       val pitch = preferences.lastMapPitch
-      if (latitude != null && longitude != null && zoom != null && bearing != null && pitch != null) {
+      if (
+        latitude != null && longitude != null && zoom != null && bearing != null && pitch != null
+      ) {
         MapCameraPosition(
           latitude = latitude,
           longitude = longitude,

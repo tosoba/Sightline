@@ -90,7 +90,7 @@ fun SharedTransitionScope.PlaceCategoryScreen(
           padding = mapPadding.toCameraPadding(),
           pitch = mapState.cameraPosition.pitch,
           zoom = mapState.cameraPosition.zoom,
-        )
+        ),
       )
     }
 
@@ -277,9 +277,9 @@ private fun PlaceListItem(place: Place, location: GeoLocation?, onClick: () -> U
               Intent.ACTION_VIEW,
               "geo:${place.latitude},${place.longitude}?q=${Uri.encode(place.name)}".toUri(),
             )
-            .setPackage("com.google.android.apps.maps")
+            .setPackage("com.google.android.apps.maps"),
         )
-      }
+      },
     ) {
       Icon(
         painter = painterResource(uiR.drawable.google_maps),

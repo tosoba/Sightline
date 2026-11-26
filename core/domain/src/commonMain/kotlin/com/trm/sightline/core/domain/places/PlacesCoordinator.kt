@@ -36,8 +36,8 @@ import kotlinx.coroutines.withTimeout
 
 /**
  * Owns the reactive places, location, and custom-location-search state shared by Android and iOS.
- * State is derived from the same repositories and preferences, exposed as fine-grained
- * `StateFlow`s plus the consolidated [state] snapshot, and mutated through the intents below.
+ * State is derived from the same repositories and preferences, exposed as fine-grained `StateFlow`s
+ * plus the consolidated [state] snapshot, and mutated through the intents below.
  *
  * Intents are expected to be invoked from the main thread; every effect runs on [scope].
  */
@@ -192,17 +192,16 @@ class PlacesCoordinator(
     }
     _customLocationAddress.value = persisted.address
     updateCustomLocation(
-      GeoLocation(latitude = persisted.latitude, longitude = persisted.longitude)
+      GeoLocation(latitude = persisted.latitude, longitude = persisted.longitude),
     )
   }
 
   fun saveMapPosition(position: MapCameraPosition) {
     mapPositionSaveJob?.cancel()
-    mapPositionSaveJob =
-      scope.launch {
-        delay(MAP_POSITION_SAVE_DEBOUNCE)
-        writePreferences { userPreferencesRepository.setLastMapPosition(position) }
-      }
+    mapPositionSaveJob = scope.launch {
+      delay(MAP_POSITION_SAVE_DEBOUNCE)
+      writePreferences { userPreferencesRepository.setLastMapPosition(position) }
+    }
   }
 
   /**
@@ -216,48 +215,38 @@ class PlacesCoordinator(
   }
 
   private suspend fun observeCustomLocationPreference() {
-    userPreferencesRepository
-      .getCustomLocation()
-      .filterNotNull()
-      .distinctUntilChanged()
-      .collect { persisted ->
-        persistedCustomLocation = persisted
-        if (!isEditingCustomLocationAddress) {
-          _customLocationAddress.value = persisted.address
-        }
-        updateCustomLocation(
-          GeoLocation(latitude = persisted.latitude, longitude = persisted.longitude)
-        )
+    userPreferencesRepository.getCustomLocation().filterNotNull().distinctUntilChanged().collect {
+      persisted ->
+      persistedCustomLocation = persisted
+      if (!isEditingCustomLocationAddress) {
+        _customLocationAddress.value = persisted.address
       }
+      updateCustomLocation(
+        GeoLocation(latitude = persisted.latitude, longitude = persisted.longitude),
+      )
+    }
   }
 
   private suspend fun observeUserLocationEnabledPreference() {
-    userPreferencesRepository
-      .getUserLocationEnabled()
-      .distinctUntilChanged()
-      .collect { enabled ->
-        if (_userLocationEnabled.value == enabled) return@collect
-        _userLocationEnabled.value = enabled
-        updateActiveLocation()
-      }
+    userPreferencesRepository.getUserLocationEnabled().distinctUntilChanged().collect { enabled ->
+      if (_userLocationEnabled.value == enabled) return@collect
+      _userLocationEnabled.value = enabled
+      updateActiveLocation()
+    }
   }
 
   private suspend fun observeSearchRadiusPreference() {
-    userPreferencesRepository
-      .getSearchRadius()
-      .distinctUntilChanged()
-      .collect { radius ->
-        val changed = _searchRadius.value != radius
-        _searchRadius.value = radius
-        if (changed) refreshActiveCategories()
-      }
+    userPreferencesRepository.getSearchRadius().distinctUntilChanged().collect { radius ->
+      val changed = _searchRadius.value != radius
+      _searchRadius.value = radius
+      if (changed) refreshActiveCategories()
+    }
   }
 
   private suspend fun observeLastMapPositionPreference() {
-    userPreferencesRepository
-      .getLastMapPosition()
-      .distinctUntilChanged()
-      .collect { position -> _lastMapPosition.value = position }
+    userPreferencesRepository.getLastMapPosition().distinctUntilChanged().collect { position ->
+      _lastMapPosition.value = position
+    }
   }
 
   private suspend fun observeLocationServices() {
@@ -310,11 +299,10 @@ class PlacesCoordinator(
     putCategory(category, CategoryPlacesState.Loading)
 
     fetchJobs.remove(category)?.cancel()
-    fetchJobs[category] =
-      scope.launch {
-        delay(CATEGORY_TOGGLE_DEBOUNCE)
-        fetchCategory(category)
-      }
+    fetchJobs[category] = scope.launch {
+      delay(CATEGORY_TOGGLE_DEBOUNCE)
+      fetchCategory(category)
+    }
   }
 
   private fun deactivate(category: PlaceCategory) {
@@ -397,7 +385,7 @@ class PlacesCoordinator(
   }
 
   private fun updatePlaces(
-    transform: (Map<PlaceCategory, CategoryPlacesState>) -> Map<PlaceCategory, CategoryPlacesState>
+    transform: (Map<PlaceCategory, CategoryPlacesState>) -> Map<PlaceCategory, CategoryPlacesState>,
   ) {
     val places = _places.updateAndGet(transform)
     _allPlaces.value =
@@ -434,20 +422,19 @@ class PlacesCoordinator(
         _customLocationSearchResults.value = CustomLocationSearchState.QueryTooShort
       else -> {
         _customLocationSearchResults.value = CustomLocationSearchState.Loading
-        customLocationSearchJob =
-          scope.launch {
-            delay(CUSTOM_LOCATION_SEARCH_DEBOUNCE)
-            try {
-              val results =
-                addressRepository.search(query = trimmed, limit = CUSTOM_LOCATION_SEARCH_LIMIT)
-              _customLocationSearchResults.value = CustomLocationSearchState.Loaded(results)
-            } catch (ex: CancellationException) {
-              throw ex
-            } catch (ex: Exception) {
-              reportError(ex.toRequestError())
-              _customLocationSearchResults.value = CustomLocationSearchState.Loaded(emptyList())
-            }
+        customLocationSearchJob = scope.launch {
+          delay(CUSTOM_LOCATION_SEARCH_DEBOUNCE)
+          try {
+            val results =
+              addressRepository.search(query = trimmed, limit = CUSTOM_LOCATION_SEARCH_LIMIT)
+            _customLocationSearchResults.value = CustomLocationSearchState.Loaded(results)
+          } catch (ex: CancellationException) {
+            throw ex
+          } catch (ex: Exception) {
+            reportError(ex.toRequestError())
+            _customLocationSearchResults.value = CustomLocationSearchState.Loaded(emptyList())
           }
+        }
       }
     }
   }
@@ -455,11 +442,10 @@ class PlacesCoordinator(
   private fun reportError(error: RequestError) {
     errorClearJob?.cancel()
     _error.value = error
-    errorClearJob =
-      scope.launch {
-        delay(ERROR_AUTO_CLEAR)
-        _error.value = null
-      }
+    errorClearJob = scope.launch {
+      delay(ERROR_AUTO_CLEAR)
+      _error.value = null
+    }
   }
 
   private fun persist(block: suspend () -> Unit) {

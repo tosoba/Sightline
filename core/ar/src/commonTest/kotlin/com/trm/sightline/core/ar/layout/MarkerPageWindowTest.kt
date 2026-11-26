@@ -39,7 +39,13 @@ class MarkerPageWindowTest {
 
   @Test
   fun `the window size is configurable`() {
-    assertEquals(listOf(3, 4), MarkerPageWindow.compute(currentPage = 4, totalPages = 10, maxVisiblePages = 2))
-    assertEquals(listOf(2, 3, 4, 5), MarkerPageWindow.compute(currentPage = 4, totalPages = 10, maxVisiblePages = 4))
+    assertEquals(
+      listOf(3, 4),
+      MarkerPageWindow.compute(currentPage = 4, totalPages = 10, maxVisiblePages = 2),
+    )
+    assertEquals(
+      listOf(2, 3, 4, 5),
+      MarkerPageWindow.compute(currentPage = 4, totalPages = 10, maxVisiblePages = 4),
+    )
   }
 }

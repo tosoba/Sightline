@@ -4,14 +4,13 @@ import com.trm.sightline.core.ar.math.ScreenRotation
 import kotlin.math.PI
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /**
  * Seam: the Swift-facing [ArOrientationTracker] that turns a Core Motion rotation matrix into the
- * Android-equivalent `(pitch, roll, azimuth)` triple plus the Android low-pass.
- * These catch remapping sign/axis errors and smoothing drift; they cannot prove the sensor feeds
- * a real device pose (that needs a phone with a magnetometer).
+ * Android-equivalent `(pitch, roll, azimuth)` triple plus the Android low-pass. These catch
+ * remapping sign/axis errors and smoothing drift; they cannot prove the sensor feeds a real device
+ * pose (that needs a phone with a magnetometer).
  */
 class ArOrientationTrackerTest {
   @Test
@@ -134,8 +133,8 @@ class ArOrientationTrackerTest {
  * Builds the Core Motion rotation matrix for a physical pose.
  *
  * Core Motion's matrix maps the reference frame onto the device frame, so its rows are the device
- * axes expressed in the iOS reference frame (X = magnetic north, Y = west, Z = up).
- * Pose helpers below describe the device axes in ENU (east, north, up) for readability.
+ * axes expressed in the iOS reference frame (X = magnetic north, Y = west, Z = up). Pose helpers
+ * below describe the device axes in ENU (east, north, up) for readability.
  */
 internal fun rotationMatrix(right: Enu, top: Enu, out: Enu): RotationMatrix {
   fun row(axis: Enu) = Triple(axis.north, -axis.east, axis.up)
@@ -173,7 +172,8 @@ internal fun flatScreenUpTopNorth(): RotationMatrix =
 
 /** Upright portrait, back camera pointing along [bearingRadians]. */
 internal fun uprightFacing(bearingRadians: Double): RotationMatrix {
-  val camera = Enu(east = kotlin.math.sin(bearingRadians), north = kotlin.math.cos(bearingRadians), up = 0.0)
+  val camera =
+    Enu(east = kotlin.math.sin(bearingRadians), north = kotlin.math.cos(bearingRadians), up = 0.0)
   val right = Enu(camera.north, -camera.east, 0.0)
   return rotationMatrix(right = right, top = UP, out = Enu(-camera.east, -camera.north, 0.0))
 }
@@ -182,18 +182,24 @@ internal fun uprightFacing(bearingRadians: Double): RotationMatrix {
 internal fun pitchedDownFacing(bearingRadians: Double, downRadians: Double): RotationMatrix {
   val cosDown = kotlin.math.cos(downRadians)
   val sinDown = kotlin.math.sin(downRadians)
-  val camera = Enu(
-    east = kotlin.math.sin(bearingRadians) * cosDown,
-    north = kotlin.math.cos(bearingRadians) * cosDown,
-    up = -sinDown,
-  )
+  val camera =
+    Enu(
+      east = kotlin.math.sin(bearingRadians) * cosDown,
+      north = kotlin.math.cos(bearingRadians) * cosDown,
+      up = -sinDown,
+    )
   val right = Enu(kotlin.math.cos(bearingRadians), -kotlin.math.sin(bearingRadians), 0.0)
-  val top = Enu(
-    east = kotlin.math.sin(bearingRadians) * sinDown,
-    north = kotlin.math.cos(bearingRadians) * sinDown,
-    up = cosDown,
+  val top =
+    Enu(
+      east = kotlin.math.sin(bearingRadians) * sinDown,
+      north = kotlin.math.cos(bearingRadians) * sinDown,
+      up = cosDown,
+    )
+  return rotationMatrix(
+    right = right,
+    top = top,
+    out = Enu(-camera.east, -camera.north, -camera.up),
   )
-  return rotationMatrix(right = right, top = top, out = Enu(-camera.east, -camera.north, -camera.up))
 }
 
 /** Upright portrait facing [bearingRadians], rolled by [rollRadians] about the camera axis. */

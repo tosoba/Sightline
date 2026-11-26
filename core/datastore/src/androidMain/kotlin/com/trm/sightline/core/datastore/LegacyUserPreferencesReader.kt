@@ -27,8 +27,7 @@ internal object LegacyUserPreferencesReader {
           val value = reader.readVarint()
           preferences =
             when (fieldNumber) {
-              FIELD_USER_LOCATION_ENABLED ->
-                preferences.copy(userLocationEnabled = value != 0L)
+              FIELD_USER_LOCATION_ENABLED -> preferences.copy(userLocationEnabled = value != 0L)
               FIELD_CUSTOM_LOCATION_TIMESTAMP ->
                 preferences.copy(customLocationTimestampMillis = value)
               FIELD_SEARCH_RADIUS -> preferences.copy(searchRadiusMeters = value.toInt())
@@ -39,10 +38,8 @@ internal object LegacyUserPreferencesReader {
           val value = reader.readDouble()
           preferences =
             when (fieldNumber) {
-              FIELD_CUSTOM_LOCATION_LATITUDE ->
-                preferences.copy(customLocationLatitude = value)
-              FIELD_CUSTOM_LOCATION_LONGITUDE ->
-                preferences.copy(customLocationLongitude = value)
+              FIELD_CUSTOM_LOCATION_LATITUDE -> preferences.copy(customLocationLatitude = value)
+              FIELD_CUSTOM_LOCATION_LONGITUDE -> preferences.copy(customLocationLongitude = value)
               FIELD_LAST_MAP_LATITUDE -> preferences.copy(lastMapLatitude = value)
               FIELD_LAST_MAP_LONGITUDE -> preferences.copy(lastMapLongitude = value)
               FIELD_LAST_MAP_ZOOM -> preferences.copy(lastMapZoom = value)

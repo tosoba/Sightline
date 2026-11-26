@@ -100,7 +100,7 @@ class PlacesCoordinatorTest {
           latitude = krakow.latitude,
           longitude = krakow.longitude,
           radiusMeters = 1_000f,
-        )
+        ),
       ),
       harness.places.queries,
     )
@@ -280,7 +280,7 @@ class PlacesCoordinatorTest {
     advanceTimeBy(1.seconds)
     runCurrent()
     assertTrue(
-      harness.coordinator.places.value[PlaceCategory.FoodDrink] is CategoryPlacesState.Loaded
+      harness.coordinator.places.value[PlaceCategory.FoodDrink] is CategoryPlacesState.Loaded,
     )
 
     harness.coordinator.setUserLocationEnabled(true)
@@ -304,7 +304,7 @@ class PlacesCoordinatorTest {
       harness.places.queries.last(),
     )
     assertTrue(
-      harness.coordinator.places.value[PlaceCategory.FoodDrink] is CategoryPlacesState.Loaded
+      harness.coordinator.places.value[PlaceCategory.FoodDrink] is CategoryPlacesState.Loaded,
     )
   }
 
@@ -353,7 +353,7 @@ class PlacesCoordinatorTest {
         longitude = warsaw.longitude,
         address = "Warsaw, Poland",
         timestamp = 2L,
-      )
+      ),
     )
 
     assertEquals(
@@ -537,7 +537,7 @@ class PlacesCoordinatorTest {
           longitude = warsaw.longitude,
           address = "Warsaw, Poland",
           timestamp = 2L,
-        )
+        ),
       )
     harness.address.results = results
     runCurrent()
@@ -625,7 +625,7 @@ class PlacesCoordinatorTest {
     advanceTimeBy(1.seconds)
     runCurrent()
     assertTrue(
-      harness.coordinator.places.value[PlaceCategory.FoodDrink] is CategoryPlacesState.Loaded
+      harness.coordinator.places.value[PlaceCategory.FoodDrink] is CategoryPlacesState.Loaded,
     )
 
     harness.coordinator.setCustomLocationAddress("Warsaw")
@@ -645,7 +645,7 @@ class PlacesCoordinatorTest {
       harness.coordinator.customLocationSearchResults.value,
     )
     assertTrue(
-      harness.coordinator.places.value[PlaceCategory.FoodDrink] is CategoryPlacesState.Loaded
+      harness.coordinator.places.value[PlaceCategory.FoodDrink] is CategoryPlacesState.Loaded,
     )
   }
 
@@ -767,7 +767,7 @@ class PlacesCoordinatorTest {
           longitude = warsaw.longitude,
           address = "Warsaw, Poland",
           timestamp = 2L,
-        )
+        ),
       )
     harness.address.results = results
     runCurrent()
@@ -960,8 +960,9 @@ private class StubLocationProvider : LocationProvider {
 
   override fun locationUpdates(): Flow<GeoLocation> = updates
 
-  override fun isLocationEnabled(): Flow<Boolean> =
-    locationEnabled.onStart { locationEnabledSubscriptions++ }
+  override fun isLocationEnabled(): Flow<Boolean> = locationEnabled.onStart {
+    locationEnabledSubscriptions++
+  }
 
   override val authorizationState: Flow<LocationAuthorization> = authorization
 

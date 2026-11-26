@@ -2,7 +2,6 @@ package com.trm.sightline.shared
 
 import com.trm.sightline.core.common.location.LocationAuthorization
 import com.trm.sightline.core.common.location.LocationProvider
-import com.trm.sightline.core.data.UserPreferencesDirectory
 import com.trm.sightline.core.domain.AddressRepository
 import com.trm.sightline.core.domain.PlacesRepository
 import com.trm.sightline.core.domain.UserPreferencesRepository
@@ -31,8 +30,8 @@ internal constructor(
   val locationEnabled: Flow<Boolean> = locationProvider.isLocationEnabled()
 
   /**
-   * Restores every shared preference to its default through the real repository.
-   * The iOS host calls this only for the `-resetPreferences` UI-test launch argument.
+   * Restores every shared preference to its default through the real repository. The iOS host calls
+   * this only for the `-resetPreferences` UI-test launch argument.
    */
   suspend fun resetPreferencesForTesting() {
     userPreferencesRepository.reset()

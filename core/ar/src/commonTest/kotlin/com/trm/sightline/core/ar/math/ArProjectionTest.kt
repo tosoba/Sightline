@@ -10,9 +10,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
- * Seam: the Swift-facing [ArProjection] facade.
- * These catch wrong state delegation, projection ordering and hole-rect geometry.
- * They say nothing about the Metal renderer that consumes the rects.
+ * Seam: the Swift-facing [ArProjection] facade. These catch wrong state delegation, projection
+ * ordering and hole-rect geometry. They say nothing about the Metal renderer that consumes the
+ * rects.
  */
 class ArProjectionTest {
   private val camera = GeoLocation(latitude = 52.52, longitude = 13.405, altitude = 34.0)
@@ -22,18 +22,20 @@ class ArProjectionTest {
   private val facingNorth = Orientation(pitch = 0f, roll = 0f, azimuth = 0f)
 
   /** 100 m ahead, 10 degrees to the right of the camera direction. */
-  private val horizontal = GeoLocation(
-    latitude = camera.latitude + cos(10.0 * PI / 180.0) * 100.0 / METERS_PER_DEGREE,
-    longitude = camera.longitude + sin(10.0 * PI / 180.0) * 100.0 / METERS_PER_DEGREE,
-    altitude = camera.altitude,
-  )
+  private val horizontal =
+    GeoLocation(
+      latitude = camera.latitude + cos(10.0 * PI / 180.0) * 100.0 / METERS_PER_DEGREE,
+      longitude = camera.longitude + sin(10.0 * PI / 180.0) * 100.0 / METERS_PER_DEGREE,
+      altitude = camera.altitude,
+    )
 
   /** 100 m dead ahead, 20 m above the camera so the offset projects vertically. */
-  private val vertical = GeoLocation(
-    latitude = camera.latitude + 100.0 / METERS_PER_DEGREE,
-    longitude = camera.longitude,
-    altitude = camera.altitude + 20.0,
-  )
+  private val vertical =
+    GeoLocation(
+      latitude = camera.latitude + 100.0 / METERS_PER_DEGREE,
+      longitude = camera.longitude,
+      altitude = camera.altitude + 20.0,
+    )
 
   private fun projection(
     orientation: Orientation = facingNorth,
@@ -54,7 +56,8 @@ class ArProjectionTest {
 
   private fun viewportFor(rotation: ScreenRotation): Viewport =
     when (rotation) {
-      ScreenRotation.ROTATION_0, ScreenRotation.ROTATION_180 -> Viewport(1080, 2400, 540.0, 1200.0)
+      ScreenRotation.ROTATION_0,
+      ScreenRotation.ROTATION_180 -> Viewport(1080, 2400, 540.0, 1200.0)
       ScreenRotation.ROTATION_90,
       ScreenRotation.ROTATION_270 -> Viewport(2400, 1080, 1200.0, 540.0)
     }

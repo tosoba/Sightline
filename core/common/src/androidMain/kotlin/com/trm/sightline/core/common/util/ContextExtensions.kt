@@ -7,8 +7,8 @@ import android.net.Uri
 import android.provider.Settings
 import androidx.activity.result.IntentSenderRequest
 import com.google.android.gms.common.api.ResolvableApiException
-import com.google.android.gms.location.LocationSettingsRequest
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.LocationSettingsRequest
 import com.trm.sightline.core.common.location.locationRequest
 import kotlin.coroutines.resume
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -16,7 +16,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 fun Context.startAppSettingsActivity() {
   startActivity(
     Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-      .setData(Uri.fromParts("package", packageName, null))
+      .setData(Uri.fromParts("package", packageName, null)),
   )
 }
 
@@ -24,7 +24,7 @@ suspend fun Context.checkLocationSettings(): CheckLocationSettingsResult =
   suspendCancellableCoroutine { continuation ->
     LocationServices.getSettingsClient(this)
       .checkLocationSettings(
-        LocationSettingsRequest.Builder().addLocationRequest(locationRequest()).build()
+        LocationSettingsRequest.Builder().addLocationRequest(locationRequest()).build(),
       )
       .addOnSuccessListener { continuation.resume(CheckLocationSettingsResult.Enabled) }
       .addOnFailureListener { exception ->
@@ -32,8 +32,8 @@ suspend fun Context.checkLocationSettings(): CheckLocationSettingsResult =
           try {
             continuation.resume(
               CheckLocationSettingsResult.DisabledResolvable(
-                IntentSenderRequest.Builder(exception.resolution).build()
-              )
+                IntentSenderRequest.Builder(exception.resolution).build(),
+              ),
             )
           } catch (_: IntentSender.SendIntentException) {
             continuation.resume(CheckLocationSettingsResult.DisabledNonResolvable)
