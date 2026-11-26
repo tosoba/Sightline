@@ -30,8 +30,10 @@ data class MarkerSlotUpdate(
  * [com.trm.sightline.core.ar.math.ArProjection].
  */
 class MarkerSlotSession(
-  private val locationReassignThresholdMeters: Float = LOCATION_REASSIGN_THRESHOLD_METERS,
+  private val locationReassignThresholdMeters: Float,
 ) {
+  constructor() : this(LOCATION_REASSIGN_THRESHOLD_METERS)
+
   var currentPage: Int = 0
     private set
 

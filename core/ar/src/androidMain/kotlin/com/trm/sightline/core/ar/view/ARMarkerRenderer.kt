@@ -20,8 +20,10 @@ import androidx.compose.ui.graphics.vector.VectorNode
 import androidx.compose.ui.graphics.vector.VectorPath
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.withSave
-import com.trm.sightline.core.ar.math.MarkerSlotAssignment
-import com.trm.sightline.core.ar.math.MarkerSlotGeometry
+import com.trm.sightline.core.ar.layout.MarkerLayoutCalculator
+import com.trm.sightline.core.ar.layout.MarkerLayoutConfig
+import com.trm.sightline.core.ar.layout.MarkerLayoutGeometry
+import com.trm.sightline.core.ar.layout.MarkerSlotSession
 import com.trm.sightline.core.ar.math.MarkerSlotTarget
 import com.trm.sightline.core.ar.math.RoundedRectF
 import com.trm.sightline.core.ar.math.markerRect
@@ -33,6 +35,7 @@ import com.trm.sightline.core.ar.util.dpToPx
 import com.trm.sightline.core.ar.util.drawMultilineText
 import com.trm.sightline.core.ar.util.isCompactHeight
 import com.trm.sightline.core.ar.util.navigationBarsBottomInsetPx
+import com.trm.sightline.core.ar.util.screenRotation
 import com.trm.sightline.core.ar.util.sideSheetWidthDp
 import com.trm.sightline.core.ar.util.spToPx
 import com.trm.sightline.core.ar.util.statusBarTopInsetPx
@@ -54,75 +57,71 @@ class ARMarkerRenderer(private val context: Context) {
   private val markerTitleTextSizePx: Float = context.spToPx(MARKER_TITLE_TEXT_SIZE_SP)
   private val markerDistanceTextSizePx: Float = context.spToPx(MARKER_DISTANCE_TEXT_SIZE_SP)
 
-  internal val markerHeightPx: Float
-  internal val markerWidthPx: Float
-
-  private val overlapGuardPx: Float
-  private val cameraViewHeightPx: Float
-
   // Minimum height must accommodate: (a) one name line + distance line + padding, and
   // (b) the icon box — box height = markerHeight - 2×padding, so MIN_LEFT_BOX_SIZE_DP
   // drives a larger lower bound. maxOf() picks whichever constraint is tighter.
-  private val minMarkerHeightPx: Float
-    get() {
-      val nameLineH = markerTitleTextSizePx * LINE_HEIGHT_MULTIPLIER
-      val distLineH = markerDistanceTextSizePx * LINE_HEIGHT_MULTIPLIER
-      val minBoxPx = context.dpToPx(MIN_LEFT_BOX_SIZE_DP)
-      return maxOf(nameLineH + distLineH + markerPaddingPx * 2, minBoxPx + markerPaddingPx * 2)
-    }
+  private val minMarkerHeightPx: Float =
+    maxOf(
+      markerTitleTextSizePx * LINE_HEIGHT_MULTIPLIER +
+        markerDistanceTextSizePx * LINE_HEIGHT_MULTIPLIER +
+        markerPaddingPx * 2,
+      context.dpToPx(MIN_LEFT_BOX_SIZE_DP) + markerPaddingPx * 2,
+    )
 
-  private val numberOfRows: Int
-    get() =
-      (cameraViewHeightPx / (minMarkerHeightPx + MARKER_VERTICAL_SPACING_PX))
-        .toInt()
-        .coerceIn(MIN_ROWS, MAX_ROWS)
+  private val cameraViewHeightPx: Float =
+    context.resources.displayMetrics.heightPixels.toFloat() -
+      context.statusBarTopInsetPx -
+      context.cameraPreviewVerticalPaddingPx -
+      (if (context.isCompactHeight) context.navigationBarsBottomInsetPx
+      else context.bottomSheetHeightPx)
 
-  private val markerWidthDivisor: Int
-    get() {
-      val screenWidthDp = context.resources.displayMetrics.run { widthPixels / density }
-      return (screenWidthDp / TARGET_MARKER_WIDTH_DP)
-        .toInt()
-        .coerceIn(MIN_WIDTH_DIVISOR, MAX_WIDTH_DIVISOR)
-    }
+  private val layoutConfig =
+    MarkerLayoutConfig(
+      minMarkerHeight = minMarkerHeightPx,
+      maxMarkerHeight = cameraViewHeightPx,
+      minMarkerWidth = 0f,
+      maxMarkerWidth = context.resources.displayMetrics.widthPixels.toFloat(),
+      targetMarkerWidth = context.dpToPx(TARGET_MARKER_WIDTH_DP),
+      minWidthDivisor = MIN_WIDTH_DIVISOR,
+      maxWidthDivisor = MAX_WIDTH_DIVISOR,
+      minRows = MIN_ROWS,
+      maxRows = MAX_ROWS,
+      verticalSpacing = MARKER_VERTICAL_SPACING_PX,
+      overlapGuardFraction = MARKER_OVERLAP_GUARD_FRACTION,
+      topPadding = context.cameraPreviewVerticalPaddingPx,
+    )
 
-  init {
-    val displayMetrics = context.resources.displayMetrics
-    cameraViewHeightPx =
-      displayMetrics.heightPixels -
-        context.statusBarTopInsetPx -
-        context.cameraPreviewVerticalPaddingPx -
-        if (context.isCompactHeight) context.navigationBarsBottomInsetPx
-        else context.bottomSheetHeightPx
-    markerHeightPx = cameraViewHeightPx / numberOfRows - MARKER_VERTICAL_SPACING_PX
-    markerWidthPx = (displayMetrics.widthPixels / markerWidthDivisor).toFloat()
-    overlapGuardPx = markerWidthPx * MARKER_OVERLAP_GUARD_FRACTION
-  }
+  private val layoutGeometry: MarkerLayoutGeometry =
+    MarkerLayoutCalculator.calculate(
+      config = layoutConfig,
+      usableWidth = context.resources.displayMetrics.widthPixels.toFloat(),
+      usableHeight = cameraViewHeightPx,
+      topInset = context.statusBarTopInsetPx,
+    )
+
+  internal val markerHeightPx: Float = layoutGeometry.markerHeight
+  internal val markerWidthPx: Float = layoutGeometry.markerWidth
+
+  private val slotSession = MarkerSlotSession()
 
   var povLocation: GeoLocation? = null
     @MainThread
     set(value) {
-      val previous = field
       field = value
-      if (value != null) {
-        val shouldReassign =
-          previous == null || previous.distanceTo(value) > LOCATION_REASSIGN_THRESHOLD_METERS
-        if (shouldReassign) reassignSlots(value)
-      }
+      value?.let { reassignSlots(it) }
     }
 
-  var currentPage: Int = 0
+  var currentPage: Int
+    get() = slotSession.currentPage
     @MainThread
     set(value) {
       assert(value >= 0)
-      field = value
+      slotSession.selectPage(value)
     }
 
-  private var maxPage: Int = 0
-
-  private var firstFrame: Boolean = true
   private var lastDrawnMarkerIds = HashSet<String>()
 
-  private val _markersPagingState = MutableStateFlow(MarkersPagingState(currentPage, maxPage))
+  private val _markersPagingState = MutableStateFlow(MarkersPagingState(currentPage, 0))
   val markersPagingState: StateFlow<MarkersPagingState> = _markersPagingState.asStateFlow()
 
   private val _drawnMarkerRectFs = MutableStateFlow<List<RoundedRectF>>(emptyList())
@@ -248,12 +247,10 @@ class ARMarkerRenderer(private val context: Context) {
     povLocation: GeoLocation,
     canvasWidth: Int = lastCanvasWidth,
     canvasHeight: Int = lastCanvasHeight,
+    previouslyVisibleIds: Set<String> = lastDrawnMarkerIds,
   ) {
-    if (pagedMarkers.isEmpty()) return
-    if (canvasWidth == 0 || canvasHeight == 0) return
-
-    val slots =
-      MarkerSlotAssignment.assign(
+    val update =
+      slotSession.update(
         povLocation = povLocation,
         targets =
           pagedMarkers.values.map { pagedMarker ->
@@ -263,23 +260,14 @@ class ARMarkerRenderer(private val context: Context) {
               distance = pagedMarker.marker.distance,
             )
           },
-        geometry =
-          MarkerSlotGeometry(
-            markerWidthPx = markerWidthPx,
-            markerHeightPx = markerHeightPx,
-            overlapGuardPx = overlapGuardPx,
-            verticalSpacingPx = MARKER_VERTICAL_SPACING_PX,
-            rows = numberOfRows,
-            baseY =
-              context.statusBarTopInsetPx +
-                markerHeightPx / 2f +
-                context.cameraPreviewVerticalPaddingPx,
-          ),
+        geometry = layoutGeometry,
+        screenRotation = context.screenRotation,
         canvasWidth = canvasWidth,
         canvasHeight = canvasHeight,
+        previouslyVisibleIds = previouslyVisibleIds,
       )
 
-    slots.forEach { (id, slot) ->
+    update.slots.forEach { (id, slot) ->
       pagedMarkers[id]?.apply {
         bearing = slot.bearing
         position = PagedYPosition(slot.y, slot.page)
@@ -298,8 +286,6 @@ class ARMarkerRenderer(private val context: Context) {
 
     val drawnRectFs = mutableListOf<RoundedRectF>()
     val renderedMarkerIds = HashSet<String>()
-    var maxPageThisFrame = 0
-    var currentPageAfterScreenRotation = Int.MAX_VALUE
 
     // Clip markers to everything left of the side sheet
     val markerClipRight =
@@ -311,16 +297,6 @@ class ARMarkerRenderer(private val context: Context) {
       val position = pagedMarker.position ?: return@forEach
 
       marker.y = position.y
-
-      if (position.page > maxPageThisFrame) maxPageThisFrame = position.page
-
-      if (
-        firstFrame &&
-          lastDrawnMarkerIds.contains(marker.place.id) &&
-          position.page < currentPageAfterScreenRotation
-      ) {
-        currentPageAfterScreenRotation = position.page
-      }
 
       if (position.page != currentPage) return@forEach
       if (!marker.isDrawn) return@forEach
@@ -350,17 +326,10 @@ class ARMarkerRenderer(private val context: Context) {
       )
     }
 
-    maxPage = maxPageThisFrame
-    if (firstFrame) {
-      currentPage =
-        if (currentPageAfterScreenRotation == Int.MAX_VALUE) 0 else currentPageAfterScreenRotation
-    }
-    if (currentPage > maxPage) currentPage = maxPage
-
     lastDrawnMarkerIds = renderedMarkerIds
-    _markersPagingState.value = MarkersPagingState(currentPage, maxPage)
+    _markersPagingState.value =
+      MarkersPagingState(slotSession.currentPage, slotSession.totalPages - 1)
     _drawnMarkerRectFs.value = drawnRectFs
-    firstFrame = false
   }
 
   // ── Marker content drawing ─────────────────────────────────────────────────
@@ -803,8 +772,8 @@ class ARMarkerRenderer(private val context: Context) {
     }
     pagedMarkers.clear()
     markers.forEach { marker -> pagedMarkers[marker.place.id] = PagedMarker(marker) }
-    povLocation?.let { reassignSlots(it) }
-    currentPage = 0
+    povLocation?.let { reassignSlots(it, previouslyVisibleIds = emptySet()) }
+    slotSession.selectPage(0)
   }
 
   internal fun isOnCurrentPage(marker: ARMarker): Boolean =
@@ -861,7 +830,5 @@ class ARMarkerRenderer(private val context: Context) {
 
     // Fraction of the box side that the icon fills, leaving even padding on all sides.
     private const val ICON_BOX_FILL_FRACTION = 0.60f
-
-    private const val LOCATION_REASSIGN_THRESHOLD_METERS = 10f
   }
 }

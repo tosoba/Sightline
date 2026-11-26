@@ -112,28 +112,27 @@ final class ARCameraModel {
     private var cameraLocation: GeoLocation?
     private var lastHoleRects: [ARHoleRect] = []
     private var lastDrawnIDs: Set<String> = []
-    private var cachedSlots: CachedSlots?
+    private let slotSession = MarkerSlotSession()
     private var contrastingColor: (red: Float, green: Float, blue: Float)?
     private var orientationObservers: [NSObjectProtocol] = []
     private var isGeneratingOrientationNotifications = false
 
-    private static let minMarkerHeight: CGFloat = 72
-    private static let maxMarkerHeight: CGFloat = 88
-    private static let minMarkerWidth: CGFloat = 150
-    private static let maxMarkerWidth: CGFloat = 220
-    private static let markerTargetWidth: CGFloat = 160
-    private static let minMarkerWidthDivisor = 2
-    private static let maxMarkerWidthDivisor = 6
-    private static let markerVerticalSpacing: CGFloat = 16
-    private static let markerOverlapGuardFraction: CGFloat = 0.5
-    private static let markerTopPadding: CGFloat = 12
-    private static let minMarkerRows = 1
-    private static let maxMarkerRows = 6
+    private static let layoutConfig = MarkerLayoutConfig(
+        minMarkerHeight: 72,
+        maxMarkerHeight: 88,
+        minMarkerWidth: 150,
+        maxMarkerWidth: 220,
+        targetMarkerWidth: 160,
+        minWidthDivisor: 2,
+        maxWidthDivisor: 6,
+        minRows: 1,
+        maxRows: 6,
+        verticalSpacing: 16,
+        overlapGuardFraction: 0.5,
+        topPadding: 12
+    )
     private static let cornerRadius: CGFloat = 16
     private static let pitchLimitDegrees: Double = 45
-    /// Same reassign policy as Android's `ARMarkerRenderer`: a slot layout only depends on the
-    /// device position, not on the camera orientation, so a small move reuses it.
-    private static let locationReassignThresholdMeters: Float = 10
 
     init(nearby: NearbyPlacesModel, options: ARCameraLaunchOptions = .current) {
         self.nearby = nearby
@@ -278,9 +277,6 @@ final class ARCameraModel {
         viewport = size
         self.safeAreaInsets = safeAreaInsets
         self.overlayOrigin = overlayOrigin
-        if geometryChanged {
-            cachedSlots = nil
-        }
         refreshScreenRotation()
         if geometryChanged {
             recompute()
@@ -301,9 +297,8 @@ final class ARCameraModel {
     }
 
     func selectPage(_ page: Int) {
-        let clamped = min(max(page, 0), max(totalPages - 1, 0))
-        guard clamped != currentPage else { return }
-        currentPage = clamped
+        guard slotSession.selectPage(page: Int32(page)) else { return }
+        currentPage = Int(slotSession.currentPage)
         recompute()
     }
 
@@ -439,7 +434,6 @@ final class ARCameraModel {
         motion.screenRotation = rotation
         guard rotation != screenRotation else { return }
         screenRotation = rotation
-        cachedSlots = nil
         recompute()
     }
 
@@ -487,22 +481,17 @@ final class ARCameraModel {
 
         let places: [Place] = isSynthetic ? Self.syntheticPlaces() : nearby.allPlaces
         let candidates = places.map { Self.candidate(for: $0, camera: location) }
-        let assignment = slotAssignment(
-            for: candidates,
-            at: location,
-            layout: layout
+        let update = slotSession.update(
+            povLocation: location,
+            targets: candidates.map(\.target),
+            geometry: layout,
+            screenRotation: screenRotation,
+            canvasWidth: Int32(viewport.width.rounded()),
+            canvasHeight: Int32(viewport.height.rounded()),
+            previouslyVisibleIds: lastDrawnIDs
         )
-
-        if assignment.didReassign, !lastDrawnIDs.isEmpty {
-            currentPage = Self.followedPage(
-                for: lastDrawnIDs,
-                slots: assignment.slots,
-                fallback: currentPage
-            )
-        }
-        let maxPage = assignment.slots.values.map { Int($0.page) }.max() ?? 0
-        currentPage = min(max(currentPage, 0), maxPage)
-        totalPages = maxPage + 1
+        currentPage = Int(update.currentPage)
+        totalPages = Int(update.totalPages)
 
         guard !(pitchOutOfRange || sheetObscuresCamera) else {
             apply(placements: [], layout: layout)
@@ -511,19 +500,19 @@ final class ARCameraModel {
 
         var placements: [ARPlacement] = []
         for candidate in candidates {
-            guard let slot = assignment.slots[candidate.place.id],
+            guard let slot = update.slots[candidate.place.id],
                   Int(slot.page) == currentPage else { continue }
             let projected = projection.project(location: candidate.location)
             guard projected.isInFront, projected.isDrawn else { continue }
             let rect = projection.markerRect(
                 marker: projected,
-                widthPx: Float(layout.markerWidth),
-                heightPx: Float(layout.markerHeight),
+                widthPx: layout.markerWidth,
+                heightPx: layout.markerHeight,
                 cornerRadiusPx: Float(Self.cornerRadius)
             )
             let frame = CGRect(
                 x: CGFloat(rect.left),
-                y: CGFloat(slot.y) - layout.markerHeight / 2,
+                y: CGFloat(slot.y) - CGFloat(layout.markerHeight) / 2,
                 width: CGFloat(rect.width),
                 height: CGFloat(rect.height)
             )
@@ -545,11 +534,12 @@ final class ARCameraModel {
         apply(placements: placements, layout: layout)
     }
 
-    private func apply(placements: [ARPlacement], layout: MarkerLayout) {
+    private func apply(placements: [ARPlacement], layout: MarkerLayoutGeometry) {
         self.placements = placements
         markerCount = placements.count
         if options.debugHUD {
             layoutDebugText = Self.debugLayoutText(
+                viewport: viewport,
                 layout: layout,
                 displayScale: displayScale,
                 screenRotation: screenRotation,
@@ -588,118 +578,15 @@ final class ARCameraModel {
         let target: MarkerSlotTarget
     }
 
-    private struct MarkerLayout: Equatable {
-        let viewport: CGSize
-        let safeAreaInsets: EdgeInsets
-        let markerWidth: CGFloat
-        let markerHeight: CGFloat
-        let divisor: Int
-        let rows: Int
-        let baseY: CGFloat
-        let verticalSpacing: CGFloat
-    }
-
-    private struct CachedSlots {
-        let location: GeoLocation
-        let layout: MarkerLayout
-        let screenRotation: ScreenRotation
-        let placeIDs: [String]
-        let slots: [String: MarkerSlot]
-    }
-
-    private struct SlotAssignment {
-        let slots: [String: MarkerSlot]
-        let didReassign: Bool
-    }
-
-    private func markerLayout() -> MarkerLayout {
+    private func markerLayout() -> MarkerLayoutGeometry {
         let usableWidth = max(0, viewport.width - safeAreaInsets.leading - safeAreaInsets.trailing)
         let usableHeight = max(0, viewport.height - safeAreaInsets.top - safeAreaInsets.bottom)
-        let markerHeight = Self.clamped(
-            usableHeight / 6,
-            Self.minMarkerHeight...Self.maxMarkerHeight
+        return MarkerLayoutCalculator.shared.calculate(
+            config: Self.layoutConfig,
+            usableWidth: Float(usableWidth),
+            usableHeight: Float(usableHeight),
+            topInset: Float(safeAreaInsets.top)
         )
-        let rows = Int((usableHeight + Self.markerVerticalSpacing) / (markerHeight + Self.markerVerticalSpacing))
-        let divisor = min(
-            max(Int(usableWidth / Self.markerTargetWidth), Self.minMarkerWidthDivisor),
-            Self.maxMarkerWidthDivisor
-        )
-        let markerWidth = Self.clamped(
-            usableWidth / CGFloat(divisor),
-            Self.minMarkerWidth...Self.maxMarkerWidth
-        )
-        return MarkerLayout(
-            viewport: viewport,
-            safeAreaInsets: safeAreaInsets,
-            markerWidth: markerWidth,
-            markerHeight: markerHeight,
-            divisor: divisor,
-            rows: min(max(rows, Self.minMarkerRows), Self.maxMarkerRows),
-            baseY: safeAreaInsets.top + Self.markerTopPadding + markerHeight / 2,
-            verticalSpacing: Self.markerVerticalSpacing
-        )
-    }
-
-    private static func clamped(_ value: CGFloat, _ range: ClosedRange<CGFloat>) -> CGFloat {
-        min(max(value, range.lowerBound), range.upperBound)
-    }
-
-    private func slotAssignment(
-        for candidates: [MarkerCandidate],
-        at location: GeoLocation,
-        layout: MarkerLayout
-    ) -> SlotAssignment {
-        let placeIDs = candidates.map(\.place.id)
-        if let cached = cachedSlots,
-            cached.layout == layout,
-            cached.screenRotation == screenRotation,
-            cached.placeIDs == placeIDs,
-            cached.location.distanceTo(other: location) <= Self.locationReassignThresholdMeters {
-            return SlotAssignment(slots: cached.slots, didReassign: false)
-        }
-
-        let slots = MarkerSlotAssignment.shared.assign(
-            povLocation: location,
-            targets: candidates.map(\.target),
-            geometry: MarkerSlotGeometry(
-                markerWidthPx: Float(layout.markerWidth),
-                markerHeightPx: Float(layout.markerHeight),
-                overlapGuardPx: Float(layout.markerWidth * Self.markerOverlapGuardFraction),
-                verticalSpacingPx: Float(layout.verticalSpacing),
-                rows: Int32(layout.rows),
-                baseY: Float(layout.baseY)
-            ),
-            canvasWidth: Int32(viewport.width.rounded()),
-            canvasHeight: Int32(viewport.height.rounded())
-        )
-        cachedSlots = CachedSlots(
-            location: location,
-            layout: layout,
-            screenRotation: screenRotation,
-            placeIDs: placeIDs,
-            slots: slots
-        )
-        return SlotAssignment(slots: slots, didReassign: true)
-    }
-
-    /// Follows the reassigned markers that were on screen: the page holding the most of them wins,
-    /// and ties fall back to the lowest page so the result is deterministic.
-    private static func followedPage(
-        for previousIDs: Set<String>,
-        slots: [String: MarkerSlot],
-        fallback: Int
-    ) -> Int {
-        var counts: [Int: Int] = [:]
-        for id in previousIDs {
-            guard let slot = slots[id] else { continue }
-            counts[Int(slot.page), default: 0] += 1
-        }
-        guard let best = counts.sorted(by: { lhs, rhs in
-            lhs.value == rhs.value ? lhs.key < rhs.key : lhs.value > rhs.value
-        }).first else {
-            return fallback
-        }
-        return best.key
     }
 
     private static func candidate(for place: Place, camera: GeoLocation) -> MarkerCandidate {
@@ -722,7 +609,8 @@ final class ARCameraModel {
     /// sentinel or `nan`. The marker geometry stays in the text so a debug run can check the sizing
     /// even when there is nothing to place.
     private static func debugLayoutText(
-        layout: MarkerLayout,
+        viewport: CGSize,
+        layout: MarkerLayoutGeometry,
         displayScale: CGFloat,
         screenRotation: ScreenRotation,
         currentPage: Int,
@@ -732,11 +620,11 @@ final class ARCameraModel {
         let viewportText =
             String(
                 format: "vp %.0fx%.0f s%.0f mw %.0f d%d",
-                layout.viewport.width,
-                layout.viewport.height,
+                viewport.width,
+                viewport.height,
                 displayScale,
-                layout.markerWidth,
-                layout.divisor
+                Double(layout.markerWidth),
+                Int(layout.divisor)
             )
             + " r\(rotationLabel(screenRotation)) p\(currentPage + 1)/\(totalPages)"
         guard !placements.isEmpty else { return "\(viewportText)  no placements" }

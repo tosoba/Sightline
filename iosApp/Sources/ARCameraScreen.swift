@@ -256,9 +256,19 @@ private struct ARMarkerPagePicker: View {
     let totalPages: Int
     let onSelect: (Int) -> Void
 
+    private var pageWindow: [Int] {
+        MarkerPageWindow.shared
+            .compute(
+                currentPage: Int32(currentPage),
+                totalPages: Int32(totalPages),
+                maxVisiblePages: 3
+            )
+            .map { Int(truncating: $0) }
+    }
+
     var body: some View {
         VStack(spacing: 2) {
-            ForEach(Self.pageWindow(currentPage: currentPage, totalPages: totalPages), id: \.self) { page in
+            ForEach(pageWindow, id: \.self) { page in
                 Button {
                     onSelect(page)
                 } label: {
@@ -283,18 +293,6 @@ private struct ARMarkerPagePicker: View {
         .overlay(Capsule().stroke(.white.opacity(0.18), lineWidth: 1))
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("ar-page-picker")
-    }
-
-    static func pageWindow(currentPage: Int, totalPages: Int) -> [Int] {
-        let pageCount = max(totalPages, 0)
-        guard pageCount > 3 else { return Array(0..<pageCount) }
-        if currentPage <= 0 {
-            return [0, 1, 2]
-        }
-        if currentPage >= pageCount - 1 {
-            return [pageCount - 3, pageCount - 2, pageCount - 1]
-        }
-        return [currentPage - 1, currentPage, currentPage + 1]
     }
 }
 
