@@ -52,8 +52,11 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.trm.sightline.core.domain.places.CategoryPlacesState
+import com.trm.sightline.core.domain.places.CustomLocationSearchState
+import com.trm.sightline.core.domain.places.LocationAddressState
 import com.trm.sightline.core.model.CustomLocation
-import com.trm.sightline.core.model.LoadingState
+import com.trm.sightline.core.model.GeoLocation
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
 import com.trm.sightline.core.ui.icon
@@ -61,11 +64,12 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun SharedTransitionScope.PlacesContent(
-  places: Map<PlaceCategory, LoadingState<List<Place>>>,
-  locationAddress: LoadingState<String>,
+  places: Map<PlaceCategory, CategoryPlacesState>,
   userLocationEnabled: Boolean,
-  placeCategoriesEnabled: Boolean,
-  customLocationSearchResults: LoadingState<List<CustomLocation>>,
+  activeLocation: GeoLocation?,
+  userLocationAddress: LocationAddressState,
+  customLocationAddress: String,
+  customLocationSearchResults: CustomLocationSearchState,
   layout: PlacesLayout,
   alpha: Float,
   animatedVisibilityScope: AnimatedVisibilityScope,
@@ -74,6 +78,7 @@ fun SharedTransitionScope.PlacesContent(
   onToggleUserLocationEnabled: (Boolean) -> Unit,
   onCustomLocationAddressChange: (String) -> Unit,
   onCustomLocationSearchResultClick: (CustomLocation) -> Unit,
+  onCancelCustomLocationSearch: () -> Unit,
   onTogglePlaceCategory: (PlaceCategory) -> Unit,
   onCategoryClick: (PlaceCategory, List<Place>) -> Unit,
 ) {
@@ -81,22 +86,18 @@ fun SharedTransitionScope.PlacesContent(
   val searchBarState = rememberSearchBarState()
   val scope = rememberCoroutineScope()
   val expanded = searchBarState.targetValue == SearchBarValue.Expanded
-  val textFieldState =
-    rememberTextFieldState((locationAddress as? LoadingState.Loaded)?.data.orEmpty())
+  val textFieldState = rememberTextFieldState(customLocationAddress)
 
-  LaunchedEffect(locationAddress) {
-    if (
-      locationAddress is LoadingState.Loaded &&
-        textFieldState.text.toString() != locationAddress.data
-    ) {
-      textFieldState.setTextAndPlaceCursorAtEnd(locationAddress.data)
+  LaunchedEffect(customLocationAddress) {
+    if (textFieldState.text.toString() != customLocationAddress) {
+      textFieldState.setTextAndPlaceCursorAtEnd(customLocationAddress)
     }
   }
 
-  LaunchedEffect(textFieldState, locationAddress) {
+  LaunchedEffect(textFieldState, customLocationAddress) {
     snapshotFlow { textFieldState.text.toString() }
       .collect { query ->
-        if (locationAddress !is LoadingState.Loaded || locationAddress.data != query) {
+        if (customLocationAddress != query) {
           onCustomLocationAddressChange(query)
         }
       }
@@ -126,8 +127,9 @@ fun SharedTransitionScope.PlacesContent(
             stringResource(
               when {
                 !userLocationEnabled -> R.string.enter_location_placeholder
-                !placeCategoriesEnabled -> R.string.loading_location
-                locationAddress is LoadingState.Loading -> R.string.loading_location_address
+                activeLocation == null -> R.string.loading_location
+                userLocationAddress is LocationAddressState.Loading ->
+                  R.string.loading_location_address
                 else -> R.string.location_address_not_found
               },
             ),
@@ -135,17 +137,18 @@ fun SharedTransitionScope.PlacesContent(
         },
         leadingIcon = {
           when {
-            locationAddress is LoadingState.Loading ||
-              (userLocationEnabled && !placeCategoriesEnabled) -> {
+            userLocationEnabled &&
+              (userLocationAddress is LocationAddressState.Loading || activeLocation == null) -> {
               CircularProgressIndicator(modifier = Modifier.size(24.dp))
             }
-            userLocationEnabled && locationAddress is LoadingState.Loaded -> {
+            userLocationEnabled && userLocationAddress is LocationAddressState.Loaded -> {
               Icon(imageVector = Icons.Default.GpsFixed, contentDescription = null)
             }
             expanded -> {
               IconButton(
                 onClick = {
                   focusManager.clearFocus()
+                  onCancelCustomLocationSearch()
                   scope.launch { searchBarState.animateToCollapsed() }
                 },
               ) {
@@ -188,19 +191,15 @@ fun SharedTransitionScope.PlacesContent(
       inputField = inputField,
     ) {
       LazyColumn {
-        when {
-          locationAddress is LoadingState.Loaded && locationAddress.data.trim().length < 3 -> {
+        when (val results = customLocationSearchResults) {
+          CustomLocationSearchState.Idle -> {
             item {
               Box(
                 modifier = Modifier.fillParentMaxWidth().padding(16.dp).animateItem(),
                 contentAlignment = Alignment.Center,
               ) {
                 Text(
-                  text =
-                    stringResource(
-                      if (locationAddress.data.trim().isEmpty()) R.string.start_typing_to_search
-                      else R.string.query_too_short,
-                    ),
+                  text = stringResource(R.string.start_typing_to_search),
                   style = MaterialTheme.typography.titleMedium,
                   color = MaterialTheme.colorScheme.onSurface,
                   textAlign = TextAlign.Center,
@@ -208,8 +207,26 @@ fun SharedTransitionScope.PlacesContent(
               }
             }
           }
-          customLocationSearchResults is LoadingState.Loaded -> {
-            items(customLocationSearchResults.data) { result ->
+          CustomLocationSearchState.QueryTooShort -> {
+            item {
+              Box(
+                modifier = Modifier.fillParentMaxWidth().padding(16.dp).animateItem(),
+                contentAlignment = Alignment.Center,
+              ) {
+                Text(
+                  text = stringResource(R.string.query_too_short),
+                  style = MaterialTheme.typography.titleMedium,
+                  color = MaterialTheme.colorScheme.onSurface,
+                  textAlign = TextAlign.Center,
+                )
+              }
+            }
+          }
+          CustomLocationSearchState.Loading -> {
+            item { LinearProgressIndicator(modifier = Modifier.fillMaxWidth().animateItem()) }
+          }
+          is CustomLocationSearchState.Loaded -> {
+            items(results.results) { result ->
               ListItem(
                 leadingContent = {
                   Icon(imageVector = Icons.Default.Place, contentDescription = null)
@@ -228,9 +245,6 @@ fun SharedTransitionScope.PlacesContent(
                 Text(text = result.address)
               }
             }
-          }
-          customLocationSearchResults is LoadingState.Loading -> {
-            item { LinearProgressIndicator(modifier = Modifier.fillMaxWidth().animateItem()) }
           }
         }
       }
@@ -252,9 +266,9 @@ fun SharedTransitionScope.PlacesContent(
               PlaceCategoryItem(
                 category = category,
                 icon = category.icon,
-                enabled = placeCategoriesEnabled,
+                enabled = activeLocation != null,
                 selected = category in places,
-                loadingState = places[category],
+                state = places[category],
                 layout = it,
                 modifier = Modifier.weight(1f),
                 alpha = alpha,
@@ -276,9 +290,9 @@ fun SharedTransitionScope.PlacesContent(
               PlaceCategoryItem(
                 category = category,
                 icon = category.icon,
-                enabled = placeCategoriesEnabled,
+                enabled = activeLocation != null,
                 selected = category in places,
-                loadingState = places[category],
+                state = places[category],
                 layout = it,
                 alpha = alpha,
                 animatedVisibilityScope = animatedVisibilityScope,

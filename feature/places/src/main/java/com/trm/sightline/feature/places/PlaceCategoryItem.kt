@@ -41,7 +41,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.dropUnlessResumed
 import com.trm.sightline.core.common.R as commonR
-import com.trm.sightline.core.model.LoadingState
+import com.trm.sightline.core.domain.places.CategoryPlacesState
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
 import com.trm.sightline.core.ui.labelRes
@@ -52,7 +52,7 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
   icon: ImageVector,
   enabled: Boolean,
   selected: Boolean,
-  loadingState: LoadingState<List<Place>>?,
+  state: CategoryPlacesState?,
   alpha: Float,
   modifier: Modifier = Modifier,
   layout: PlacesLayout = PlacesLayout.Row,
@@ -82,7 +82,7 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
           modifier = Modifier.padding(vertical = 8.dp),
         ) {
           PlaceCategoryItemIconLoadingState(
-            loadingState = loadingState,
+            state = state,
             trackColor = buttonColors.checkedContentColor,
             icon = icon,
           )
@@ -118,11 +118,11 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
         modifier = modifier,
         onClick =
           dropUnlessResumed {
-            if (loadingState is LoadingState.Loaded<List<Place>>) {
-              onCategoryClick(category, loadingState.data)
+            if (state is CategoryPlacesState.Loaded) {
+              onCategoryClick(category, state.places)
             }
           },
-        enabled = loadingState is LoadingState.Loaded<List<Place>>,
+        enabled = state is CategoryPlacesState.Loaded,
       ) {
         Row(
           modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
@@ -145,7 +145,7 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
                 .aspectRatio(1f),
           ) {
             PlaceCategoryItemIconLoadingState(
-              loadingState = loadingState,
+              state = state,
               trackColor = buttonColors.checkedContentColor,
               icon = icon,
             )
@@ -165,11 +165,11 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
                   .basicMarquee(iterations = Int.MAX_VALUE),
             )
 
-            AnimatedContent(loadingState) { state ->
-              when (state) {
-                is LoadingState.Loaded<List<Place>> -> {
+            AnimatedContent(state) { current ->
+              when (current) {
+                is CategoryPlacesState.Loaded -> {
                   Text(
-                    text = stringResource(commonR.string.places_count, state.data.size),
+                    text = stringResource(commonR.string.places_count, current.places.size),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
@@ -189,7 +189,7 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
 
           Spacer(modifier = Modifier.width(8.dp))
 
-          AnimatedVisibility(loadingState is LoadingState.Loaded<List<Place>>) {
+          AnimatedVisibility(state is CategoryPlacesState.Loaded) {
             Icon(
               imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
               contentDescription = null,
@@ -205,13 +205,13 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
 
 @Composable
 private fun PlaceCategoryItemIconLoadingState(
-  loadingState: LoadingState<List<Place>>?,
+  state: CategoryPlacesState?,
   trackColor: Color,
   icon: ImageVector,
 ) {
-  AnimatedContent(targetState = loadingState) { state ->
-    when (state) {
-      is LoadingState.Loading -> {
+  AnimatedContent(targetState = state) { current ->
+    when (current) {
+      is CategoryPlacesState.Loading -> {
         CircularProgressIndicator(modifier = Modifier.size(32.dp), trackColor = trackColor)
       }
       else -> {

@@ -1,4 +1,4 @@
-package com.trm.sightline.shared
+package com.trm.sightline.core.domain.places
 
 import com.trm.sightline.core.common.RequestError
 import com.trm.sightline.core.common.location.LocationAuthorization
@@ -649,6 +649,136 @@ class PlacesCoordinatorTest {
 
     assertEquals(listOf(second), harness.preferences.lastMapPositionWrites)
     assertEquals(second, harness.coordinator.lastMapPosition.value)
+  }
+
+  @Test
+  fun consolidatedStateBundlesLoadedCategories() = runTest {
+    val harness = harness(preferences = prefsWithKrakow())
+    runCurrent()
+
+    harness.coordinator.onTogglePlaceCategory(PlaceCategory.FoodDrink)
+    advanceTimeBy(1_000)
+    runCurrent()
+
+    val state = harness.coordinator.state.value
+    assertEquals(
+      mapOf(PlaceCategory.FoodDrink to CategoryPlacesState.Loaded(emptyList())),
+      state.places,
+    )
+    assertEquals(emptyList(), state.allPlaces)
+    assertEquals(krakow, state.activeLocation)
+    assertEquals(krakow, state.customLocation)
+    assertEquals(krakowAddress, state.customLocationAddress)
+    assertEquals(false, state.userLocationEnabled)
+    assertEquals(PlaceSearchRadius.OneKilometer, state.searchRadius)
+  }
+
+  @Test
+  fun consolidatedStateTracksActiveLocationAcrossUserAndCustomLocation() = runTest {
+    val harness = harness(preferences = prefsWithKrakow(userLocationEnabled = true))
+    runCurrent()
+
+    val beforeFix = harness.coordinator.state.value
+    assertNull(beforeFix.activeLocation)
+    assertNull(beforeFix.userLocation)
+    assertEquals(krakow, beforeFix.customLocation)
+    assertEquals(true, beforeFix.userLocationEnabled)
+
+    harness.location.emit(warsaw)
+    runCurrent()
+
+    val tracking = harness.coordinator.state.value
+    assertEquals(warsaw, tracking.userLocation)
+    assertEquals(warsaw, tracking.activeLocation)
+    assertEquals(krakow, tracking.customLocation)
+
+    harness.coordinator.setUserLocationEnabled(false)
+    runCurrent()
+
+    val custom = harness.coordinator.state.value
+    assertEquals(false, custom.userLocationEnabled)
+    assertNull(custom.userLocation)
+    assertEquals(krakow, custom.activeLocation)
+    assertEquals(krakow, custom.customLocation)
+  }
+
+  @Test
+  fun consolidatedStateReflectsSearchRadiusChanges() = runTest {
+    val harness = harness(preferences = prefsWithKrakow())
+    harness.places.latency = 2.seconds
+    runCurrent()
+
+    harness.coordinator.onTogglePlaceCategory(PlaceCategory.FoodDrink)
+    advanceTimeBy(1_000)
+    runCurrent()
+    assertEquals(PlaceSearchRadius.OneKilometer, harness.coordinator.state.value.searchRadius)
+
+    harness.coordinator.setSearchRadius(PlaceSearchRadius.TwoKilometers)
+    runCurrent()
+
+    val state = harness.coordinator.state.value
+    assertEquals(PlaceSearchRadius.TwoKilometers, state.searchRadius)
+    assertEquals(
+      CategoryPlacesState.Loading,
+      state.places[PlaceCategory.FoodDrink],
+      "The consolidated state kept stale places while the radius refetch was in flight.",
+    )
+    assertEquals(emptyList(), state.allPlaces)
+    assertEquals(2_000f, harness.places.queries.last().radiusMeters)
+
+    advanceTimeBy(2_000)
+    runCurrent()
+
+    assertEquals(
+      CategoryPlacesState.Loaded(emptyList()),
+      harness.coordinator.state.value.places[PlaceCategory.FoodDrink],
+    )
+  }
+
+  @Test
+  fun consolidatedStateReflectsCustomLocationSearchChanges() = runTest {
+    val harness = harness(preferences = prefsWithKrakow())
+    val results =
+      listOf(
+        CustomLocation(
+          latitude = warsaw.latitude,
+          longitude = warsaw.longitude,
+          address = "Warsaw, Poland",
+          timestamp = 2L,
+        )
+      )
+    harness.address.results = results
+    runCurrent()
+
+    harness.coordinator.setCustomLocationAddress("ab")
+    runCurrent()
+
+    val tooShort = harness.coordinator.state.value
+    assertEquals("ab", tooShort.customLocationAddress)
+    assertEquals(CustomLocationSearchState.QueryTooShort, tooShort.customLocationSearchResults)
+    assertNull(tooShort.activeLocation)
+
+    harness.coordinator.setCustomLocationAddress("")
+    runCurrent()
+    assertEquals(
+      CustomLocationSearchState.Idle,
+      harness.coordinator.state.value.customLocationSearchResults,
+    )
+
+    harness.coordinator.setCustomLocationAddress("wars")
+    runCurrent()
+    assertEquals(
+      CustomLocationSearchState.Loading,
+      harness.coordinator.state.value.customLocationSearchResults,
+    )
+
+    advanceTimeBy(1_000)
+    runCurrent()
+
+    val loaded = harness.coordinator.state.value
+    assertEquals("wars", loaded.customLocationAddress)
+    assertEquals(CustomLocationSearchState.Loaded(results), loaded.customLocationSearchResults)
+    assertNull(loaded.activeLocation)
   }
 
   private fun TestScope.harness(

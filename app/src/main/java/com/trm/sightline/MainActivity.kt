@@ -14,7 +14,6 @@ import androidx.compose.material3.windowsizeclass.WindowHeightSizeClass
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.dropUnlessResumed
 import androidx.navigation3.runtime.entryProvider
@@ -41,19 +40,8 @@ class MainActivity : ComponentActivity() {
           val backStack = rememberNavBackStack(MainRoute)
 
           val viewModel = metroViewModel<MainViewModel>()
-          val userLocationEnabled by viewModel.userLocationEnabled.collectAsStateWithLifecycle()
-          val customLocationAddress by viewModel.customLocationAddress.collectAsStateWithLifecycle()
-          val userLocationAddress by viewModel.userLocationAddress.collectAsStateWithLifecycle()
-          val customLocationSearchResults by
-            viewModel.customLocationSearchResults.collectAsStateWithLifecycle()
-          val lastMapPosition by viewModel.lastMapPosition.collectAsStateWithLifecycle()
+          val state by viewModel.state.collectAsStateWithLifecycle()
           val errorMessage by viewModel.errorMessage.collectAsStateWithLifecycle()
-          val searchRadius by viewModel.searchRadius.collectAsStateWithLifecycle()
-          val currentLocation =
-            remember(userLocationEnabled, viewModel.userLocation, viewModel.customLocation) {
-              if (userLocationEnabled && viewModel.userLocation != null) viewModel.userLocation
-              else viewModel.customLocation
-            }
 
           SharedTransitionLayout {
             NavDisplay(
@@ -69,23 +57,22 @@ class MainActivity : ComponentActivity() {
                   entry<MainRoute> {
                     MainScreen(
                       isCompactHeight = isCompactHeight,
-                      places = viewModel.places,
-                      allPlaces = viewModel.allPlaces,
-                      currentLocation = currentLocation,
-                      userLocation = viewModel.userLocation,
-                      userLocationAddress = userLocationAddress,
-                      customLocation = viewModel.customLocation,
-                      customLocationAddress = customLocationAddress,
-                      customLocationSearchResults = customLocationSearchResults,
-                      isUserLocationEnabled = userLocationEnabled,
-                      lastMapPosition = lastMapPosition,
+                      places = state.places,
+                      allPlaces = state.allPlaces,
+                      activeLocation = state.activeLocation,
+                      userLocationAddress = state.userLocationAddress,
+                      customLocationAddress = state.customLocationAddress,
+                      customLocationSearchResults = state.customLocationSearchResults,
+                      isUserLocationEnabled = state.userLocationEnabled,
+                      lastMapPosition = state.lastMapPosition,
                       errorMessage = errorMessage,
-                      searchRadius = searchRadius,
+                      searchRadius = state.searchRadius,
                       animatedVisibilityScope = LocalNavAnimatedContentScope.current,
                       onUserLocationEnabledChange = viewModel::setUserLocationEnabled,
                       onCustomLocationAddressChange = viewModel::setCustomLocationAddress,
                       onCustomLocationSearchResultClick =
                         viewModel::onCustomLocationSearchResultClick,
+                      onCancelCustomLocationSearch = viewModel::cancelCustomLocationSearch,
                       onTogglePlaceCategory = viewModel::onTogglePlaceCategory,
                       onCategoryClick = { category, places ->
                         backStack.add(PlaceCategoryRoute(category, places))
@@ -97,7 +84,7 @@ class MainActivity : ComponentActivity() {
                   entry<PlaceCategoryRoute> { route ->
                     PlaceCategoryScreen(
                       route = route,
-                      location = currentLocation,
+                      location = state.activeLocation,
                       isCompactHeight = isCompactHeight,
                       animatedVisibilityScope = LocalNavAnimatedContentScope.current,
                       onBack = dropUnlessResumed { backStack.removeLastOrNull() },

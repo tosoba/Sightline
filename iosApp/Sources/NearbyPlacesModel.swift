@@ -6,7 +6,8 @@ import os
 /// Thin `@MainActor @Observable` adapter over the shared `PlacesCoordinator`.
 ///
 /// Every piece of places, location, and custom-location-search state lives in the coordinator; this
-/// type mirrors the coordinator's `StateFlow`s into observable properties and forwards user intents.
+/// type mirrors the coordinator's consolidated state snapshot into observable properties and
+/// forwards user intents.
 @MainActor
 @Observable
 final class NearbyPlacesModel {
@@ -118,18 +119,8 @@ final class NearbyPlacesModel {
     }
 
     func observePreferences() async {
-        await withTaskGroup(of: Void.self) { group in
-            group.addTask { await self.observePlaces() }
-            group.addTask { await self.observeAllPlaces() }
-            group.addTask { await self.observeActiveLocation() }
-            group.addTask { await self.observeUserLocation() }
-            group.addTask { await self.observeUserLocationAddress() }
-            group.addTask { await self.observeCustomLocationAddress() }
-            group.addTask { await self.observeCustomLocationSearch() }
-            group.addTask { await self.observeUserLocationEnabled() }
-            group.addTask { await self.observeSearchRadius() }
-            group.addTask { await self.observeLastMapPosition() }
-            group.addTask { await self.observeErrors() }
+        for await state in coordinator.state {
+            apply(state)
         }
     }
 
@@ -146,72 +137,26 @@ final class NearbyPlacesModel {
         }
     }
 
-    private func observePlaces() async {
-        for await states in coordinator.places {
-            categoryStates = states
-        }
-    }
+    private func apply(_ state: PlacesUiState) {
+        categoryStates = state.places
+        allPlaces = state.allPlaces
+        activeLocation = state.activeLocation
+        userLocation = state.userLocation
+        userLocationAddress = state.userLocationAddress
+        customLocationAddress = state.customLocationAddress
+        customLocationSearchResults = state.customLocationSearchResults
+        lastMapPosition = state.lastMapPosition
+        errorMessage = state.error.map { message(for: $0) }
 
-    private func observeAllPlaces() async {
-        for await places in coordinator.allPlaces {
-            allPlaces = places
+        if userLocationEnabled != state.userLocationEnabled {
+            userLocationEnabled = state.userLocationEnabled
+            Self.logger.info(
+                "user location enabled: \(state.userLocationEnabled, privacy: .public)")
         }
-    }
 
-    private func observeActiveLocation() async {
-        for await location in coordinator.activeLocation {
-            activeLocation = location
-        }
-    }
-
-    private func observeUserLocation() async {
-        for await location in coordinator.userLocation {
-            userLocation = location
-        }
-    }
-
-    private func observeUserLocationAddress() async {
-        for await state in coordinator.userLocationAddress {
-            userLocationAddress = state
-        }
-    }
-
-    private func observeCustomLocationAddress() async {
-        for await address in coordinator.customLocationAddress {
-            customLocationAddress = address
-        }
-    }
-
-    private func observeCustomLocationSearch() async {
-        for await state in coordinator.customLocationSearchResults {
-            customLocationSearchResults = state
-        }
-    }
-
-    private func observeUserLocationEnabled() async {
-        for await enabled in coordinator.userLocationEnabled {
-            userLocationEnabled = enabled.boolValue
-            Self.logger.info("user location enabled: \(enabled.boolValue, privacy: .public)")
-        }
-    }
-
-    private func observeSearchRadius() async {
-        for await radius in coordinator.searchRadius {
-            guard radius != searchRadius else { continue }
-            searchRadius = radius
-            Self.logger.info("search radius changed to \(radius.meters, privacy: .public) m")
-        }
-    }
-
-    private func observeLastMapPosition() async {
-        for await position in coordinator.lastMapPosition {
-            lastMapPosition = position
-        }
-    }
-
-    private func observeErrors() async {
-        for await error in coordinator.error {
-            errorMessage = error.map { message(for: $0) }
+        if searchRadius != state.searchRadius {
+            searchRadius = state.searchRadius
+            Self.logger.info("search radius changed to \(state.searchRadius.meters, privacy: .public) m")
         }
     }
 

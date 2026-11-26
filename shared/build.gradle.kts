@@ -33,6 +33,7 @@ kotlin {
       export(project(":core:model"))
       export(project(":core:common"))
       export(project(":core:ar"))
+      export(project(":core:domain"))
 
       xcframework.add(this)
     }
