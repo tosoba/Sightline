@@ -14,6 +14,8 @@ import androidx.compose.material3.windowsizeclass.WindowHeightSizeClass
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.dropUnlessResumed
 import androidx.navigation3.runtime.entryProvider
@@ -54,6 +56,8 @@ class MainActivity : ComponentActivity() {
               entryProvider =
                 entryProvider {
                   entry<MainRoute> {
+                    val navigationLifecycle = LocalLifecycleOwner.current.lifecycle
+
                     MainScreen(
                       state = state,
                       isCompactHeight = isCompactHeight,
@@ -65,7 +69,9 @@ class MainActivity : ComponentActivity() {
                       onCancelCustomLocationSearch = viewModel::cancelCustomLocationSearch,
                       onTogglePlaceCategory = viewModel::onTogglePlaceCategory,
                       onCategoryClick = { category, places ->
-                        backStack.add(PlaceCategoryRoute(category, places))
+                        if (navigationLifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+                          backStack.add(PlaceCategoryRoute(category, places))
+                        }
                       },
                       onMapPositionChanged = viewModel::saveMapPosition,
                       onSearchRadiusChange = viewModel::setSearchRadius,

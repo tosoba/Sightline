@@ -39,7 +39,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.dropUnlessResumed
 import com.trm.sightline.core.common.R as commonR
 import com.trm.sightline.core.domain.places.CategoryPlacesState
 import com.trm.sightline.core.model.Place
@@ -116,12 +115,11 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
               MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = alpha / 2f),
           ),
         modifier = modifier,
-        onClick =
-          dropUnlessResumed {
-            if (state is CategoryPlacesState.Loaded) {
-              onCategoryClick(category, state.places)
-            }
-          },
+        onClick = {
+          if (state is CategoryPlacesState.Loaded) {
+            onCategoryClick(category, state.places)
+          }
+        },
         enabled = state is CategoryPlacesState.Loaded,
       ) {
         Row(
