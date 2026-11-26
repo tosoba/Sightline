@@ -20,7 +20,6 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import androidx.navigation3.ui.NavDisplay
-import com.trm.sightline.core.common.messageResource
 import com.trm.sightline.core.ui.theme.SightlineTheme
 import com.trm.sightline.feature.category.PlaceCategoryRoute
 import com.trm.sightline.feature.category.PlaceCategoryScreen
@@ -42,7 +41,6 @@ class MainActivity : ComponentActivity() {
 
           val viewModel = metroViewModel<MainViewModel>()
           val state by viewModel.state.collectAsStateWithLifecycle()
-          val errorMessage = state.error?.messageResource()
 
           SharedTransitionLayout {
             NavDisplay(
@@ -57,17 +55,8 @@ class MainActivity : ComponentActivity() {
                 entryProvider {
                   entry<MainRoute> {
                     MainScreen(
+                      state = state,
                       isCompactHeight = isCompactHeight,
-                      places = state.places,
-                      allPlaces = state.allPlaces,
-                      activeLocation = state.activeLocation,
-                      userLocationAddress = state.userLocationAddress,
-                      customLocationAddress = state.customLocationAddress,
-                      customLocationSearchResults = state.customLocationSearchResults,
-                      isUserLocationEnabled = state.userLocationEnabled,
-                      lastMapPosition = state.lastMapPosition,
-                      errorMessage = errorMessage,
-                      searchRadius = state.searchRadius,
                       animatedVisibilityScope = LocalNavAnimatedContentScope.current,
                       onUserLocationEnabledChange = viewModel::setUserLocationEnabled,
                       onCustomLocationAddressChange = viewModel::setCustomLocationAddress,

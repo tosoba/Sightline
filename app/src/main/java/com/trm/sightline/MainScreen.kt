@@ -44,14 +44,13 @@ import com.trm.sightline.core.ar.util.dpToPx
 import com.trm.sightline.core.ar.util.getScreenSize
 import com.trm.sightline.core.ar.util.sideSheetRectF
 import com.trm.sightline.core.common.PermissionStatus
+import com.trm.sightline.core.common.messageResource
 import com.trm.sightline.core.common.util.CheckLocationSettingsResult
 import com.trm.sightline.core.common.util.checkLocationSettings
 import com.trm.sightline.core.common.util.startAppSettingsActivity
-import com.trm.sightline.core.domain.places.CategoryPlacesState
-import com.trm.sightline.core.domain.places.CustomLocationSearchState
 import com.trm.sightline.core.domain.places.LocationAddressState
+import com.trm.sightline.core.domain.places.PlacesUiState
 import com.trm.sightline.core.model.CustomLocation
-import com.trm.sightline.core.model.GeoLocation
 import com.trm.sightline.core.model.MapCameraPosition
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
@@ -67,17 +66,8 @@ import com.trm.sightline.core.common.R as commonR
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SharedTransitionScope.MainScreen(
+  state: PlacesUiState,
   isCompactHeight: Boolean,
-  places: Map<PlaceCategory, CategoryPlacesState>,
-  allPlaces: List<Place>,
-  activeLocation: GeoLocation?,
-  userLocationAddress: LocationAddressState,
-  customLocationAddress: String,
-  customLocationSearchResults: CustomLocationSearchState,
-  isUserLocationEnabled: Boolean,
-  lastMapPosition: MapCameraPosition?,
-  errorMessage: Int?,
-  searchRadius: PlaceSearchRadius,
   animatedVisibilityScope: AnimatedVisibilityScope,
   onUserLocationEnabledChange: (Boolean) -> Unit,
   onCustomLocationAddressChange: (String) -> Unit,
@@ -213,13 +203,14 @@ fun SharedTransitionScope.MainScreen(
     )
   }
 
-  val userLocationEnabled = isUserLocationEnabled && locationPermissionState.isGranted
+  val userLocationEnabled = state.userLocationEnabled && locationPermissionState.isGranted
   val locationAddress =
     if (userLocationEnabled) {
-      userLocationAddress
+      state.userLocationAddress
     } else {
-      LocationAddressState.Loaded(customLocationAddress)
+      LocationAddressState.Loaded(state.customLocationAddress)
     }
+  val errorMessage = state.error?.messageResource()
   val focusManager = LocalFocusManager.current
 
   val sheetPeekHeight =
@@ -244,11 +235,11 @@ fun SharedTransitionScope.MainScreen(
       sheetContainerColor = sheetContainerColor,
       sheetContent = { sheet, sheetModifier ->
         PlacesContent(
-          places = places,
+          places = state.places,
           userLocationEnabled = userLocationEnabled,
-          activeLocation = activeLocation,
+          activeLocation = state.activeLocation,
           locationAddress = locationAddress,
-          customLocationSearchResults = customLocationSearchResults,
+          customLocationSearchResults = state.customLocationSearchResults,
           layout =
             if (isCompactHeight || sheet.cameraPreviewBlurred) PlacesLayout.Grid
             else PlacesLayout.Row,
@@ -299,9 +290,9 @@ fun SharedTransitionScope.MainScreen(
 
       MainPager(
         pagerState = pagerState,
-        location = activeLocation,
-        places = allPlaces,
-        lastMapPosition = lastMapPosition,
+        location = state.activeLocation,
+        places = state.allPlaces,
+        lastMapPosition = state.lastMapPosition,
         isCompactHeight = isCompactHeight,
         cameraPreviewBlurred = sheet.cameraPreviewBlurred,
         blurredRectFs =
@@ -346,7 +337,7 @@ fun SharedTransitionScope.MainScreen(
         visible = toolbarsVisible && (isCompactHeight || !sheet.cameraPreviewBlurred),
         isCompactHeight = isCompactHeight,
         selectedPage = selectedPage,
-        searchRadius = searchRadius,
+        searchRadius = state.searchRadius,
         onPageSelected = { page ->
           scope.launch { pagerState.animateScrollToPage(page.ordinal) }
         },
