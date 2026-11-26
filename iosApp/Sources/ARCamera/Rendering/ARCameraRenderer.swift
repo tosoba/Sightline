@@ -1,9 +1,9 @@
 import CoreVideo
 import Metal
 import MetalKit
+import os
 import QuartzCore
 import Shared
-import os
 import simd
 
 /// Layout must match `ARShaderUniforms` in `ARCameraShaders.metal` (16-byte aligned).
@@ -131,7 +131,9 @@ final class ARCameraRenderer: NSObject, MTKViewDelegate {
 
     private struct PipelineError: LocalizedError {
         let message: String
-        var errorDescription: String? { message }
+        var errorDescription: String? {
+            message
+        }
     }
 
     private func buildPipelines(
@@ -327,7 +329,8 @@ final class ARCameraRenderer: NSObject, MTKViewDelegate {
         guard sourceSize.width > 0,
               sourceSize.height > 0,
               intermediateSize.width > 0,
-              intermediateSize.height > 0 else {
+              intermediateSize.height > 0
+        else {
             texTransform = matrix_identity_float4x4
             return
         }
@@ -503,7 +506,7 @@ final class ARCameraRenderer: NSObject, MTKViewDelegate {
 
     // MARK: - MTKViewDelegate
 
-    func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
+    func mtkView(_: MTKView, drawableSizeWillChange size: CGSize) {
         makeIntermediates(for: size)
     }
 
@@ -519,7 +522,8 @@ final class ARCameraRenderer: NSObject, MTKViewDelegate {
               let descriptor = view.currentRenderPassDescriptor,
               let source = currentSource(),
               intermediates.count == 7,
-              let commandBuffer = commandQueue.makeCommandBuffer() else {
+              let commandBuffer = commandQueue.makeCommandBuffer()
+        else {
             return
         }
         let (sourceTexture, retainedCameraTexture) = source

@@ -86,7 +86,9 @@ extension XCTestCase {
         )
 
         let wanted = enabled ? "On" : "Off"
-        if (button.value as? String) == wanted { return }
+        if (button.value as? String) == wanted {
+            return
+        }
 
         button.tap()
         answer()

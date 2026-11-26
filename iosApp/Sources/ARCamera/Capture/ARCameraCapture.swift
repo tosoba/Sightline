@@ -146,7 +146,8 @@ final class ARCameraCapture: NSObject, AVCaptureVideoDataOutputSampleBufferDeleg
 
     private func configure() -> Bool {
         guard let camera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
-              let input = try? AVCaptureDeviceInput(device: camera) else {
+              let input = try? AVCaptureDeviceInput(device: camera)
+        else {
             Self.log.error("camera input unavailable")
             return false
         }
@@ -179,9 +180,9 @@ final class ARCameraCapture: NSObject, AVCaptureVideoDataOutputSampleBufferDeleg
     }
 
     func captureOutput(
-        _ output: AVCaptureOutput,
+        _: AVCaptureOutput,
         didOutput sampleBuffer: CMSampleBuffer,
-        from connection: AVCaptureConnection
+        from _: AVCaptureConnection
     ) {
         guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
         renderer?.submit(pixelBuffer: pixelBuffer)

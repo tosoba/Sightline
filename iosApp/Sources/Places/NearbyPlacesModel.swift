@@ -1,7 +1,7 @@
 import Foundation
 import Observation
-import Shared
 import os
+import Shared
 
 /// Thin `@MainActor @Observable` adapter over the shared `PlacesCoordinator`.
 ///
@@ -21,7 +21,8 @@ final class NearbyPlacesModel {
     private(set) var allPlaces: [Place] = []
     private(set) var categoryStates: [PlaceCategory: any CategoryPlacesState] = [:]
     private(set) var userLocationAddress: any LocationAddressState = LocationAddressStateLoaded(
-        address: "")
+        address: ""
+    )
     private(set) var customLocationAddress = ""
     private(set) var customLocationSearchResults: any CustomLocationSearchState =
         CustomLocationSearchStateIdle.shared
@@ -34,7 +35,9 @@ final class NearbyPlacesModel {
 
     private var locationEnabledTask: Task<Void, Never>?
 
-    var hasLocation: Bool { activeLocation != nil }
+    var hasLocation: Bool {
+        activeLocation != nil
+    }
 
     var isLoading: Bool {
         categoryStates.keys.contains(where: isLoading)
@@ -59,19 +62,25 @@ final class NearbyPlacesModel {
 
     func isLoading(_ category: PlaceCategory) -> Bool {
         guard let state = categoryStates[category] else { return false }
-        if case .loading = onEnum(of: state) { return true }
+        if case .loading = onEnum(of: state) {
+            return true
+        }
         return false
     }
 
     func isLoaded(_ category: PlaceCategory) -> Bool {
         guard let state = categoryStates[category] else { return false }
-        if case .loaded = onEnum(of: state) { return true }
+        if case .loaded = onEnum(of: state) {
+            return true
+        }
         return false
     }
 
     func places(in category: PlaceCategory) -> [Place] {
         guard let state = categoryStates[category] else { return [] }
-        if case .loaded(let loaded) = onEnum(of: state) { return loaded.places }
+        if case let .loaded(loaded) = onEnum(of: state) {
+            return loaded.places
+        }
         return []
     }
 
@@ -152,7 +161,8 @@ final class NearbyPlacesModel {
         if userLocationEnabled != state.userLocationEnabled {
             userLocationEnabled = state.userLocationEnabled
             Self.logger.info(
-                "user location enabled: \(state.userLocationEnabled, privacy: .public)")
+                "user location enabled: \(state.userLocationEnabled, privacy: .public)"
+            )
         }
 
         if searchRadius != state.searchRadius {

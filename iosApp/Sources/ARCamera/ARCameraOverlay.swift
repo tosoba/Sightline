@@ -24,7 +24,7 @@ struct ARCameraOverlay: View {
         static let iconFillFraction: CGFloat = 0.6
         static let nameDistanceGap: CGFloat = 8
         static let maxNameLines = 2
-        static let unbounded = CGSize(width: 10_000, height: 10_000)
+        static let unbounded = CGSize(width: 10000, height: 10000)
     }
 
     private func draw(_ placement: ARPlacement, in context: inout GraphicsContext) {

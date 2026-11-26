@@ -23,7 +23,7 @@ struct CategoryPlacesScreen: View {
 
     private var focusedCoordinate: GeoLocation? {
         guard let selectedPlaceID,
-            let place = places.first(where: { $0.id == selectedPlaceID })
+              let place = places.first(where: { $0.id == selectedPlaceID })
         else {
             return nil
         }

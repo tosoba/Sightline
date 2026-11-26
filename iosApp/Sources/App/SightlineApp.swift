@@ -1,6 +1,6 @@
+import os
 import Shared
 import SwiftUI
-import os
 
 @main
 struct SightlineApp: App {

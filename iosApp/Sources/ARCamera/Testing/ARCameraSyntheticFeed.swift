@@ -47,8 +47,8 @@ enum ARCameraSyntheticFeed {
             UIColor(red: 0.90, green: 0.40, blue: 0.80, alpha: 0.85),
         ]
         let cell = 112
-        for row in 0..<(height / cell + 1) {
-            for column in 0..<(width / cell + 1) {
+        for row in 0 ..< (height / cell + 1) {
+            for column in 0 ..< (width / cell + 1) {
                 guard (row + column) % 3 != 0 else { continue }
                 context.setFillColor(colors[(row * 3 + column) % colors.count].cgColor)
                 context.fill(CGRect(x: column * cell, y: row * cell, width: cell, height: cell))

@@ -2,9 +2,9 @@ import CoreGraphics
 import Foundation
 import Metal
 import Observation
+import os
 import Shared
 import SwiftUI
-import os
 
 /// One marker as laid out by the overlay: the card rect is also the stencil hole the renderer punches.
 struct ARPlacement: Identifiable, Equatable {
@@ -205,7 +205,8 @@ final class ARCameraModel {
         guard unavailability == .permissionDenied,
               options.simulatedUnavailability == nil,
               let renderer,
-              ARCameraCapture.isAuthorized else {
+              ARCameraCapture.isAuthorized
+        else {
             return
         }
         Self.log.info("camera access granted while in Settings")
@@ -228,8 +229,8 @@ final class ARCameraModel {
         self.displayScale = displayScale
         let geometryChanged =
             size != viewport
-            || safeAreaInsets != self.safeAreaInsets
-            || overlayOrigin != self.overlayOrigin
+                || safeAreaInsets != self.safeAreaInsets
+                || overlayOrigin != self.overlayOrigin
         viewport = size
         self.safeAreaInsets = safeAreaInsets
         self.overlayOrigin = overlayOrigin

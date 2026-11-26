@@ -1,8 +1,8 @@
 import CoreMotion
 import Foundation
+import os
 import QuartzCore
 import Shared
-import os
 
 /// Scripted poses for the simulator (no magnetometer) and for on-device debugging.
 enum ARScriptedAttitude: String, CaseIterable {
@@ -34,7 +34,9 @@ final class ARCameraMotion {
     var onRotationMatrix: ((RotationMatrix) -> Void)?
     var onScriptedPose: ((String) -> Void)?
 
-    var isDeviceMotionAvailable: Bool { manager.isDeviceMotionAvailable }
+    var isDeviceMotionAvailable: Bool {
+        manager.isDeviceMotionAvailable
+    }
 
     func start(scripted: ARScriptedAttitude?) {
         stop()
@@ -112,6 +114,7 @@ final class ARCameraMotion {
     }
 
     // MARK: - Pose geometry (debug scaffolding)
+
     //
     // Device axes are built in ENU and converted to the Core Motion reference frame
     // (north, west, up) row by row. Camera direction is -Z.

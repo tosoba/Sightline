@@ -55,7 +55,8 @@ final class ARWindowOrientationObserver {
         guard let scene = Self.activeWindowScene(),
               let mapped = Self.orientationMapping(
                   for: scene.effectiveGeometry.interfaceOrientation
-              ) else {
+              )
+        else {
             onRotationChange?(rotation)
             return
         }

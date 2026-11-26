@@ -19,13 +19,19 @@ struct ARCameraLaunchOptions {
     let debugHUD: Bool
     let simulatedUnavailability: ARSimulatedUnavailability?
 
-    static var current: ARCameraLaunchOptions { ARCameraLaunchOptions(arguments: ProcessInfo.processInfo.arguments) }
+    static var current: ARCameraLaunchOptions {
+        ARCameraLaunchOptions(arguments: ProcessInfo.processInfo.arguments)
+    }
 
     /// Normal viewing starts sharp; only the debug blur flags override the pitch and sheet triggers.
-    var forcesBlur: Bool { forceBlur || (blurStrength ?? 0) > 0 }
+    var forcesBlur: Bool {
+        forceBlur || (blurStrength ?? 0) > 0
+    }
 
     /// `-arCamera` pins scripted launches to the AR page; without it the pager keeps its own default.
-    var requestedPage: MainPage? { isArEntry ? .camera : nil }
+    var requestedPage: MainPage? {
+        isArEntry ? .camera : nil
+    }
 
     init(arguments: [String]) {
         func value(after flag: String) -> String? {

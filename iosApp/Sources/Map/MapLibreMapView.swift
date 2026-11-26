@@ -1,8 +1,8 @@
 import CoreLocation
 import MapLibre
+import os
 import Shared
 import SwiftUI
-import os
 
 private enum MapFitPadding {
     static let standard = UIEdgeInsets(top: 64, left: 40, bottom: 120, right: 40)
@@ -124,8 +124,9 @@ struct MapLibreMapView: UIViewRepresentable {
         func update(focusedCoordinate: GeoLocation?) {
             guard let focusedCoordinate else { return }
             if let lastAppliedFocus,
-                lastAppliedFocus.latitude == focusedCoordinate.latitude,
-                lastAppliedFocus.longitude == focusedCoordinate.longitude {
+               lastAppliedFocus.latitude == focusedCoordinate.latitude,
+               lastAppliedFocus.longitude == focusedCoordinate.longitude
+            {
                 return
             }
             pendingFocus = focusedCoordinate
@@ -151,9 +152,10 @@ struct MapLibreMapView: UIViewRepresentable {
 
         func mapView(_ mapView: MLNMapView, regionDidChangeAnimated _: Bool) {
             guard purpose == .main,
-                styleLoaded,
-                hasAppliedInitialCamera || hasFittedPlaces,
-                let onCameraChanged else {
+                  styleLoaded,
+                  hasAppliedInitialCamera || hasFittedPlaces,
+                  let onCameraChanged
+            else {
                 return
             }
 
@@ -176,10 +178,10 @@ struct MapLibreMapView: UIViewRepresentable {
 
         private func applyRestoredCameraIfNeeded() {
             guard purpose == .main,
-                let mapView,
-                styleLoaded,
-                !hasAppliedInitialCamera,
-                let position = pendingLastMapPosition
+                  let mapView,
+                  styleLoaded,
+                  !hasAppliedInitialCamera,
+                  let position = pendingLastMapPosition
             else {
                 return
             }

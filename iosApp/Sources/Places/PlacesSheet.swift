@@ -62,7 +62,8 @@ struct PlacesSheet: View {
         .onAppear {
             searchText = model.customLocationAddress
             if model.authorization == .denied || model.authorization == .restricted,
-                model.userLocationEnabled {
+               model.userLocationEnabled
+            {
                 model.setUserLocationEnabled(false)
             }
         }
@@ -80,7 +81,6 @@ struct PlacesSheet: View {
 
     // MARK: - Location header
 
-    @ViewBuilder
     private var locationHeader: some View {
         HStack(spacing: 8) {
             if model.userLocationEnabled {
@@ -117,7 +117,6 @@ struct PlacesSheet: View {
         }
     }
 
-    @ViewBuilder
     private var userLocationField: some View {
         HStack(spacing: 8) {
             if model.userLocation == nil {
@@ -145,8 +144,8 @@ struct PlacesSheet: View {
     }
 
     private var locationAddressText: String {
-        guard case .loaded(let loaded) = onEnum(of: model.userLocationAddress),
-            !loaded.address.isEmpty
+        guard case let .loaded(loaded) = onEnum(of: model.userLocationAddress),
+              !loaded.address.isEmpty
         else {
             return "Location address not found."
         }
@@ -209,7 +208,7 @@ struct PlacesSheet: View {
         case .loading:
             ProgressView()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-        case .loaded(let loaded):
+        case let .loaded(loaded):
             if loaded.results.isEmpty {
                 prompt("No locations found.")
             } else {
@@ -280,7 +279,8 @@ struct PlacesSheet: View {
             return
         }
         if model.authorization == .denied || model.authorization == .restricted
-            || model.isLocationServicesDisabled {
+            || model.isLocationServicesDisabled
+        {
             showsSettingsAlert = true
             return
         }
@@ -309,8 +309,13 @@ private struct CategoryGridCard: View {
     let model: NearbyPlacesModel
     let onOpen: () -> Void
 
-    private var isActive: Bool { model.isActive(category) }
-    private var places: [Place] { model.places(in: category) }
+    private var isActive: Bool {
+        model.isActive(category)
+    }
+
+    private var places: [Place] {
+        model.places(in: category)
+    }
 
     private var subtitle: String {
         guard isActive else { return "Not selected" }

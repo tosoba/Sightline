@@ -5,7 +5,9 @@ enum MainPage: String, CaseIterable, Identifiable {
     case camera
     case map
 
-    var id: Self { self }
+    var id: Self {
+        self
+    }
 
     var title: String {
         switch self {
@@ -88,7 +90,6 @@ struct MainScreen: View {
         }
     }
 
-    @ViewBuilder
     private func tabContent<Content: View>(
         showsControls: Bool,
         @ViewBuilder content: () -> Content

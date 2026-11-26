@@ -178,8 +178,8 @@ final class IPadAdaptiveUITests: XCTestCase {
     private func markerGeometry(in text: String) -> (width: Double, divisor: Int)? {
         let tokens = text.split(separator: " ")
         guard let marker = tokens.firstIndex(of: "mw"),
-            tokens.count > marker + 2,
-            let width = Double(tokens[marker + 1])
+              tokens.count > marker + 2,
+              let width = Double(tokens[marker + 1])
         else {
             return nil
         }
@@ -198,7 +198,7 @@ final class IPadAdaptiveUITests: XCTestCase {
             return
         }
         XCTAssertTrue(
-            (150.0...220.0).contains(geometry.width),
+            (150.0 ... 220.0).contains(geometry.width),
             "The iPad marker width is outside 150...220 pt in \(orientation); its text is \(layoutDebug.label)."
         )
         XCTAssertEqual(
@@ -229,8 +229,8 @@ final class IPadAdaptiveUITests: XCTestCase {
         }
         let value = tokens[marker + 1]
         guard let separator = value.firstIndex(of: "x"),
-            let width = Double(value[value.startIndex..<separator]),
-            let height = Double(value[value.index(after: separator)...])
+              let width = Double(value[value.startIndex ..< separator]),
+              let height = Double(value[value.index(after: separator)...])
         else {
             return nil
         }

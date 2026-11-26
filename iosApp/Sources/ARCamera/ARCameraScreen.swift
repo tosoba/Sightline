@@ -7,7 +7,7 @@ struct ARCameraMetalView: UIViewRepresentable {
     let renderer: ARCameraRenderer
     var isPaused: Bool = false
 
-    func makeUIView(context: Context) -> MTKView {
+    func makeUIView(context _: Context) -> MTKView {
         let view = MTKView(frame: .zero, device: renderer.device)
         renderer.configure(view: view)
         // The camera preview is inert; letting taps reach SwiftUI keeps the overlay toggle working.
@@ -15,7 +15,7 @@ struct ARCameraMetalView: UIViewRepresentable {
         return view
     }
 
-    func updateUIView(_ uiView: MTKView, context: Context) {
+    func updateUIView(_ uiView: MTKView, context _: Context) {
         uiView.isPaused = isPaused
     }
 }
@@ -171,7 +171,8 @@ struct ARCameraScreen: View {
         if current.viewport != previous.viewport
             || current.safeAreaInsets != previous.safeAreaInsets
             || current.overlayOrigin != previous.overlayOrigin
-            || current.displayScale != previous.displayScale {
+            || current.displayScale != previous.displayScale
+        {
             applyViewport(camera, input: current)
         }
         if current.isActive != previous.isActive {
@@ -184,7 +185,9 @@ struct ARCameraScreen: View {
             switch current.scenePhase {
             case .active:
                 camera.resumeAfterSettings()
-                if current.isActive { camera.setActive(true) }
+                if current.isActive {
+                    camera.setActive(true)
+                }
             case .background:
                 camera.setActive(false)
             default:
@@ -199,7 +202,6 @@ struct ARCameraScreen: View {
         }
     }
 
-    @ViewBuilder
     private func hud(_ camera: ARCameraModel) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(camera.statusText)
@@ -211,8 +213,8 @@ struct ARCameraScreen: View {
                     Text(String(
                         format: "lod %+.2f  gpu %.2f ms  cpu %.2f ms  markers %d",
                         renderer.currentLOD,
-                        renderer.lastGPUSeconds * 1_000,
-                        renderer.lastCPUSeconds * 1_000,
+                        renderer.lastGPUSeconds * 1000,
+                        renderer.lastCPUSeconds * 1000,
                         camera.markerCount
                     ))
                 }
@@ -341,13 +343,15 @@ private extension ARCameraUnavailability {
         switch self {
         case .permissionDenied:
             "Enable camera access in Settings to see the live AR view."
-        case .configurationFailed(let detail):
+        case let .configurationFailed(detail):
             detail
         }
     }
 
     var offersSettings: Bool {
-        if case .permissionDenied = self { return true }
+        if case .permissionDenied = self {
+            return true
+        }
         return false
     }
 }
