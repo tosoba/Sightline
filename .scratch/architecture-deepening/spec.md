@@ -173,3 +173,12 @@ Deepen Sightline's cross-platform modules, align source sets with their actual c
 
 - Tickets are sequenced with explicit `Blocked by:` dependencies so separate agent sessions can execute them safely without merge conflicts.
 - After Ticket 03 completes, `:shared` will have zero files in `commonMain`/`commonTest` and will live entirely in `iosMain`/`iosTest` as the iOS framework root.
+
+## Comments
+
+A two-axis code review (Standards and Spec) reviewed `cbd7e40..d9fd814` after the implementation tickets landed.
+The review raised four functional findings: an iOS landscape card-height regression, an Android search-bar address regression, `AdaptiveSheetScaffold` composing the sheet twice and not switching between portrait and side sheet, and a missing `refreshLocationSettings` so iOS never re-read the location-services switch.
+It also flagged standards findings, fixed by collapsing the duplicated error state onto `PlacesUiState.error` and removing the dead `PaddingValues` parameter from the scaffold content slot.
+The fixes landed on `review-fixes` at `b65de08` and were merged with `81f319f6119dd8944963710b33303c280c6e6cb8`.
+Re-verification after the merge passed: 90 `:core:ar` tests per target, 29 `:core:domain` tests per target, 6 shared tests, the Android build, iPhone UI 7 passed / 1 skipped / 0 failed, and iPad UI 7 passed / 0 skipped / 0 failed.
+`LocationProvider.checkLocationSettings()` and `AndroidLocationProvider.authorizationState` were reviewed and kept because they are required or used.
