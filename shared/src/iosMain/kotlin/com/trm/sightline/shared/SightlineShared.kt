@@ -7,10 +7,6 @@ import com.trm.sightline.core.domain.AddressRepository
 import com.trm.sightline.core.domain.PlacesRepository
 import com.trm.sightline.core.domain.UserPreferencesRepository
 import com.trm.sightline.core.domain.places.PlacesCoordinator
-import com.trm.sightline.core.model.CustomLocation
-import com.trm.sightline.core.model.GeoLocation
-import com.trm.sightline.core.model.Place
-import com.trm.sightline.core.model.PlaceCategory
 import dev.zacsweers.metro.createGraphFactory
 import kotlinx.coroutines.flow.Flow
 
@@ -21,10 +17,6 @@ internal constructor(
   private val locationProvider: LocationProvider,
   private val userPreferencesRepository: UserPreferencesRepository,
 ) {
-  val categories: List<PlaceCategory> = PlaceCategory.entries
-
-  val preferences: PreferencesFacade = PreferencesFacade(userPreferencesRepository)
-
   val placesCoordinator: PlacesCoordinator by lazy {
     PlacesCoordinator(
       placesRepository = placesRepository,
@@ -37,28 +29,6 @@ internal constructor(
   val authorizationState: Flow<LocationAuthorization> = locationProvider.authorizationState
 
   val locationEnabled: Flow<Boolean> = locationProvider.isLocationEnabled()
-
-  val locationUpdates: Flow<GeoLocation> = locationProvider.locationUpdates()
-
-  suspend fun nearbyPlaces(
-    category: PlaceCategory,
-    location: GeoLocation,
-    radiusMeters: Float,
-  ): List<Place> =
-    placesRepository
-      .fetchPlaces(
-        category = category,
-        latitude = location.latitude,
-        longitude = location.longitude,
-        radiusMeters = radiusMeters,
-      )
-      .sortedBy { place -> place.location.distanceTo(location) }
-
-  suspend fun reverseGeocode(location: GeoLocation): String? =
-    addressRepository.getAddress(latitude = location.latitude, longitude = location.longitude)
-
-  suspend fun searchAddresses(query: String, limit: Int = 100): List<CustomLocation> =
-    addressRepository.search(query = query, limit = limit)
 
   /**
    * Restores every shared preference to its default through the real repository.
@@ -80,5 +50,3 @@ internal constructor(
     }
   }
 }
-
-internal expect fun userPreferencesDirectory(): UserPreferencesDirectory
