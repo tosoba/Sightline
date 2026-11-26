@@ -140,62 +140,61 @@ fun AdaptiveSheetScaffold(
           layoutCoordinates.size.height.toFloat() - with(density) { sheetPeekHeight.toPx() }
       }
 
-  Box(modifier = modifier.fillMaxSize()) {
-    BottomSheetScaffold(
-      scaffoldState = scaffoldState,
-      sheetDragHandle =
-        if (isCompactHeight) {
-          null
-        } else {
-          {
-            Column(
-              modifier = Modifier.fillMaxWidth(),
-              horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-              Spacer(
-                modifier =
-                  Modifier.height(
-                    WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding() *
-                      state.expandedProgress.value
-                  )
-              )
-              BottomSheetDefaults.DragHandle(color = MaterialTheme.colorScheme.onSurface)
-            }
+  BottomSheetScaffold(
+    modifier = modifier.fillMaxSize(),
+    scaffoldState = scaffoldState,
+    sheetDragHandle =
+      if (isCompactHeight) {
+        null
+      } else {
+        {
+          Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+          ) {
+            Spacer(
+              modifier =
+                Modifier.height(
+                  WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding() *
+                    state.expandedProgress.value
+                )
+            )
+            BottomSheetDefaults.DragHandle(color = MaterialTheme.colorScheme.onSurface)
           }
-        },
-      sheetContainerColor = sheetContainerColor,
-      sheetPeekHeight = sheetPeekHeight,
-      sheetContent = {
-        if (!isCompactHeight) {
-          sheetContent(state, portraitSheetModifier)
         }
       },
-    ) { innerPadding ->
-      Box(
-        modifier =
-          if (applyContentPadding) {
-            Modifier.fillMaxSize()
-              .padding(
-                top = innerPadding.calculateTopPadding(),
-                bottom = if (isCompactHeight) innerPadding.calculateBottomPadding() else 0.dp,
-                start = innerPadding.calculateStartPadding(LocalLayoutDirection.current),
-                end = innerPadding.calculateEndPadding(LocalLayoutDirection.current),
-              )
-          } else {
-            Modifier.fillMaxSize()
-          },
-        contentAlignment = Alignment.Center,
-      ) {
-        content(state)
+    sheetContainerColor = sheetContainerColor,
+    sheetPeekHeight = sheetPeekHeight,
+    sheetContent = {
+      if (!isCompactHeight) {
+        sheetContent(state, portraitSheetModifier)
+      }
+    },
+  ) { innerPadding ->
+    Box(
+      modifier =
+        if (applyContentPadding) {
+          Modifier.fillMaxSize()
+            .padding(
+              top = innerPadding.calculateTopPadding(),
+              bottom = if (isCompactHeight) innerPadding.calculateBottomPadding() else 0.dp,
+              start = innerPadding.calculateStartPadding(LocalLayoutDirection.current),
+              end = innerPadding.calculateEndPadding(LocalLayoutDirection.current),
+            )
+        } else {
+          Modifier.fillMaxSize()
+        },
+      contentAlignment = Alignment.Center,
+    ) {
+      content(state)
 
-        if (isCompactHeight) {
-          Surface(
-            modifier = Modifier.fillMaxHeight().align(Alignment.CenterEnd),
-            color = sheetContainerColor,
-            tonalElevation = 1.dp,
-          ) {
-            sheetContent(state, sideSheetModifier)
-          }
+      if (isCompactHeight) {
+        Surface(
+          modifier = Modifier.fillMaxHeight().align(Alignment.CenterEnd),
+          color = sheetContainerColor,
+          tonalElevation = 1.dp,
+        ) {
+          sheetContent(state, sideSheetModifier)
         }
       }
     }
