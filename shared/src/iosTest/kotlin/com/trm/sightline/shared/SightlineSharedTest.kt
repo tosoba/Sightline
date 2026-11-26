@@ -19,6 +19,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -71,7 +72,11 @@ class SightlineSharedTest {
   fun togglingACategoryFetchesFromTheActiveCustomLocationAfterTheDebounce() = runTest {
     installTestMain()
     val places = FakePlacesRepository(listOf(farPlace, nearPlace))
-    val shared = shared(places = places, preferences = FakeUserPreferencesRepository(customLocation = savedKrakow))
+    val shared =
+      shared(
+        places = places,
+        preferences = FakeUserPreferencesRepository(customLocation = savedKrakow),
+      )
     val coordinator = shared.placesCoordinator
     runCurrent()
 
@@ -84,11 +89,11 @@ class SightlineSharedTest {
       shared.placesCoordinator.places.value[PlaceCategory.FoodDrink],
     )
 
-    advanceTimeBy(999)
+    advanceTimeBy(999.milliseconds)
     runCurrent()
     assertTrue(places.queries.isEmpty())
 
-    advanceTimeBy(1)
+    advanceTimeBy(1.milliseconds)
     runCurrent()
 
     assertEquals(
@@ -108,7 +113,8 @@ class SightlineSharedTest {
   @Test
   fun activeLocationFollowsUserLocationWhileTrackingIsEnabled() = runTest {
     installTestMain()
-    val preferences = FakeUserPreferencesRepository(customLocation = savedKrakow, userLocationEnabled = true)
+    val preferences =
+      FakeUserPreferencesRepository(customLocation = savedKrakow, userLocationEnabled = true)
     val location = FakeLocationProvider()
     val shared = shared(preferences = preferences, location = location)
     val coordinator = shared.placesCoordinator
@@ -136,19 +142,26 @@ class SightlineSharedTest {
   fun consolidatedStateEmitsTheActiveLocationAndPlaces() = runTest {
     installTestMain()
     val places = FakePlacesRepository(listOf(nearPlace))
-    val shared = shared(places = places, preferences = FakeUserPreferencesRepository(customLocation = savedKrakow))
+    val shared =
+      shared(
+        places = places,
+        preferences = FakeUserPreferencesRepository(customLocation = savedKrakow),
+      )
     val coordinator = shared.placesCoordinator
     runCurrent()
 
     coordinator.onTogglePlaceCategory(PlaceCategory.ArtsCulture)
-    advanceTimeBy(1_000)
+    advanceTimeBy(1_000.milliseconds)
     runCurrent()
 
     val state = coordinator.state.value
     assertEquals(krakow, state.activeLocation)
     assertEquals(krakow, state.customLocation)
     assertEquals(krakowAddress, state.customLocationAddress)
-    assertEquals(mapOf(PlaceCategory.ArtsCulture to CategoryPlacesState.Loaded(listOf(nearPlace))), state.places)
+    assertEquals(
+      mapOf(PlaceCategory.ArtsCulture to CategoryPlacesState.Loaded(listOf(nearPlace))),
+      state.places,
+    )
     assertEquals(listOf(nearPlace), state.allPlaces)
   }
 
@@ -176,7 +189,7 @@ class SightlineSharedTest {
         zoom = 12.5,
         bearing = 30.0,
         pitch = 45.0,
-      )
+      ),
     )
 
     shared.resetPreferencesForTesting()

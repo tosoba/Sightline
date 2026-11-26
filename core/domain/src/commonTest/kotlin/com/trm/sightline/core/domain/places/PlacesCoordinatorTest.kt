@@ -18,7 +18,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -29,6 +31,7 @@ import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class PlacesCoordinatorTest {
   private val krakow = GeoLocation(latitude = 50.0614, longitude = 19.9366)
   private val warsaw = GeoLocation(latitude = 52.2297, longitude = 21.0122)
@@ -83,11 +86,11 @@ class PlacesCoordinatorTest {
     )
 
     runCurrent()
-    advanceTimeBy(999)
+    advanceTimeBy(999.milliseconds)
     runCurrent()
     assertEquals(emptyList(), harness.places.queries)
 
-    advanceTimeBy(1)
+    advanceTimeBy(1.milliseconds)
     runCurrent()
 
     assertEquals(
@@ -120,7 +123,7 @@ class PlacesCoordinatorTest {
       harness.coordinator.places.value[PlaceCategory.FoodDrink],
     )
 
-    advanceTimeBy(1_000)
+    advanceTimeBy(1.seconds)
     runCurrent()
 
     assertNull(harness.coordinator.places.value[PlaceCategory.FoodDrink])
@@ -134,13 +137,13 @@ class PlacesCoordinatorTest {
     runCurrent()
 
     harness.coordinator.onTogglePlaceCategory(PlaceCategory.FoodDrink)
-    advanceTimeBy(500)
+    advanceTimeBy(500.milliseconds)
     runCurrent()
     harness.coordinator.onTogglePlaceCategory(PlaceCategory.FoodDrink)
 
     assertNull(harness.coordinator.places.value[PlaceCategory.FoodDrink])
 
-    advanceTimeBy(5_000)
+    advanceTimeBy(5.seconds)
     runCurrent()
 
     assertEquals(emptyList(), harness.places.queries)
@@ -154,13 +157,13 @@ class PlacesCoordinatorTest {
     runCurrent()
 
     harness.coordinator.onTogglePlaceCategory(PlaceCategory.FoodDrink)
-    advanceTimeBy(1_000)
+    advanceTimeBy(1.seconds)
     runCurrent()
     assertEquals(1, harness.places.queries.size)
 
-    advanceTimeBy(2_000)
+    advanceTimeBy(2.seconds)
     harness.coordinator.onTogglePlaceCategory(PlaceCategory.FoodDrink)
-    advanceTimeBy(20_000)
+    advanceTimeBy(20.seconds)
     runCurrent()
 
     assertNull(harness.coordinator.places.value[PlaceCategory.FoodDrink])
@@ -174,7 +177,7 @@ class PlacesCoordinatorTest {
     runCurrent()
 
     harness.coordinator.onTogglePlaceCategory(PlaceCategory.FoodDrink)
-    advanceTimeBy(1_000)
+    advanceTimeBy(1.seconds)
     runCurrent()
 
     assertEquals(
@@ -193,7 +196,7 @@ class PlacesCoordinatorTest {
 
     harness.coordinator.onTogglePlaceCategory(PlaceCategory.FoodDrink)
     harness.coordinator.onTogglePlaceCategory(PlaceCategory.Health)
-    advanceTimeBy(1_000)
+    advanceTimeBy(1.seconds)
     runCurrent()
 
     assertEquals(
@@ -209,19 +212,19 @@ class PlacesCoordinatorTest {
     runCurrent()
 
     harness.coordinator.onTogglePlaceCategory(PlaceCategory.FoodDrink)
-    advanceTimeBy(1_000)
+    advanceTimeBy(1.seconds)
     runCurrent()
-    advanceTimeBy(34_000)
+    advanceTimeBy(34.seconds)
     runCurrent()
     assertNull(harness.coordinator.error.value)
 
-    advanceTimeBy(2_000)
+    advanceTimeBy(2.seconds)
     runCurrent()
 
     assertEquals(RequestError.IO, harness.coordinator.error.value)
     assertNull(harness.coordinator.places.value[PlaceCategory.FoodDrink])
 
-    advanceTimeBy(4_000)
+    advanceTimeBy(4.seconds)
     runCurrent()
 
     assertNull(harness.coordinator.error.value)
@@ -234,7 +237,7 @@ class PlacesCoordinatorTest {
     runCurrent()
 
     harness.coordinator.onTogglePlaceCategory(PlaceCategory.FoodDrink)
-    advanceTimeBy(1_000)
+    advanceTimeBy(1.seconds)
     runCurrent()
 
     assertTrue(harness.coordinator.error.value is RequestError.Other)
@@ -274,7 +277,7 @@ class PlacesCoordinatorTest {
     runCurrent()
 
     harness.coordinator.onTogglePlaceCategory(PlaceCategory.FoodDrink)
-    advanceTimeBy(1_000)
+    advanceTimeBy(1.seconds)
     runCurrent()
     assertTrue(
       harness.coordinator.places.value[PlaceCategory.FoodDrink] is CategoryPlacesState.Loaded
@@ -311,7 +314,7 @@ class PlacesCoordinatorTest {
     runCurrent()
 
     harness.coordinator.onTogglePlaceCategory(PlaceCategory.FoodDrink)
-    advanceTimeBy(1_000)
+    advanceTimeBy(1.seconds)
     runCurrent()
     assertEquals(1_000f, harness.places.queries.single().radiusMeters)
 
@@ -341,7 +344,7 @@ class PlacesCoordinatorTest {
     runCurrent()
 
     harness.coordinator.onTogglePlaceCategory(PlaceCategory.FoodDrink)
-    advanceTimeBy(1_000)
+    advanceTimeBy(1.seconds)
     runCurrent()
 
     harness.coordinator.onCustomLocationSearchResultClick(
@@ -381,11 +384,11 @@ class PlacesCoordinatorTest {
       harness.coordinator.userLocationAddress.value,
     )
 
-    advanceTimeBy(999)
+    advanceTimeBy(999.milliseconds)
     runCurrent()
     assertEquals(emptyList(), harness.address.reverseGeocodeCalls)
 
-    advanceTimeBy(1)
+    advanceTimeBy(1.milliseconds)
     runCurrent()
 
     assertEquals(warsaw.latitude to warsaw.longitude, harness.address.reverseGeocodeCalls.single())
@@ -402,7 +405,7 @@ class PlacesCoordinatorTest {
     runCurrent()
 
     harness.location.emit(warsaw)
-    advanceTimeBy(1_000)
+    advanceTimeBy(1.seconds)
     runCurrent()
     assertEquals(
       LocationAddressState.Loaded("Warsaw, Poland"),
@@ -427,10 +430,10 @@ class PlacesCoordinatorTest {
     runCurrent()
 
     harness.coordinator.onTogglePlaceCategory(PlaceCategory.FoodDrink)
-    advanceTimeBy(1_000)
+    advanceTimeBy(1.seconds)
     runCurrent()
     harness.coordinator.onTogglePlaceCategory(PlaceCategory.Health)
-    advanceTimeBy(1_000)
+    advanceTimeBy(1.seconds)
     runCurrent()
     assertEquals(2, harness.coordinator.places.value.size)
 
@@ -450,15 +453,15 @@ class PlacesCoordinatorTest {
 
     harness.location.emit(krakow)
     runCurrent()
-    advanceTimeBy(500)
+    advanceTimeBy(500.milliseconds)
     harness.location.emit(warsaw)
     runCurrent()
-    advanceTimeBy(999)
+    advanceTimeBy(999.milliseconds)
     runCurrent()
 
     assertEquals(emptyList(), harness.address.reverseGeocodeCalls)
 
-    advanceTimeBy(1)
+    advanceTimeBy(1.milliseconds)
     runCurrent()
 
     assertEquals(warsaw.latitude to warsaw.longitude, harness.address.reverseGeocodeCalls.single())
@@ -518,7 +521,7 @@ class PlacesCoordinatorTest {
       harness.coordinator.customLocationSearchResults.value,
     )
 
-    advanceTimeBy(5_000)
+    advanceTimeBy(5.seconds)
     runCurrent()
 
     assertEquals(emptyList(), harness.address.searchCalls)
@@ -547,11 +550,11 @@ class PlacesCoordinatorTest {
     )
 
     runCurrent()
-    advanceTimeBy(999)
+    advanceTimeBy(999.milliseconds)
     runCurrent()
     assertEquals(emptyList(), harness.address.searchCalls)
 
-    advanceTimeBy(1)
+    advanceTimeBy(1.milliseconds)
     runCurrent()
 
     assertEquals(
@@ -570,14 +573,14 @@ class PlacesCoordinatorTest {
     runCurrent()
 
     harness.coordinator.setCustomLocationAddress("kra")
-    advanceTimeBy(500)
+    advanceTimeBy(500.milliseconds)
     harness.coordinator.setCustomLocationAddress("krakow")
-    advanceTimeBy(999)
+    advanceTimeBy(999.milliseconds)
     runCurrent()
 
     assertEquals(emptyList(), harness.address.searchCalls)
 
-    advanceTimeBy(1)
+    advanceTimeBy(1.milliseconds)
     runCurrent()
 
     assertEquals(
@@ -619,7 +622,7 @@ class PlacesCoordinatorTest {
     runCurrent()
 
     harness.coordinator.onTogglePlaceCategory(PlaceCategory.FoodDrink)
-    advanceTimeBy(1_000)
+    advanceTimeBy(1.seconds)
     runCurrent()
     assertTrue(
       harness.coordinator.places.value[PlaceCategory.FoodDrink] is CategoryPlacesState.Loaded
@@ -656,14 +659,14 @@ class PlacesCoordinatorTest {
     runCurrent()
 
     harness.coordinator.saveMapPosition(first)
-    advanceTimeBy(500)
+    advanceTimeBy(500.milliseconds)
     harness.coordinator.saveMapPosition(second)
-    advanceTimeBy(999)
+    advanceTimeBy(999.milliseconds)
     runCurrent()
 
     assertEquals(emptyList(), harness.preferences.lastMapPositionWrites)
 
-    advanceTimeBy(1)
+    advanceTimeBy(1.milliseconds)
     runCurrent()
 
     assertEquals(listOf(second), harness.preferences.lastMapPositionWrites)
@@ -676,7 +679,7 @@ class PlacesCoordinatorTest {
     runCurrent()
 
     harness.coordinator.onTogglePlaceCategory(PlaceCategory.FoodDrink)
-    advanceTimeBy(1_000)
+    advanceTimeBy(1.seconds)
     runCurrent()
 
     val state = harness.coordinator.state.value
@@ -728,7 +731,7 @@ class PlacesCoordinatorTest {
     runCurrent()
 
     harness.coordinator.onTogglePlaceCategory(PlaceCategory.FoodDrink)
-    advanceTimeBy(1_000)
+    advanceTimeBy(1.seconds)
     runCurrent()
     assertEquals(PlaceSearchRadius.OneKilometer, harness.coordinator.state.value.searchRadius)
 
@@ -745,7 +748,7 @@ class PlacesCoordinatorTest {
     assertEquals(emptyList(), state.allPlaces)
     assertEquals(2_000f, harness.places.queries.last().radiusMeters)
 
-    advanceTimeBy(2_000)
+    advanceTimeBy(2.seconds)
     runCurrent()
 
     assertEquals(
@@ -791,7 +794,7 @@ class PlacesCoordinatorTest {
       harness.coordinator.state.value.customLocationSearchResults,
     )
 
-    advanceTimeBy(1_000)
+    advanceTimeBy(1.seconds)
     runCurrent()
 
     val loaded = harness.coordinator.state.value
