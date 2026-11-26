@@ -6,8 +6,6 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import androidx.annotation.MainThread
-import kotlin.math.PI
-import kotlin.math.abs
 
 class OrientationManager : SensorEventListener {
 
@@ -25,8 +23,11 @@ class OrientationManager : SensorEventListener {
 
   private var sensorManager: SensorManager? = null
   private var orientation = Orientation()
-  private var oldOrientation: Orientation? = null
   private var sensorRunning = false
+
+  private val pitchFilter = AngleLowPassFilter()
+  private val rollFilter = AngleLowPassFilter()
+  private val azimuthFilter = AngleLowPassFilter()
 
   var onOrientationChangedListener: OnOrientationChangedListener? = null
 
@@ -92,7 +93,9 @@ class OrientationManager : SensorEventListener {
       sensorRunning = false
       hasGravity = false
       hasGeoMag = false
-      oldOrientation = null
+      pitchFilter.reset()
+      rollFilter.reset()
+      azimuthFilter.reset()
     }
   }
 
@@ -134,39 +137,11 @@ class OrientationManager : SensorEventListener {
     val azimuth = orientationArray[0]
     val roll = orientationArray[2]
 
-    oldOrientation?.let {
-      orientation.pitch = lowPass(pitch, it.pitch)
-      orientation.azimuth = lowPass(azimuth, it.azimuth)
-      orientation.roll = lowPass(roll, it.roll)
-    }
-      ?: run {
-        orientation.pitch = pitch
-        orientation.azimuth = azimuth
-        orientation.roll = roll
-      }
+    orientation.pitch = pitchFilter.filter(pitch)
+    orientation.azimuth = azimuthFilter.filter(azimuth)
+    orientation.roll = rollFilter.filter(roll)
 
-    oldOrientation = orientation.copy()
     onOrientationChangedListener?.onOrientationChanged(orientation)
-  }
-
-  private fun lowPass(newValue: Float, oldValue: Float): Float {
-    val delta = newValue - oldValue
-    return if (abs(delta) < CIRCLE / 2) {
-      if (abs(delta) > SMOOTH_THRESHOLD) newValue else oldValue + SMOOTH_FACTOR * delta
-    } else {
-      val wrappedDelta = CIRCLE - abs(delta)
-      when {
-        wrappedDelta > SMOOTH_THRESHOLD -> {
-          newValue
-        }
-        oldValue > newValue -> {
-          ((oldValue + SMOOTH_FACTOR * wrappedDelta + CIRCLE) % CIRCLE)
-        }
-        else -> {
-          ((oldValue - SMOOTH_FACTOR * wrappedDelta + CIRCLE) % CIRCLE)
-        }
-      }
-    }
   }
 
   override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) = Unit
@@ -178,11 +153,5 @@ class OrientationManager : SensorEventListener {
 
   interface OnOrientationChangedListener {
     fun onOrientationChanged(orientation: Orientation)
-  }
-
-  companion object {
-    private const val CIRCLE: Float = (PI * 2).toFloat()
-    private const val SMOOTH_THRESHOLD: Float = CIRCLE / 20f // ~18°
-    private const val SMOOTH_FACTOR: Float = 0.12f
   }
 }

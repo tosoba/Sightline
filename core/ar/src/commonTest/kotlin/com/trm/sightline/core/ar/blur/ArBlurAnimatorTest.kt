@@ -1,4 +1,4 @@
-package com.trm.sightline.shared
+package com.trm.sightline.core.ar.blur
 
 import kotlin.test.Test
 import kotlin.test.assertEquals

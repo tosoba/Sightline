@@ -27,7 +27,7 @@ struct CategoryPlacesScreen: View {
         else {
             return nil
         }
-        return place.geoLocation
+        return place.location
     }
 
     var body: some View {
@@ -103,7 +103,7 @@ struct CategoryPlacesScreen: View {
                 selectedPlaceID = place.id
             } label: {
                 HStack(spacing: 12) {
-                    Text(place.name.placeInitials)
+                    Text(place.initials)
                         .font(.headline)
                         .frame(width: 44, height: 44)
                         .background(
@@ -116,8 +116,8 @@ struct CategoryPlacesScreen: View {
                             .lineLimit(2)
                         if let activeLocation = model.activeLocation {
                             Text(
-                                DistanceFormat.formatted(
-                                    meters: activeLocation.distanceTo(other: place.geoLocation)
+                                formatDistance(
+                                    meters: activeLocation.distanceTo(other: place.location)
                                 )
                             )
                             .font(.caption)
@@ -160,29 +160,5 @@ struct CategoryPlacesScreen: View {
         if !model.isActive(route.category) {
             dismiss()
         }
-    }
-}
-
-private extension Place {
-    var geoLocation: GeoLocation {
-        GeoLocation(
-            latitude: latitude,
-            longitude: longitude,
-            altitude: 0,
-            horizontalAccuracyMeters: nil,
-            timestampMillis: 0
-        )
-    }
-}
-
-private extension String {
-    /// Matches Android's `String.placeInitials()`: the first characters of the first two words.
-    var placeInitials: String {
-        let words = split(whereSeparator: \.isWhitespace)
-        guard let first = words.first, let character = first.first else { return "?" }
-        if words.count >= 2, let second = words[1].first {
-            return "\(character)\(second)".uppercased()
-        }
-        return String(character).uppercased()
     }
 }

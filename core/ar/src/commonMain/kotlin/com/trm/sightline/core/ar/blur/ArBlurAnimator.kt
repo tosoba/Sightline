@@ -1,4 +1,4 @@
-package com.trm.sightline.shared
+package com.trm.sightline.core.ar.blur
 
 /**
  * One frame of blur state, handed to the Metal renderer.

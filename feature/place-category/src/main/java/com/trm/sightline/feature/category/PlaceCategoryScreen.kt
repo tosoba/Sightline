@@ -66,7 +66,6 @@ import androidx.lifecycle.compose.currentStateAsState
 import com.trm.sightline.core.ar.util.sideSheetWidthDp
 import com.trm.sightline.core.common.R as commonR
 import com.trm.sightline.core.common.util.formattedDistance
-import com.trm.sightline.core.common.util.location
 import com.trm.sightline.core.model.GeoLocation
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
@@ -322,7 +321,7 @@ private fun PlaceListItem(place: Place, location: GeoLocation?, onClick: () -> U
     ) {
       Box(contentAlignment = Alignment.Center) {
         Text(
-          text = place.name.placeInitials(),
+          text = place.initials,
           style = MaterialTheme.typography.titleLarge,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -370,14 +369,5 @@ private fun PlaceListItem(place: Place, location: GeoLocation?, onClick: () -> U
         modifier = Modifier.size(24.dp),
       )
     }
-  }
-}
-
-private fun String.placeInitials(): String {
-  val words = trim().split(Regex("\\s+")).filter(String::isNotEmpty)
-  return when {
-    words.isEmpty() -> "?"
-    words.size >= 2 -> "${words[0].first()}${words[1].first()}".uppercase()
-    else -> words[0].first().toString().uppercase()
   }
 }

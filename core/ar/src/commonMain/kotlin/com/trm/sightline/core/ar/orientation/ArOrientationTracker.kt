@@ -1,8 +1,5 @@
-package com.trm.sightline.shared
+package com.trm.sightline.core.ar.orientation
 
-import com.trm.sightline.core.ar.orientation.Orientation
-import kotlin.math.PI
-import kotlin.math.abs
 import kotlin.math.asin
 import kotlin.math.atan2
 
@@ -37,26 +34,20 @@ data class RotationMatrix(
  * Stateful low-pass, not thread-safe: create one per renderer and call [update] from one thread.
  */
 class ArOrientationTracker {
-  private var previous: Orientation? = null
+  private val pitchFilter = AngleLowPassFilter()
+  private val rollFilter = AngleLowPassFilter()
+  private val azimuthFilter = AngleLowPassFilter()
 
   fun update(rotationMatrix: RotationMatrix): Orientation {
     val raw = remap(rotationMatrix)
-    val smoothed = previous?.let { old ->
-      Orientation(
-        pitch = lowPass(raw.pitch, old.pitch),
-        roll = lowPass(raw.roll, old.roll),
-        azimuth = lowPass(raw.azimuth, old.azimuth),
-      )
-    } ?: raw
-    previous = smoothed.copy()
-    return smoothed
+    return Orientation(
+      pitch = pitchFilter.filter(raw.pitch),
+      roll = rollFilter.filter(raw.roll),
+      azimuth = azimuthFilter.filter(raw.azimuth),
+    )
   }
 
   companion object {
-    private const val CIRCLE = (PI * 2).toFloat()
-    private const val SMOOTH_THRESHOLD = CIRCLE / 20f
-    private const val SMOOTH_FACTOR = 0.12f
-
     fun remap(matrix: RotationMatrix): Orientation {
       val outEast = matrix.m32
       // Negative zero would make atan2 jump to pi for the degenerate flat-on-a-table pose.
@@ -73,20 +64,6 @@ class ArOrientationTracker {
         roll = roll.toFloat(),
         azimuth = azimuth.toFloat(),
       )
-    }
-
-    private fun lowPass(newValue: Float, oldValue: Float): Float {
-      val delta = newValue - oldValue
-      return if (abs(delta) < CIRCLE / 2) {
-        if (abs(delta) > SMOOTH_THRESHOLD) newValue else oldValue + SMOOTH_FACTOR * delta
-      } else {
-        val wrappedDelta = CIRCLE - abs(delta)
-        when {
-          wrappedDelta > SMOOTH_THRESHOLD -> newValue
-          oldValue > newValue -> (oldValue + SMOOTH_FACTOR * wrappedDelta + CIRCLE) % CIRCLE
-          else -> (oldValue - SMOOTH_FACTOR * wrappedDelta + CIRCLE) % CIRCLE
-        }
-      }
     }
   }
 }

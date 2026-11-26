@@ -1,4 +1,4 @@
-package com.trm.sightline.shared
+package com.trm.sightline.core.ar.orientation
 
 import com.trm.sightline.core.ar.math.ScreenRotation
 import kotlin.math.PI

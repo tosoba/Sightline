@@ -3,7 +3,6 @@ package com.trm.sightline.shared
 import com.trm.sightline.core.common.RequestError
 import com.trm.sightline.core.common.location.LocationProvider
 import com.trm.sightline.core.common.toRequestError
-import com.trm.sightline.core.common.util.location
 import com.trm.sightline.core.domain.AddressRepository
 import com.trm.sightline.core.domain.PlacesRepository
 import com.trm.sightline.core.domain.UserPreferencesRepository
