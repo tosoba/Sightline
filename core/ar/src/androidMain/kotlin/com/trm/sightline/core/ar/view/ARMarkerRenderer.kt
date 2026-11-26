@@ -78,7 +78,7 @@ class ARMarkerRenderer(private val context: Context) {
   private val layoutConfig =
     MarkerLayoutConfig(
       minMarkerHeight = minMarkerHeightPx,
-      maxMarkerHeight = cameraViewHeightPx,
+      maxMarkerHeight = maxOf(cameraViewHeightPx, minMarkerHeightPx),
       minMarkerWidth = 0f,
       maxMarkerWidth = context.resources.displayMetrics.widthPixels.toFloat(),
       targetMarkerWidth = context.dpToPx(TARGET_MARKER_WIDTH_DP),
