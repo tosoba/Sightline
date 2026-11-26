@@ -129,8 +129,8 @@ fun SharedTransitionScope.PlacesContent(
                 !placeCategoriesEnabled -> R.string.loading_location
                 locationAddress is LoadingState.Loading -> R.string.loading_location_address
                 else -> R.string.location_address_not_found
-              }
-            )
+              },
+            ),
           )
         },
         leadingIcon = {
@@ -147,7 +147,7 @@ fun SharedTransitionScope.PlacesContent(
                 onClick = {
                   focusManager.clearFocus()
                   scope.launch { searchBarState.animateToCollapsed() }
-                }
+                },
               ) {
                 Icon(
                   imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -199,7 +199,7 @@ fun SharedTransitionScope.PlacesContent(
                   text =
                     stringResource(
                       if (locationAddress.data.trim().isEmpty()) R.string.start_typing_to_search
-                      else R.string.query_too_short
+                      else R.string.query_too_short,
                     ),
                   style = MaterialTheme.typography.titleMedium,
                   color = MaterialTheme.colorScheme.onSurface,
@@ -216,7 +216,7 @@ fun SharedTransitionScope.PlacesContent(
                 },
                 colors =
                   ListItemDefaults.colors(
-                    containerColor = ListItemDefaults.colors().containerColor.copy(alpha = 0f)
+                    containerColor = ListItemDefaults.colors().containerColor.copy(alpha = 0f),
                   ),
                 modifier =
                   Modifier.animateItem().clickable {
@@ -296,7 +296,7 @@ fun SharedTransitionScope.PlacesContent(
     Text(
       text = stringResource(R.string.openstreetmap_attribution),
       style = MaterialTheme.typography.bodySmall,
-      color = MaterialTheme.colorScheme.onSurfaceVariant,
+      color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = alpha / 2f),
       textAlign = TextAlign.Center,
     )
   }
