@@ -46,10 +46,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.trm.sightline.MainPage
 import com.trm.sightline.R
-import com.trm.sightline.core.ar.util.collapsedBottomSheetContentHeightDp
-import com.trm.sightline.core.ar.util.collapsedBottomSheetDragHandleHeightDp
 import com.trm.sightline.core.common.util.formattedLabel
 import com.trm.sightline.core.model.PlaceSearchRadius
+import com.trm.sightline.core.ui.collapsedBottomSheetContentHeightDp
+import com.trm.sightline.core.ui.collapsedBottomSheetDragHandleHeightDp
 
 @Composable
 fun BoxScope.MainPagerToolbar(

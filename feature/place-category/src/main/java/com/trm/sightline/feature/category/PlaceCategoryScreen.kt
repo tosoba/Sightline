@@ -14,28 +14,17 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.displayCutout
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.BottomSheetDefaults
-import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
@@ -45,37 +34,30 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.ToggleButtonDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.currentStateAsState
-import com.trm.sightline.core.ar.util.sideSheetWidthDp
 import com.trm.sightline.core.common.R as commonR
 import com.trm.sightline.core.common.util.formattedDistance
 import com.trm.sightline.core.model.GeoLocation
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
+import com.trm.sightline.core.ui.AdaptiveSheetScaffold
 import com.trm.sightline.core.ui.MapCameraAnimateToBoundingBoxEffect
 import com.trm.sightline.core.ui.MapPreview
-import com.trm.sightline.core.ui.rememberBottomSheetScaffoldStateForScreenHeight
 import com.trm.sightline.core.ui.R as uiR
 import com.trm.sightline.core.ui.icon
 import com.trm.sightline.core.ui.labelRes
-import com.trm.sightline.core.ui.rememberBottomSheetExpandedProgress
 import com.trm.sightline.core.ui.rememberMapPlaceState
 import com.trm.sightline.core.ui.rememberMapPlacesBoundingBox
 import com.trm.sightline.core.ui.toCameraPadding
@@ -93,70 +75,14 @@ fun SharedTransitionScope.PlaceCategoryScreen(
   onBack: () -> Unit,
 ) {
   val scope = rememberCoroutineScope()
-  val scaffoldState = rememberBottomSheetScaffoldStateForScreenHeight(isCompactHeight)
-  val sheetState = scaffoldState.bottomSheetState
-
-  val density = LocalDensity.current
-  val (sheetNonPeekHeightState, expandedProgressState) =
-    rememberBottomSheetExpandedProgress(sheetState)
-  var sheetNonPeekHeight by sheetNonPeekHeightState
-  val expandedProgress by expandedProgressState
-
   val mapPlacesBoundingBox =
     rememberMapPlacesBoundingBox(places = route.places, percentageIncrease = 0.1)
   val mapState = rememberMapPlaceState(places = route.places, currentLocation = location)
 
-  @Composable
-  fun sheetContent(peekHeight: Dp, onPlaceItemClick: (Place) -> Unit) {
-    LazyColumn(
-      modifier =
-        if (isCompactHeight) {
-          Modifier.width(sideSheetWidthDp.dp)
-            .fillMaxHeight()
-            .systemBarsPadding()
-            .navigationBarsPadding()
-            .windowInsetsPadding(WindowInsets.displayCutout.only(WindowInsetsSides.End))
-        } else {
-          Modifier.fillMaxWidth().navigationBarsPadding().onGloballyPositioned { layoutCoordinates
-            ->
-            sheetNonPeekHeight =
-              layoutCoordinates.size.height.toFloat() - with(density) { peekHeight.toPx() }
-          }
-        },
-      contentPadding = PaddingValues(bottom = 16.dp),
-    ) {
-      item {
-        PlaceCategoryHeader(
-          category = route.category,
-          placesCount = route.places.size,
-          animatedVisibilityScope = animatedVisibilityScope,
-        )
-      }
-
-      items(route.places, key = Place::id) { place ->
-        PlaceListItem(place = place, location = location, onClick = { onPlaceItemClick(place) })
-      }
-    }
-  }
-
   BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
     val sheetPeekHeight = if (isCompactHeight) 0.dp else maxHeight / 2
-    val sheetContainerColor = BottomSheetDefaults.ContainerColor.copy(alpha = .9f)
-    val mapPadding =
-      PaddingValues(
-        bottom =
-          if (isCompactHeight) {
-            WindowInsets.safeDrawing
-              .only(WindowInsetsSides.Bottom)
-              .asPaddingValues()
-              .calculateBottomPadding()
-          } else {
-            sheetPeekHeight
-          },
-        end = if (isCompactHeight) sideSheetWidthDp.dp else 0.dp,
-      )
 
-    suspend fun animateToPlace(place: Place) {
+    suspend fun animateToPlace(place: Place, mapPadding: PaddingValues) {
       mapState.animateCamera(
         CameraUpdate(
           center = Position(longitude = place.longitude, latitude = place.latitude),
@@ -168,31 +94,36 @@ fun SharedTransitionScope.PlaceCategoryScreen(
       )
     }
 
-    BottomSheetScaffold(
-      scaffoldState = scaffoldState,
+    AdaptiveSheetScaffold(
+      isCompactHeight = isCompactHeight,
       sheetPeekHeight = sheetPeekHeight,
-      sheetContainerColor = sheetContainerColor,
-      sheetDragHandle = {
-        Column(
-          modifier = Modifier.fillMaxWidth(),
-          horizontalAlignment = Alignment.CenterHorizontally,
+      sheetContainerColor = BottomSheetDefaults.ContainerColor.copy(alpha = .9f),
+      applyContentPadding = false,
+      sheetContentHorizontalPadding = 0.dp,
+      sheetContentFillModifier = Modifier.fillMaxWidth(),
+      sheetContent = { sheet, sheetModifier ->
+        LazyColumn(
+          modifier = sheetModifier,
+          contentPadding = PaddingValues(bottom = 16.dp),
         ) {
-          Spacer(
-            modifier =
-              Modifier.height(
-                WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding() * expandedProgress
-              )
-          )
-          BottomSheetDefaults.DragHandle(color = MaterialTheme.colorScheme.onSurface)
+          item {
+            PlaceCategoryHeader(
+              category = route.category,
+              placesCount = route.places.size,
+              animatedVisibilityScope = animatedVisibilityScope,
+            )
+          }
+
+          items(route.places, key = Place::id) { place ->
+            PlaceListItem(
+              place = place,
+              location = location,
+              onClick = { scope.launch { animateToPlace(place, sheet.contentPadding) } },
+            )
+          }
         }
       },
-      sheetContent = {
-        sheetContent(
-          peekHeight = sheetPeekHeight,
-          onPlaceItemClick = { place -> scope.launch { animateToPlace(place) } },
-        )
-      },
-    ) {
+    ) { sheet, _ ->
       Box(modifier = Modifier.fillMaxSize()) {
         AnimatedVisibility(
           visible =
@@ -206,7 +137,7 @@ fun SharedTransitionScope.PlaceCategoryScreen(
           MapCameraAnimateToBoundingBoxEffect(
             boundingBox = mapPlacesBoundingBox,
             mapState = mapState,
-            padding = mapPadding,
+            padding = sheet.contentPadding,
           )
 
           MapPreview(
@@ -229,19 +160,6 @@ fun SharedTransitionScope.PlaceCategoryScreen(
             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
             contentDescription = stringResource(commonR.string.back),
           )
-        }
-
-        if (isCompactHeight) {
-          Surface(
-            modifier = Modifier.fillMaxHeight().align(Alignment.CenterEnd),
-            color = sheetContainerColor,
-            tonalElevation = 1.dp,
-          ) {
-            sheetContent(
-              peekHeight = sheetPeekHeight,
-              onPlaceItemClick = { place -> scope.launch { animateToPlace(place) } },
-            )
-          }
         }
       }
     }

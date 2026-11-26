@@ -52,4 +52,6 @@ dependencies {
   runtimeOnly(libs.maplibre.compose.runtime.vulkan.android)
 
   implementation(libs.material)
+
+  testImplementation(kotlin("test-junit"))
 }

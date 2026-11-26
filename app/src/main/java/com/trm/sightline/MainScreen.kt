@@ -9,40 +9,20 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.calculateEndPadding
-import androidx.compose.foundation.layout.calculateStartPadding
-import androidx.compose.foundation.layout.displayCutout
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomSheetDefaults
-import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetValue
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,22 +31,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.trm.sightline.composable.MainPager
 import com.trm.sightline.composable.MainPagerToolbar
 import com.trm.sightline.composable.MainScreenErrorMessage
 import com.trm.sightline.core.ar.math.RoundedRectF
-import com.trm.sightline.core.ar.util.collapsedBottomSheetContentHeightDp
 import com.trm.sightline.core.ar.util.dpToPx
 import com.trm.sightline.core.ar.util.getScreenSize
 import com.trm.sightline.core.ar.util.sideSheetRectF
-import com.trm.sightline.core.ar.util.sideSheetWidthDp
 import com.trm.sightline.core.common.PermissionStatus
 import com.trm.sightline.core.common.util.CheckLocationSettingsResult
 import com.trm.sightline.core.common.util.checkLocationSettings
@@ -80,8 +56,8 @@ import com.trm.sightline.core.model.MapCameraPosition
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
 import com.trm.sightline.core.model.PlaceSearchRadius
-import com.trm.sightline.core.ui.rememberBottomSheetExpandedProgress
-import com.trm.sightline.core.ui.rememberBottomSheetScaffoldStateForScreenHeight
+import com.trm.sightline.core.ui.AdaptiveSheetScaffold
+import com.trm.sightline.core.ui.collapsedBottomSheetContentHeightDp
 import com.trm.sightline.core.ui.rememberPermissionState
 import com.trm.sightline.feature.places.PlacesContent
 import com.trm.sightline.feature.places.PlacesLayout
@@ -238,16 +214,7 @@ fun SharedTransitionScope.MainScreen(
   }
 
   val userLocationEnabled = isUserLocationEnabled && locationPermissionState.isGranted
-
-  val scaffoldState = rememberBottomSheetScaffoldStateForScreenHeight(isCompactHeight)
-  val sheetState = scaffoldState.bottomSheetState
-
   val focusManager = LocalFocusManager.current
-  LaunchedEffect(sheetState.targetValue) {
-    if (sheetState.targetValue == SheetValue.PartiallyExpanded) {
-      focusManager.clearFocus()
-    }
-  }
 
   val sheetPeekHeight =
     if (isCompactHeight) {
@@ -256,81 +223,6 @@ fun SharedTransitionScope.MainScreen(
       collapsedBottomSheetContentHeightDp.dp +
         WindowInsets.navigationBars.getBottom(LocalDensity.current).dp
     }
-  val (sheetNonPeekHeightState, expandedProgressState, sheetOffsetState) =
-    rememberBottomSheetExpandedProgress(sheetState)
-  var sheetNonPeekHeight by sheetNonPeekHeightState
-  val expandedProgress by expandedProgressState
-  val sheetOffset by sheetOffsetState
-  val cameraPreviewBlurred by remember {
-    derivedStateOf { !isCompactHeight && expandedProgress != 0f }
-  }
-
-  val placesSheetContent =
-    @Composable {
-      val density = LocalDensity.current
-      PlacesContent(
-        places = places,
-        userLocationEnabled = userLocationEnabled,
-        activeLocation = activeLocation,
-        userLocationAddress = userLocationAddress,
-        customLocationAddress = customLocationAddress,
-        customLocationSearchResults = customLocationSearchResults,
-        layout =
-          if (isCompactHeight || cameraPreviewBlurred) PlacesLayout.Grid else PlacesLayout.Row,
-        alpha =
-          when (selectedPage) {
-            MainPage.Camera -> .75f
-            MainPage.Map -> 1f
-          },
-        animatedVisibilityScope = animatedVisibilityScope,
-        modifier =
-          if (isCompactHeight) {
-            Modifier.width(sideSheetWidthDp.dp)
-              .fillMaxHeight()
-              .systemBarsPadding()
-              .navigationBarsPadding()
-              .windowInsetsPadding(WindowInsets.displayCutout.only(WindowInsetsSides.End))
-              .padding(horizontal = 16.dp)
-          } else {
-            Modifier.fillMaxSize()
-              .navigationBarsPadding()
-              .padding(horizontal = 16.dp)
-              .onGloballyPositioned { layoutCoordinates ->
-                sheetNonPeekHeight =
-                  layoutCoordinates.size.height.toFloat() - with(density) { sheetPeekHeight.toPx() }
-              }
-          },
-        onSearchFocusChange = { isFocused ->
-          if (isFocused && !isCompactHeight) {
-            scope.launch { sheetState.expand() }
-          }
-        },
-        onToggleUserLocationEnabled = { enabled ->
-          if (enabled) {
-            when (locationPermissionState.status) {
-              PermissionStatus.Granted -> {
-                scope.launch { checkLocationSettings() }
-              }
-              PermissionStatus.PermanentlyDenied -> {
-                showLocationPermissionSettingsDialog = true
-              }
-              else -> {
-                locationPermissionFlowInProgress = true
-                locationPermissionState.launchRequest()
-              }
-            }
-          } else {
-            locationPermissionFlowInProgress = false
-            onUserLocationEnabledChange(false)
-          }
-        },
-        onCustomLocationAddressChange = onCustomLocationAddressChange,
-        onCustomLocationSearchResultClick = onCustomLocationSearchResultClick,
-        onCancelCustomLocationSearch = onCancelCustomLocationSearch,
-        onTogglePlaceCategory = onTogglePlaceCategory,
-        onCategoryClick = onCategoryClick,
-      )
-    }
 
   val sheetContainerColor =
     when (selectedPage) {
@@ -338,116 +230,123 @@ fun SharedTransitionScope.MainScreen(
       MainPage.Camera if cameraPermissionState.isGranted -> Color.Transparent
       else -> BottomSheetDefaults.ContainerColor
     }
+
   Box(modifier = Modifier.fillMaxSize()) {
-    BottomSheetScaffold(
-      scaffoldState = scaffoldState,
-      sheetDragHandle = {
-        Column(
-          modifier = Modifier.fillMaxWidth(),
-          horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-          Spacer(
-            modifier =
-              Modifier.height(
-                WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding() * expandedProgress
-              )
-          )
-          BottomSheetDefaults.DragHandle(color = MaterialTheme.colorScheme.onSurface)
-        }
-      },
-      sheetContainerColor = sheetContainerColor,
+    AdaptiveSheetScaffold(
+      isCompactHeight = isCompactHeight,
       sheetPeekHeight = sheetPeekHeight,
-      sheetContent = { placesSheetContent() },
-    ) { innerPadding ->
-      Box(
-        modifier =
-          Modifier.fillMaxSize()
-            .padding(
-              top = innerPadding.calculateTopPadding(),
-              bottom = if (isCompactHeight) innerPadding.calculateBottomPadding() else 0.dp,
-              start = innerPadding.calculateStartPadding(LocalLayoutDirection.current),
-              end = innerPadding.calculateEndPadding(LocalLayoutDirection.current),
-            ),
-        contentAlignment = Alignment.Center,
-      ) {
-        MainPager(
-          pagerState = pagerState,
-          location = activeLocation,
-          places = allPlaces,
-          lastMapPosition = lastMapPosition,
-          isCompactHeight = isCompactHeight,
-          cameraPreviewBlurred = cameraPreviewBlurred,
-          blurredRectFs =
-            listOf(
-              with(LocalContext.current) {
-                if (isCompactHeight) {
-                  val sideSheetRect = sideSheetRectF
-                  RoundedRectF(
-                    left = sideSheetRect.left,
-                    top = sideSheetRect.top,
-                    right = sideSheetRect.right,
-                    bottom = sideSheetRect.bottom,
-                    cornerRadius = 0f,
-                  )
-                } else {
-                  val screenSize = getScreenSize()
-                  RoundedRectF(
-                    left = 0f,
-                    top = sheetOffset,
-                    right = screenSize.width.toFloat(),
-                    bottom = screenSize.height.toFloat(),
-                    cornerRadius = dpToPx(32f),
-                  )
-                }
-              }
-            ),
-          cameraPreviewOverlayVisible = toolbarsVisible,
-          cameraPermissionGranted = cameraPermissionState.isGranted,
-          onCameraPermissionGrantClick = {
-            if (cameraPermissionState.status == PermissionStatus.PermanentlyDenied) {
-              showCameraPermissionSettingsDialog = true
-            } else {
-              cameraPermissionState.launchRequest()
+      sheetContainerColor = sheetContainerColor,
+      sheetContent = { sheet, sheetModifier ->
+        PlacesContent(
+          places = places,
+          userLocationEnabled = userLocationEnabled,
+          activeLocation = activeLocation,
+          userLocationAddress = userLocationAddress,
+          customLocationAddress = customLocationAddress,
+          customLocationSearchResults = customLocationSearchResults,
+          layout =
+            if (isCompactHeight || sheet.cameraPreviewBlurred) PlacesLayout.Grid
+            else PlacesLayout.Row,
+          alpha =
+            when (selectedPage) {
+              MainPage.Camera -> .75f
+              MainPage.Map -> 1f
+            },
+          animatedVisibilityScope = animatedVisibilityScope,
+          modifier = sheetModifier,
+          onSearchFocusChange = { isFocused ->
+            if (isFocused && !isCompactHeight) {
+              scope.launch { sheet.sheetState.expand() }
             }
           },
-          contentPadding =
-            PaddingValues(
-              bottom =
-                if (isCompactHeight) {
-                  WindowInsets.safeDrawing
-                    .only(WindowInsetsSides.Bottom)
-                    .asPaddingValues()
-                    .calculateBottomPadding()
-                } else {
-                  sheetPeekHeight
-                },
-              end = if (isCompactHeight) sideSheetWidthDp.dp else 0.dp,
-            ),
-          onCameraPreviewTouch = { toolbarsVisible = !toolbarsVisible },
-          onMapPositionChanged = onMapPositionChanged,
-        )
-
-        MainPagerToolbar(
-          visible = toolbarsVisible && (isCompactHeight || !cameraPreviewBlurred),
-          isCompactHeight = isCompactHeight,
-          selectedPage = selectedPage,
-          searchRadius = searchRadius,
-          onPageSelected = { page ->
-            scope.launch { pagerState.animateScrollToPage(page.ordinal) }
+          onToggleUserLocationEnabled = { enabled ->
+            if (enabled) {
+              when (locationPermissionState.status) {
+                PermissionStatus.Granted -> {
+                  scope.launch { checkLocationSettings() }
+                }
+                PermissionStatus.PermanentlyDenied -> {
+                  showLocationPermissionSettingsDialog = true
+                }
+                else -> {
+                  locationPermissionFlowInProgress = true
+                  locationPermissionState.launchRequest()
+                }
+              }
+            } else {
+              locationPermissionFlowInProgress = false
+              onUserLocationEnabledChange(false)
+            }
           },
-          onSearchRadiusChange = onSearchRadiusChange,
+          onCustomLocationAddressChange = onCustomLocationAddressChange,
+          onCustomLocationSearchResultClick = onCustomLocationSearchResultClick,
+          onCancelCustomLocationSearch = onCancelCustomLocationSearch,
+          onTogglePlaceCategory = onTogglePlaceCategory,
+          onCategoryClick = onCategoryClick,
         )
-
-        if (isCompactHeight) {
-          Surface(
-            modifier = Modifier.fillMaxHeight().align(Alignment.CenterEnd),
-            color = sheetContainerColor,
-            tonalElevation = 1.dp,
-          ) {
-            placesSheetContent()
-          }
+      },
+    ) { sheet, _ ->
+      LaunchedEffect(sheet.sheetState.targetValue) {
+        if (sheet.sheetState.targetValue == SheetValue.PartiallyExpanded) {
+          focusManager.clearFocus()
         }
       }
+
+      MainPager(
+        pagerState = pagerState,
+        location = activeLocation,
+        places = allPlaces,
+        lastMapPosition = lastMapPosition,
+        isCompactHeight = isCompactHeight,
+        cameraPreviewBlurred = sheet.cameraPreviewBlurred,
+        blurredRectFs =
+          listOf(
+            with(LocalContext.current) {
+              if (isCompactHeight) {
+                val sideSheetRect = sideSheetRectF
+                RoundedRectF(
+                  left = sideSheetRect.left,
+                  top = sideSheetRect.top,
+                  right = sideSheetRect.right,
+                  bottom = sideSheetRect.bottom,
+                  cornerRadius = 0f,
+                )
+              } else {
+                val screenSize = getScreenSize()
+                RoundedRectF(
+                  left = 0f,
+                  top = sheet.sheetOffset.value,
+                  right = screenSize.width.toFloat(),
+                  bottom = screenSize.height.toFloat(),
+                  cornerRadius = dpToPx(32f),
+                )
+              }
+            }
+          ),
+        cameraPreviewOverlayVisible = toolbarsVisible,
+        cameraPermissionGranted = cameraPermissionState.isGranted,
+        onCameraPermissionGrantClick = {
+          if (cameraPermissionState.status == PermissionStatus.PermanentlyDenied) {
+            showCameraPermissionSettingsDialog = true
+          } else {
+            cameraPermissionState.launchRequest()
+          }
+        },
+        contentPadding = sheet.contentPadding,
+        onCameraPreviewTouch = { toolbarsVisible = !toolbarsVisible },
+        onMapPositionChanged = onMapPositionChanged,
+      )
+
+      MainPagerToolbar(
+        visible = toolbarsVisible && (isCompactHeight || !sheet.cameraPreviewBlurred),
+        isCompactHeight = isCompactHeight,
+        selectedPage = selectedPage,
+        searchRadius = searchRadius,
+        onPageSelected = { page ->
+          scope.launch { pagerState.animateScrollToPage(page.ordinal) }
+        },
+        onSearchRadiusChange = onSearchRadiusChange,
+      )
     }
 
     MainScreenErrorMessage(

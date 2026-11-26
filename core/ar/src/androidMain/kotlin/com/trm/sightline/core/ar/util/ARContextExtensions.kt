@@ -11,6 +11,9 @@ import android.view.WindowInsets
 import android.view.WindowManager
 import androidx.core.view.WindowInsetsCompat
 import com.trm.sightline.core.ar.math.ScreenRotation
+import com.trm.sightline.core.ui.collapsedBottomSheetContentHeightDp
+import com.trm.sightline.core.ui.collapsedBottomSheetDragHandleHeightDp
+import com.trm.sightline.core.ui.sideSheetWidthDp
 
 val Context.phoneRotation: Int
   get() =
@@ -30,10 +33,6 @@ val Context.screenRotation: ScreenRotation
       else -> throw IllegalStateException()
     }
 
-const val sideSheetWidthDp = 400
-const val collapsedBottomSheetContentHeightDp = 186
-const val collapsedBottomSheetDragHandleHeightDp = 48
-
 internal val Context.cameraPreviewVerticalPaddingPx: Float
   get() = dpToPx(16f)
 
@@ -50,8 +49,14 @@ internal val Context.statusBarTopInsetPx: Float
   get() = rootWindowInsets.getInsets(WindowInsetsCompat.Type.statusBars()).top.toFloat()
 
 internal val Context.rootWindowInsets: WindowInsetsCompat
-  get() =
-    WindowInsetsCompat.toWindowInsetsCompat((this as Activity).window.decorView.rootWindowInsets)
+  get() {
+    val insets = (this as Activity).window.decorView.rootWindowInsets
+    return if (insets != null) {
+      WindowInsetsCompat.toWindowInsetsCompat(insets)
+    } else {
+      WindowInsetsCompat.CONSUMED
+    }
+  }
 
 internal val Context.isCompactHeight: Boolean
   get() = resources.displayMetrics.run { heightPixels / density < 480f }

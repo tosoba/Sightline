@@ -36,12 +36,12 @@ import com.trm.sightline.core.ar.util.drawMultilineText
 import com.trm.sightline.core.ar.util.isCompactHeight
 import com.trm.sightline.core.ar.util.navigationBarsBottomInsetPx
 import com.trm.sightline.core.ar.util.screenRotation
-import com.trm.sightline.core.ar.util.sideSheetWidthDp
 import com.trm.sightline.core.ar.util.spToPx
 import com.trm.sightline.core.ar.util.statusBarTopInsetPx
 import com.trm.sightline.core.common.util.formatMarkerDistance
 import com.trm.sightline.core.model.GeoLocation
 import com.trm.sightline.core.model.PlaceCategory
+import com.trm.sightline.core.ui.sideSheetWidthDp
 import com.trm.sightline.core.ui.R
 import com.trm.sightline.core.ui.icon
 import java.util.Objects
