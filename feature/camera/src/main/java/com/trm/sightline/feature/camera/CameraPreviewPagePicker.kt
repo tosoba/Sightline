@@ -15,6 +15,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
+import com.trm.sightline.core.ar.layout.MarkerPageWindow
 
 @Composable
 fun CameraPreviewPagePicker(
@@ -24,14 +25,7 @@ fun CameraPreviewPagePicker(
   onPageSelected: (Int) -> Unit,
 ) {
   VerticalFloatingToolbar(expanded = true, modifier = modifier) {
-    remember(currentPage, totalPages) {
-        when {
-          totalPages <= 3 -> (0 until totalPages).toList()
-          currentPage == 0 -> listOf(0, 1, 2)
-          currentPage >= totalPages - 1 -> listOf(totalPages - 3, totalPages - 2, totalPages - 1)
-          else -> listOf(currentPage - 1, currentPage, currentPage + 1)
-        }
-      }
+    remember(currentPage, totalPages) { MarkerPageWindow.compute(currentPage, totalPages) }
       .forEach { index ->
         CameraPreviewPagePickerItem(
           pageNumber = index + 1,

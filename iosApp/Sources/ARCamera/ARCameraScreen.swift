@@ -20,6 +20,21 @@ struct ARCameraMetalView: UIViewRepresentable {
     }
 }
 
+/// One value-type snapshot of everything the AR camera model reacts to. A single `.onChange` of
+/// this value replaces the per-field modifier chain while preserving each side effect.
+private struct ARCameraInput: Equatable {
+    let viewport: CGSize
+    let safeAreaInsets: EdgeInsets
+    let overlayOrigin: CGPoint
+    let displayScale: CGFloat
+    let isActive: Bool
+    let sheetObscuresCamera: Bool
+    let colorScheme: ColorScheme
+    let scenePhase: ScenePhase
+    let places: [Place]
+    let activeLocation: GeoLocation?
+}
+
 /// The AR camera page. It takes the shared places model (owned by `MainScreen`) so the camera does
 /// not observe location a second time, and it starts capture/motion only while the page is active.
 struct ARCameraScreen: View {
@@ -36,6 +51,7 @@ struct ARCameraScreen: View {
 
     var body: some View {
         GeometryReader { proxy in
+            let input = input(proxy: proxy)
             ZStack {
                 Color.black.ignoresSafeArea()
 
@@ -94,76 +110,93 @@ struct ARCameraScreen: View {
                 if camera == nil {
                     let model = ARCameraModel(nearby: nearbyModel)
                     camera = model
-                    model.updateContrastingColor(for: colorScheme)
-                    model.sheetObscuresCamera = sheetObscuresCamera
-                    syncViewport(model, size: proxy.size, insets: proxy.safeAreaInsets, proxy: proxy)
-                    model.setActive(isActive)
+                    model.updateContrastingColor(for: input.colorScheme)
+                    model.sheetObscuresCamera = input.sheetObscuresCamera
+                    applyViewport(model, input: input)
+                    model.setActive(input.isActive)
                 }
             }
             .onAppear {
-                camera?.updateContrastingColor(for: colorScheme)
+                camera?.updateContrastingColor(for: input.colorScheme)
                 if let camera {
-                    syncViewport(camera, size: proxy.size, insets: proxy.safeAreaInsets, proxy: proxy)
+                    applyViewport(camera, input: input)
                 }
-                camera?.setActive(isActive)
+                camera?.setActive(input.isActive)
             }
             .onDisappear {
                 camera?.setActive(false)
             }
-            .onChange(of: proxy.size) { _, size in
-                if let camera {
-                    syncViewport(camera, size: size, insets: proxy.safeAreaInsets, proxy: proxy)
-                }
-            }
-            .onChange(of: proxy.safeAreaInsets) { _, insets in
-                if let camera {
-                    syncViewport(camera, size: proxy.size, insets: insets, proxy: proxy)
-                }
-            }
-            .onChange(of: isActive) { _, active in
-                camera?.setActive(active)
-            }
-            .onChange(of: sheetObscuresCamera) { _, obscured in
-                camera?.sheetObscuresCamera = obscured
-            }
-            .onChange(of: colorScheme) { _, scheme in
-                camera?.updateContrastingColor(for: scheme)
-            }
-            .onChange(of: scenePhase) { _, phase in
-                switch phase {
-                case .active:
-                    camera?.resumeAfterSettings()
-                    if isActive { camera?.setActive(true) }
-                case .background:
-                    camera?.setActive(false)
-                default:
-                    break
-                }
-            }
-            .onChange(of: nearbyModel.allPlaces) { _, _ in
-                camera?.placesChanged()
-            }
-            .onChange(of: nearbyModel.activeLocation) { _, _ in
-                camera?.locationChanged()
+            .onChange(of: input) { previous, current in
+                guard let camera else { return }
+                synchronize(camera, from: previous, to: current)
             }
         }
     }
 
-    private func syncViewport(
-        _ camera: ARCameraModel,
-        size: CGSize,
-        insets: EdgeInsets,
-        proxy: GeometryProxy
-    ) {
-        // The Metal view ignores the safe area, so its drawable origin sits at the window corner
-        // while the overlay and marker layout live in the inset viewport. Hand the difference over
-        // so stencil holes can be moved into the drawable's space.
-        camera.updateViewport(
-            size,
+    private func input(proxy: GeometryProxy) -> ARCameraInput {
+        ARCameraInput(
+            viewport: proxy.size,
+            safeAreaInsets: proxy.safeAreaInsets,
+            // The Metal view ignores the safe area, so its drawable origin sits at the window corner
+            // while the overlay and marker layout live in the inset viewport. Hand the difference
+            // over so stencil holes can be moved into the drawable's space.
+            overlayOrigin: proxy.frame(in: .global).origin,
             displayScale: displayScale,
-            safeAreaInsets: insets,
-            overlayOrigin: proxy.frame(in: .global).origin
+            isActive: isActive,
+            sheetObscuresCamera: sheetObscuresCamera,
+            colorScheme: colorScheme,
+            scenePhase: scenePhase,
+            places: nearbyModel.allPlaces,
+            activeLocation: nearbyModel.activeLocation
         )
+    }
+
+    private func applyViewport(_ camera: ARCameraModel, input: ARCameraInput) {
+        camera.updateViewport(
+            input.viewport,
+            displayScale: input.displayScale,
+            safeAreaInsets: input.safeAreaInsets,
+            overlayOrigin: input.overlayOrigin
+        )
+    }
+
+    private func synchronize(
+        _ camera: ARCameraModel,
+        from previous: ARCameraInput,
+        to current: ARCameraInput
+    ) {
+        if current.colorScheme != previous.colorScheme {
+            camera.updateContrastingColor(for: current.colorScheme)
+        }
+        if current.viewport != previous.viewport
+            || current.safeAreaInsets != previous.safeAreaInsets
+            || current.overlayOrigin != previous.overlayOrigin
+            || current.displayScale != previous.displayScale {
+            applyViewport(camera, input: current)
+        }
+        if current.isActive != previous.isActive {
+            camera.setActive(current.isActive)
+        }
+        if current.sheetObscuresCamera != previous.sheetObscuresCamera {
+            camera.sheetObscuresCamera = current.sheetObscuresCamera
+        }
+        if current.scenePhase != previous.scenePhase {
+            switch current.scenePhase {
+            case .active:
+                camera.resumeAfterSettings()
+                if current.isActive { camera.setActive(true) }
+            case .background:
+                camera.setActive(false)
+            default:
+                break
+            }
+        }
+        if current.places != previous.places {
+            camera.placesChanged()
+        }
+        if current.activeLocation != previous.activeLocation {
+            camera.locationChanged()
+        }
     }
 
     @ViewBuilder
@@ -256,9 +289,19 @@ private struct ARMarkerPagePicker: View {
     let totalPages: Int
     let onSelect: (Int) -> Void
 
+    private var pageWindow: [Int] {
+        MarkerPageWindow.shared
+            .compute(
+                currentPage: Int32(currentPage),
+                totalPages: Int32(totalPages),
+                maxVisiblePages: 3
+            )
+            .map { Int(truncating: $0) }
+    }
+
     var body: some View {
         VStack(spacing: 2) {
-            ForEach(Self.pageWindow(currentPage: currentPage, totalPages: totalPages), id: \.self) { page in
+            ForEach(pageWindow, id: \.self) { page in
                 Button {
                     onSelect(page)
                 } label: {
@@ -283,18 +326,6 @@ private struct ARMarkerPagePicker: View {
         .overlay(Capsule().stroke(.white.opacity(0.18), lineWidth: 1))
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("ar-page-picker")
-    }
-
-    static func pageWindow(currentPage: Int, totalPages: Int) -> [Int] {
-        let pageCount = max(totalPages, 0)
-        guard pageCount > 3 else { return Array(0..<pageCount) }
-        if currentPage <= 0 {
-            return [0, 1, 2]
-        }
-        if currentPage >= pageCount - 1 {
-            return [pageCount - 3, pageCount - 2, pageCount - 1]
-        }
-        return [currentPage - 1, currentPage, currentPage + 1]
     }
 }
 
