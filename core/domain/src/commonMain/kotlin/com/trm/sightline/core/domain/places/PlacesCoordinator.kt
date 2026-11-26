@@ -129,6 +129,7 @@ class PlacesCoordinator(
   private var errorClearJob: Job? = null
   private var customLocationSearchJob: Job? = null
   private var mapPositionSaveJob: Job? = null
+  private var locationServicesJob: Job? = null
   private var persistedCustomLocation: CustomLocation? = null
   private var isEditingCustomLocationAddress = false
 
@@ -137,7 +138,7 @@ class PlacesCoordinator(
     scope.launch { observeUserLocationEnabledPreference() }
     scope.launch { observeSearchRadiusPreference() }
     scope.launch { observeLastMapPositionPreference() }
-    scope.launch { observeLocationServices() }
+    locationServicesJob = scope.launch { observeLocationServices() }
     scope.launch { observeUserLocation() }
   }
 
@@ -201,6 +202,16 @@ class PlacesCoordinator(
         delay(MAP_POSITION_SAVE_DEBOUNCE)
         writePreferences { userPreferencesRepository.setLastMapPosition(position) }
       }
+  }
+
+  /**
+   * Re-reads the platform location-services switch by restarting its observation. Providers without
+   * change notifications (the iOS location provider) only report the current value when collected
+   * again, and the restart keeps the auto-disable behavior when services stay off.
+   */
+  fun refreshLocationSettings() {
+    locationServicesJob?.cancel()
+    locationServicesJob = scope.launch { observeLocationServices() }
   }
 
   private suspend fun observeCustomLocationPreference() {

@@ -67,8 +67,7 @@ fun SharedTransitionScope.PlacesContent(
   places: Map<PlaceCategory, CategoryPlacesState>,
   userLocationEnabled: Boolean,
   activeLocation: GeoLocation?,
-  userLocationAddress: LocationAddressState,
-  customLocationAddress: String,
+  locationAddress: LocationAddressState,
   customLocationSearchResults: CustomLocationSearchState,
   layout: PlacesLayout,
   alpha: Float,
@@ -86,18 +85,19 @@ fun SharedTransitionScope.PlacesContent(
   val searchBarState = rememberSearchBarState()
   val scope = rememberCoroutineScope()
   val expanded = searchBarState.targetValue == SearchBarValue.Expanded
-  val textFieldState = rememberTextFieldState(customLocationAddress)
+  val loadedAddress = (locationAddress as? LocationAddressState.Loaded)?.address
+  val textFieldState = rememberTextFieldState(loadedAddress.orEmpty())
 
-  LaunchedEffect(customLocationAddress) {
-    if (textFieldState.text.toString() != customLocationAddress) {
-      textFieldState.setTextAndPlaceCursorAtEnd(customLocationAddress)
+  LaunchedEffect(loadedAddress) {
+    if (loadedAddress != null && textFieldState.text.toString() != loadedAddress) {
+      textFieldState.setTextAndPlaceCursorAtEnd(loadedAddress)
     }
   }
 
-  LaunchedEffect(textFieldState, customLocationAddress) {
+  LaunchedEffect(textFieldState, loadedAddress, userLocationEnabled) {
     snapshotFlow { textFieldState.text.toString() }
       .collect { query ->
-        if (customLocationAddress != query) {
+        if (!userLocationEnabled && loadedAddress != query) {
           onCustomLocationAddressChange(query)
         }
       }
@@ -128,7 +128,7 @@ fun SharedTransitionScope.PlacesContent(
               when {
                 !userLocationEnabled -> R.string.enter_location_placeholder
                 activeLocation == null -> R.string.loading_location
-                userLocationAddress is LocationAddressState.Loading ->
+                locationAddress is LocationAddressState.Loading ->
                   R.string.loading_location_address
                 else -> R.string.location_address_not_found
               },
@@ -138,10 +138,10 @@ fun SharedTransitionScope.PlacesContent(
         leadingIcon = {
           when {
             userLocationEnabled &&
-              (userLocationAddress is LocationAddressState.Loading || activeLocation == null) -> {
+              (locationAddress is LocationAddressState.Loading || activeLocation == null) -> {
               CircularProgressIndicator(modifier = Modifier.size(24.dp))
             }
-            userLocationEnabled && userLocationAddress is LocationAddressState.Loaded -> {
+            userLocationEnabled && locationAddress is LocationAddressState.Loaded -> {
               Icon(imageVector = Icons.Default.GpsFixed, contentDescription = null)
             }
             expanded -> {

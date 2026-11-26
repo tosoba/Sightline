@@ -127,6 +127,7 @@ final class NearbyPlacesModel {
     /// `CLLocationManager.locationServicesEnabled()` has no change notification, so the shared flow
     /// re-reads it per collection: restarting this observation is the re-check.
     func refreshLocationServices() {
+        coordinator.refreshLocationSettings()
         locationEnabledTask?.cancel()
         locationEnabledTask = Task { [weak self] in
             guard let self else { return }

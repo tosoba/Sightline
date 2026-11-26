@@ -78,7 +78,9 @@ fun adaptiveSheetContentPadding(
  *
  * [sheetContentFillModifier] sizes the portrait sheet content before navigation-bar and horizontal
  * padding are applied; the compact side sheet always fills the available height.
- * [applyContentPadding] decides whether the scaffold's content insets wrap [content] or not.
+ * [applyContentPadding] decides whether the scaffold's content insets wrap [content] or not. Sheet
+ * content is only composed once: in compact height the bottom sheet is empty because the side
+ * surface is the only sheet on screen.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -91,7 +93,7 @@ fun AdaptiveSheetScaffold(
   sheetContentHorizontalPadding: Dp = 16.dp,
   sheetContentFillModifier: Modifier = Modifier.fillMaxSize(),
   sheetContent: @Composable (AdaptiveSheetScaffoldState, Modifier) -> Unit,
-  content: @Composable BoxScope.(AdaptiveSheetScaffoldState, PaddingValues) -> Unit,
+  content: @Composable BoxScope.(AdaptiveSheetScaffoldState) -> Unit,
 ) {
   val scaffoldState = rememberBottomSheetScaffoldStateForScreenHeight(isCompactHeight)
   val progress = rememberBottomSheetExpandedProgress(scaffoldState.bottomSheetState)
@@ -141,25 +143,32 @@ fun AdaptiveSheetScaffold(
   Box(modifier = modifier.fillMaxSize()) {
     BottomSheetScaffold(
       scaffoldState = scaffoldState,
-      sheetDragHandle = {
-        Column(
-          modifier = Modifier.fillMaxWidth(),
-          horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-          Spacer(
-            modifier =
-              Modifier.height(
-                WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding() *
-                  state.expandedProgress.value
+      sheetDragHandle =
+        if (isCompactHeight) {
+          null
+        } else {
+          {
+            Column(
+              modifier = Modifier.fillMaxWidth(),
+              horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+              Spacer(
+                modifier =
+                  Modifier.height(
+                    WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding() *
+                      state.expandedProgress.value
+                  )
               )
-          )
-          BottomSheetDefaults.DragHandle(color = MaterialTheme.colorScheme.onSurface)
-        }
-      },
+              BottomSheetDefaults.DragHandle(color = MaterialTheme.colorScheme.onSurface)
+            }
+          }
+        },
       sheetContainerColor = sheetContainerColor,
       sheetPeekHeight = sheetPeekHeight,
       sheetContent = {
-        sheetContent(state, if (isCompactHeight) sideSheetModifier else portraitSheetModifier)
+        if (!isCompactHeight) {
+          sheetContent(state, portraitSheetModifier)
+        }
       },
     ) { innerPadding ->
       Box(
@@ -177,7 +186,7 @@ fun AdaptiveSheetScaffold(
           },
         contentAlignment = Alignment.Center,
       ) {
-        content(state, innerPadding)
+        content(state)
 
         if (isCompactHeight) {
           Surface(

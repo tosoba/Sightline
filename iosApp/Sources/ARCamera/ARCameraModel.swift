@@ -82,7 +82,9 @@ final class ARCameraModel {
         maxRows: 6,
         verticalSpacing: 16,
         overlapGuardFraction: 0.5,
-        topPadding: 12
+        topPadding: 12,
+        sizingMode: .targetHeightFirst,
+        targetRows: 6
     )
     private static let cornerRadius: CGFloat = 16
     private static let pitchLimitDegrees: Double = 45

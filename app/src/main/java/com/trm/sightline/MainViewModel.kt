@@ -3,7 +3,6 @@ package com.trm.sightline
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.trm.sightline.core.common.location.LocationProvider
-import com.trm.sightline.core.common.messageResource
 import com.trm.sightline.core.domain.AddressRepository
 import com.trm.sightline.core.domain.PlacesRepository
 import com.trm.sightline.core.domain.UserPreferencesRepository
@@ -18,10 +17,7 @@ import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.binding
 import dev.zacsweers.metrox.viewmodel.ViewModelKey
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 
 @ContributesIntoMap(AppScope::class, binding = binding<ViewModel>())
 @ViewModelKey
@@ -42,15 +38,6 @@ class MainViewModel(
     )
 
   val state: StateFlow<PlacesUiState> = coordinator.state
-
-  val errorMessage: StateFlow<Int?> =
-    coordinator.error
-      .map { it?.messageResource() }
-      .stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = null,
-      )
 
   fun onTogglePlaceCategory(category: PlaceCategory) {
     coordinator.onTogglePlaceCategory(category)
