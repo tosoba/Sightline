@@ -93,7 +93,7 @@ struct ARCameraOverlay: View {
         )
 
         let distance = context.resolve(
-            Text(Self.distanceText(placement.distanceMeters))
+            Text(formatMarkerDistance(meters: placement.distanceMeters))
                 .font(.system(size: 12))
                 .foregroundStyle(.white.opacity(0.75))
         )
@@ -107,12 +107,5 @@ struct ARCameraOverlay: View {
             distance,
             in: CGRect(x: left, y: distanceTop, width: width, height: distanceHeight)
         )
-    }
-
-    private static func distanceText(_ meters: Float) -> String {
-        if meters >= 1_000 {
-            return String(format: "%.1f km", meters / 1_000)
-        }
-        return String(format: "%.0f m", meters)
     }
 }

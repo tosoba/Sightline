@@ -2,7 +2,6 @@ package com.trm.sightline.shared
 
 import com.trm.sightline.core.common.location.LocationAuthorization
 import com.trm.sightline.core.common.location.LocationProvider
-import com.trm.sightline.core.common.util.location
 import com.trm.sightline.core.data.UserPreferencesDirectory
 import com.trm.sightline.core.domain.AddressRepository
 import com.trm.sightline.core.domain.PlacesRepository

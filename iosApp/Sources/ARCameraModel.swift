@@ -703,12 +703,8 @@ final class ARCameraModel {
     }
 
     private static func candidate(for place: Place, camera: GeoLocation) -> MarkerCandidate {
-        let location = GeoLocation(
-            latitude: place.latitude,
-            longitude: place.longitude,
-            altitude: camera.altitude + altitudeOffset(for: place),
-            horizontalAccuracyMeters: nil,
-            timestampMillis: 0
+        let location = place.location.withAltitude(
+            altitude: camera.altitude + altitudeOffset(for: place)
         )
         return MarkerCandidate(
             place: place,

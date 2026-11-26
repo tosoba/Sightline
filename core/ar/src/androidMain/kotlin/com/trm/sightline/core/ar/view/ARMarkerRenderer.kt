@@ -24,6 +24,7 @@ import com.trm.sightline.core.ar.math.MarkerSlotAssignment
 import com.trm.sightline.core.ar.math.MarkerSlotGeometry
 import com.trm.sightline.core.ar.math.MarkerSlotTarget
 import com.trm.sightline.core.ar.math.RoundedRectF
+import com.trm.sightline.core.ar.math.markerRect
 import com.trm.sightline.core.ar.model.ARMarker
 import com.trm.sightline.core.ar.model.MarkersPagingState
 import com.trm.sightline.core.ar.util.bottomSheetHeightPx
@@ -35,7 +36,7 @@ import com.trm.sightline.core.ar.util.navigationBarsBottomInsetPx
 import com.trm.sightline.core.ar.util.sideSheetWidthDp
 import com.trm.sightline.core.ar.util.spToPx
 import com.trm.sightline.core.ar.util.statusBarTopInsetPx
-import com.trm.sightline.core.common.util.roundToDecimalPlaces
+import com.trm.sightline.core.common.util.formatMarkerDistance
 import com.trm.sightline.core.model.GeoLocation
 import com.trm.sightline.core.model.PlaceCategory
 import com.trm.sightline.core.ui.R
@@ -43,7 +44,6 @@ import com.trm.sightline.core.ui.icon
 import java.util.Objects
 import kotlin.math.abs
 import kotlin.math.acos
-import kotlin.math.roundToInt
 import kotlin.math.sqrt
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -232,13 +232,17 @@ class ARMarkerRenderer(private val context: Context) {
     }
 
   private val ARMarker.rectF: RectF
-    get() =
-      RectF(
-        x - markerWidthPx / 2,
-        y - markerHeightPx / 2,
-        x + markerWidthPx / 2,
-        y + markerHeightPx / 2,
-      )
+    get() {
+      val bounds =
+        markerRect(
+          centerX = x,
+          centerY = y,
+          widthPx = markerWidthPx,
+          heightPx = markerHeightPx,
+          cornerRadiusPx = 0f,
+        )
+      return RectF(bounds.left, bounds.top, bounds.right, bounds.bottom)
+    }
 
   private fun reassignSlots(
     povLocation: GeoLocation,
@@ -439,7 +443,7 @@ class ARMarkerRenderer(private val context: Context) {
     if (consumedHeight + nameDistanceGapPx + distLineH <= textAreaHeight) {
       val ellipsized =
         TextUtils.ellipsize(
-          marker.formattedDistance(),
+          formatMarkerDistance(meters = marker.distance),
           distanceLabelPaint,
           textEllipsisWidth,
           TextUtils.TruncateAt.END,
@@ -805,10 +809,6 @@ class ARMarkerRenderer(private val context: Context) {
 
   internal fun isOnCurrentPage(marker: ARMarker): Boolean =
     pagedMarkers[marker.place.id]?.position?.page == currentPage
-
-  private fun ARMarker.formattedDistance(): String =
-    if (distance >= 1_000) "${(distance / 1_000).roundToDecimalPlaces(1)} km"
-    else "${distance.roundToInt()} m"
 
   private class PagedMarker(
     val marker: ARMarker,

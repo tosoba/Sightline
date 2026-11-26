@@ -123,9 +123,9 @@ struct MainScreen: View {
                     model.setSearchRadius(radius)
                 } label: {
                     if radius == model.searchRadius {
-                        Label(radius.title, systemImage: "checkmark")
+                        Label(radius.formattedLabel, systemImage: "checkmark")
                     } else {
-                        Text(radius.title)
+                        Text(radius.formattedLabel)
                     }
                 }
                 .accessibilityIdentifier("radius-option-\(radius.meters)")
@@ -133,7 +133,7 @@ struct MainScreen: View {
         } label: {
             HStack(spacing: 6) {
                 Image(systemName: "scope")
-                Text(model.searchRadius.title)
+                Text(model.searchRadius.formattedLabel)
             }
             .font(.subheadline.weight(.medium))
             .padding(.horizontal, 12)
@@ -141,7 +141,7 @@ struct MainScreen: View {
             .background(.regularMaterial, in: Capsule())
         }
         .accessibilityIdentifier("radius-menu")
-        .accessibilityLabel("Search radius, \(model.searchRadius.title)")
+        .accessibilityLabel("Search radius, \(model.searchRadius.formattedLabel)")
     }
 
     private var placesTrigger: some View {
@@ -209,16 +209,5 @@ struct MainScreen: View {
     private func resetSheetState() {
         sheetDetent = .medium
         categoryPath.removeAll()
-    }
-}
-
-extension PlaceSearchRadius {
-    var title: String {
-        switch self {
-        case .fiveHundred: "500 m"
-        case .oneKilometer: "1 km"
-        case .twoKilometers: "2 km"
-        case .fiveKilometers: "5 km"
-        }
     }
 }

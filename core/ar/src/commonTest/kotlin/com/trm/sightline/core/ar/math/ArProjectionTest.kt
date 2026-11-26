@@ -1,7 +1,5 @@
-package com.trm.sightline.shared
+package com.trm.sightline.core.ar.math
 
-import com.trm.sightline.core.ar.math.ProjectedMarker
-import com.trm.sightline.core.ar.math.ScreenRotation
 import com.trm.sightline.core.ar.orientation.Orientation
 import com.trm.sightline.core.model.GeoLocation
 import kotlin.math.PI

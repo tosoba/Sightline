@@ -25,7 +25,6 @@
 		81D14EF0A3E009D87CB7787D /* ARCameraScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BB2E5A3F4E9E142A1C2CA65 /* ARCameraScreen.swift */; };
 		940905A6CF514EA14B1C4647 /* MapLibreMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F197093DA6B407F8BCCDF0F6 /* MapLibreMapView.swift */; };
 		98E3B4B4EF460CBC53BC71FF /* ARCameraCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3D483AFA425ECB609380159 /* ARCameraCapture.swift */; };
-		9F371DD552AC57450E3AA582 /* DistanceFormat.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88660B8E5D6902865CC22DF5 /* DistanceFormat.swift */; };
 		B6D5E6AE08FF0D56B28DDC5D /* CategoryRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2B843400E82490086A9D7F3 /* CategoryRoute.swift */; };
 		BBBBC3C12B21C55DEA565F00 /* SmokeUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77D34269A33BF6BF1E601530 /* SmokeUITests.swift */; };
 		DA13F1CEE97C74F908A08790 /* MapScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C60CB2DA6FF7C01D784C063 /* MapScreen.swift */; };
@@ -58,7 +57,6 @@
 		84E08D53FE14521E864C1BC9 /* IPadAdaptiveUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadAdaptiveUITests.swift; sourceTree = "<group>"; };
 		858566E65BCB9127E10B6580 /* ARCameraShaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = ARCameraShaders.metal; sourceTree = "<group>"; };
 		86038AE1032E284E79B32AD6 /* iosApp.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = iosApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		88660B8E5D6902865CC22DF5 /* DistanceFormat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistanceFormat.swift; sourceTree = "<group>"; };
 		93DFF26DEB51A16FAA6F6F6F /* UITestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITestSupport.swift; sourceTree = "<group>"; };
 		9E4CA9E699DDB96F8B8D04BF /* MainScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainScreen.swift; sourceTree = "<group>"; };
 		A8A77545BAA043D35B5F6B4F /* ARCameraModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARCameraModel.swift; sourceTree = "<group>"; };
@@ -126,7 +124,6 @@
 				858566E65BCB9127E10B6580 /* ARCameraShaders.metal */,
 				05A6FDE80D4F009784110F0D /* ARCameraSyntheticFeed.swift */,
 				F2B843400E82490086A9D7F3 /* CategoryRoute.swift */,
-				88660B8E5D6902865CC22DF5 /* DistanceFormat.swift */,
 				9E4CA9E699DDB96F8B8D04BF /* MainScreen.swift */,
 				F197093DA6B407F8BCCDF0F6 /* MapLibreMapView.swift */,
 				7C60CB2DA6FF7C01D784C063 /* MapScreen.swift */,
@@ -291,7 +288,6 @@
 				318B7A34F36B639F09A0C8D3 /* ARCameraSyntheticFeed.swift in Sources */,
 				F99A8C88577CB7B434DD0BA1 /* AppSettings.swift in Sources */,
 				B6D5E6AE08FF0D56B28DDC5D /* CategoryRoute.swift in Sources */,
-				9F371DD552AC57450E3AA582 /* DistanceFormat.swift in Sources */,
 				496C9FEC4B353DE50AA10ADC /* MainScreen.swift in Sources */,
 				940905A6CF514EA14B1C4647 /* MapLibreMapView.swift in Sources */,
 				DA13F1CEE97C74F908A08790 /* MapScreen.swift in Sources */,

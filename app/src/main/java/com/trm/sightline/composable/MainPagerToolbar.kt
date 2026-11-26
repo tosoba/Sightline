@@ -48,7 +48,7 @@ import com.trm.sightline.MainPage
 import com.trm.sightline.R
 import com.trm.sightline.core.ar.util.collapsedBottomSheetContentHeightDp
 import com.trm.sightline.core.ar.util.collapsedBottomSheetDragHandleHeightDp
-import com.trm.sightline.core.common.util.formattedDistance
+import com.trm.sightline.core.common.util.formattedLabel
 import com.trm.sightline.core.model.PlaceSearchRadius
 
 @Composable
@@ -159,7 +159,7 @@ private fun MainPagerPlaceSearchRadiusMenu(
           onSearchRadiusChange(radius)
           menuExpanded = false
         },
-        text = { Text(text = radius.meters.toFloat().formattedDistance()) },
+        text = { Text(text = radius.formattedLabel) },
         icon = {
           if (searchRadius == radius) {
             Icon(Icons.Default.Check, contentDescription = null)

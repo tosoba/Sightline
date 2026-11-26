@@ -1,6 +1,5 @@
 package com.trm.sightline.core.ar.model
 
-import com.trm.sightline.core.common.util.location
 import com.trm.sightline.core.model.GeoLocation
 import com.trm.sightline.core.model.Place
 
