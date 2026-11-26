@@ -40,7 +40,7 @@ kotlin {
   }
 
   sourceSets {
-    commonMain.dependencies {
+    iosMain.dependencies {
       api(project(":core:common"))
       api(project(":core:model"))
       api(project(":core:ar"))
@@ -51,7 +51,7 @@ kotlin {
       api(libs.kotlinx.coroutines.core)
     }
 
-    commonTest.dependencies {
+    iosTest.dependencies {
       implementation(kotlin("test"))
       implementation(libs.kotlinx.coroutines.test)
     }

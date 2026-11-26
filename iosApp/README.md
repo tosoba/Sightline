@@ -53,7 +53,7 @@ These exist for the tests and for scripted simulator runs; a normal launch passe
 
 ## Preferences
 
-The gear button opens a preferences sheet backed by the shared `PreferencesFacade`: search radius and the user-location toggle.
+The gear button opens a preferences sheet backed by the shared `PlacesCoordinator` exposed by `SightlineShared`: search radius and the user-location toggle.
 The map's user-location layer follows the toggle, so a clean install does not request location permission until the user enables it; Android gates location collection on the same preference.
 Values, including the last map camera, are stored in the shared DataStore file at `<app container>/Library/Application Support/Sightline/user_preferences.json`, the same path the Kotlin `OkioStorage` writes on iOS.
 

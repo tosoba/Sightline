@@ -8,7 +8,7 @@ import platform.Foundation.NSSearchPathForDirectoriesInDomains
 import platform.Foundation.NSUserDomainMask
 
 @OptIn(ExperimentalForeignApi::class)
-internal actual fun userPreferencesDirectory(): UserPreferencesDirectory {
+internal fun userPreferencesDirectory(): UserPreferencesDirectory {
   val applicationSupport =
     NSSearchPathForDirectoriesInDomains(
         NSApplicationSupportDirectory,
