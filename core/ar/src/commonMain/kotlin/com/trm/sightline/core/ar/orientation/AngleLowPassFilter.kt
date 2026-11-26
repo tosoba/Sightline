@@ -4,9 +4,9 @@ import kotlin.math.PI
 import kotlin.math.abs
 
 /**
- * Circular low-pass smoothing for angles in radians. A change smaller than
- * [SMOOTH_THRESHOLD] is eased by [SMOOTH_FACTOR], anything larger snaps, and changes that wrap
- * across the pi boundary are measured the short way round.
+ * Circular low-pass smoothing for angles in radians. A change smaller than [SMOOTH_THRESHOLD] is
+ * eased by [SMOOTH_FACTOR], anything larger snaps, and changes that wrap across the pi boundary are
+ * measured the short way round.
  *
  * Stateful, not thread-safe: create one per angle channel and drive it from one thread.
  */
@@ -47,8 +47,8 @@ class AngleLowPassFilter(
   }
 
   companion object {
-    val CIRCLE: Float = (PI * 2).toFloat()
-    val SMOOTH_THRESHOLD: Float = CIRCLE / 20f
+    const val CIRCLE: Float = (PI * 2).toFloat()
+    const val SMOOTH_THRESHOLD: Float = CIRCLE / 20f
     const val SMOOTH_FACTOR: Float = 0.12f
   }
 }

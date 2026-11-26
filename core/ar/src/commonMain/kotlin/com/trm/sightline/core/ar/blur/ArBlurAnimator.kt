@@ -1,8 +1,8 @@
 package com.trm.sightline.core.ar.blur
 
 /**
- * One frame of blur state, handed to the Metal renderer.
- * [shouldBlur] is true while blur is enabled or the lod is still animating out.
+ * One frame of blur state, handed to the Metal renderer. [shouldBlur] is true while blur is enabled
+ * or the lod is still animating out.
  */
 data class ArBlurFrame(
   val shouldBlur: Boolean,
@@ -128,9 +128,9 @@ class ArBlurAnimator {
   private fun animateContrastingColor() {
     val fraction =
       (contrastingColorAnimationFrame + 1).toFloat() / CONTRASTING_COLOR_ANIMATION_FRAMES
-    red = (targetRed - red) * fraction + red
-    green = (targetGreen - green) * fraction + green
-    blue = (targetBlue - blue) * fraction + blue
+    red += (targetRed - red) * fraction
+    green += (targetGreen - green) * fraction
+    blue += (targetBlue - blue) * fraction
     contrastingColorAnimationFrame++
   }
 

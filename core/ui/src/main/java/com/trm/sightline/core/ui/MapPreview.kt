@@ -99,7 +99,7 @@ private fun rememberPlacesMapState(
         LocalResources.current
           .openRawResource(if (isSystemInDarkTheme()) R.raw.dark_style else R.raw.light_style)
           .bufferedReader()
-          .use(BufferedReader::readText)
+          .use(BufferedReader::readText),
       ),
   ) {
     if (places.isNotEmpty()) {
@@ -111,12 +111,12 @@ private fun rememberPlacesMapState(
                 FeatureCollection(
                   places.map {
                     Feature(
-                      id = JsonPrimitive(it.id.toString()),
+                      id = JsonPrimitive(it.id),
                       geometry = Point(Position(longitude = it.longitude, latitude = it.latitude)),
                       properties = Unit,
                     )
-                  }
-                )
+                  },
+                ),
               )
             },
           from =
@@ -133,7 +133,7 @@ private fun rememberPlacesMapState(
                         reducer =
                           feature.accumulated().asNumber() +
                             feature["total_range"].convertToNumber(),
-                      )
+                      ),
                   )
               }
             },
@@ -214,14 +214,14 @@ private fun rememberPlacesMapState(
                             Position(
                               longitude = currentLocation.longitude,
                               latitude = currentLocation.latitude,
-                            )
+                            ),
                           ),
                         properties = Unit,
-                      )
-                    )
-                  )
+                      ),
+                    ),
+                  ),
                 )
-              }
+              },
           ),
         iconImage =
           image(
