@@ -78,14 +78,26 @@ class OpenGLRenderer {
   val oglFatalErrorsFlow: Flow<Unit>
     get() = oglFatalErrorsSharedFlow
 
-  var markerRectFs: List<RoundedRectF> = emptyList()
-  var otherRectFs: List<RoundedRectF> = emptyList()
+  @Volatile private var markerRectFsSnapshot: List<RoundedRectF> = emptyList()
+  @Volatile private var otherRectFsSnapshot: List<RoundedRectF> = emptyList()
 
-  private val rectFsCoordinates: FloatArray
-    get() {
-      val markers = markerRectFs
-      val others = otherRectFs
+  var markerRectFs: List<RoundedRectF>
+    get() = markerRectFsSnapshot
+    set(value) {
+      markerRectFsSnapshot = value.toList()
+    }
 
+  var otherRectFs: List<RoundedRectF>
+    get() = otherRectFsSnapshot
+    set(value) {
+      otherRectFsSnapshot = value.toList()
+    }
+
+  private class RectFsSnapshot(
+    val markers: List<RoundedRectF>,
+    val others: List<RoundedRectF>,
+  ) {
+    fun toCoordinates(): FloatArray {
       val coordinates = FloatArray((markers.size + others.size) * COORDINATES_PER_RECT_F)
       var index = 0
 
@@ -103,6 +115,10 @@ class OpenGLRenderer {
       fillCoordinatesOf(others)
       return coordinates
     }
+  }
+
+  private fun captureRectFs(): RectFsSnapshot =
+    RectFsSnapshot(markerRectFsSnapshot, otherRectFsSnapshot)
 
   @MainThread
   fun setBlurEnabled(enabled: Boolean, animated: Boolean) {
@@ -115,16 +131,11 @@ class OpenGLRenderer {
   }
 
   @MainThread
-  fun setContrastingColor(red: Int, green: Int, blue: Int) {
+  fun setContrastingColor(red: Float, green: Float, blue: Float) {
     if (isShutdown || nativeContext == 0L) return
     try {
       executor.execute {
-        setContrastingColor(
-          nativeContext,
-          red = red.toFloat() / 256f,
-          green = green.toFloat() / 256f,
-          blue = blue.toFloat() / 256f,
-        )
+        setContrastingColor(nativeContext, red = red, green = green, blue = blue)
       }
     } catch (ex: RejectedExecutionException) {
       Timber.tag(TAG).e(ex, "Renderer already shutting down. Ignoring the exception.")
@@ -311,15 +322,16 @@ class OpenGLRenderer {
     if (surfaceSize == null) return
 
     calculateSurfaceTransform()
+    val rectFs = captureRectFs()
     val success =
       renderTexture(
         nativeContext = nativeContext,
         timestampNs = timestampNs,
         vertexTransform = surfaceTransform,
         textureTransform = previewTransform,
-        rectFsCoordinates = rectFsCoordinates,
-        allRectFsCount = markerRectFs.size + otherRectFs.size,
-        otherRectFsCount = otherRectFs.size,
+        rectFsCoordinates = rectFs.toCoordinates(),
+        allRectFsCount = rectFs.markers.size + rectFs.others.size,
+        otherRectFsCount = rectFs.others.size,
       )
     if (!success) return
 

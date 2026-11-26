@@ -21,14 +21,14 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.trm.sightline.MainPage
 import com.trm.sightline.core.ar.math.RoundedRectF
-import com.trm.sightline.core.ar.util.collapsedBottomSheetContentHeightDp
-import com.trm.sightline.core.ar.util.collapsedBottomSheetDragHandleHeightDp
-import com.trm.sightline.core.ar.util.sideSheetWidthDp
 import com.trm.sightline.core.model.GeoLocation
 import com.trm.sightline.core.model.MapCameraPosition
 import com.trm.sightline.core.model.Place
+import com.trm.sightline.core.ui.collapsedBottomSheetContentHeightDp
+import com.trm.sightline.core.ui.collapsedBottomSheetDragHandleHeightDp
+import com.trm.sightline.core.ui.sideSheetWidthDp
+import com.trm.sightline.feature.camera.CameraPreview
 import com.trm.sightline.feature.camera.CameraPreviewPagePicker
-import com.trm.sightline.feature.camera.CameraScreen
 import com.trm.sightline.feature.map.MapScreen
 
 @Composable
@@ -55,10 +55,9 @@ fun MainPager(
   ) { page ->
     when (MainPage.entries[page]) {
       MainPage.Camera -> {
-        CameraScreen(
-          previewEnabled =
-            pagerState.currentPage == MainPage.Camera.ordinal && !cameraPreviewBlurred,
-          previewBlurred = cameraPreviewBlurred,
+        CameraPreview(
+          enabled = pagerState.currentPage == MainPage.Camera.ordinal && !cameraPreviewBlurred,
+          blurred = cameraPreviewBlurred,
           location = location,
           places = places,
           blurredRectFs = blurredRectFs,

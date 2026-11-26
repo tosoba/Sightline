@@ -60,8 +60,42 @@ fun CameraPreview(
   places: List<Place>,
   blurredRectFs: List<RoundedRectF>,
   padding: PaddingValues,
+  cameraPermissionGranted: Boolean,
+  onGrantPermissionClick: () -> Unit,
   onCameraPreviewTouch: () -> Unit = {},
   overlayContent: @Composable BoxScope.(ARMarkerRenderer) -> Unit = {},
+) {
+  AnimatedContent(targetState = cameraPermissionGranted) { granted ->
+    if (granted) {
+      CameraPreviewContent(
+        enabled = enabled,
+        blurred = blurred,
+        location = location,
+        places = places,
+        blurredRectFs = blurredRectFs,
+        padding = padding,
+        onCameraPreviewTouch = onCameraPreviewTouch,
+        overlayContent = overlayContent,
+      )
+    } else {
+      CameraPermissionDeniedContent(
+        modifier = Modifier.fillMaxSize().padding(16.dp).padding(padding),
+        onGrantPermissionClick = onGrantPermissionClick,
+      )
+    }
+  }
+}
+
+@Composable
+private fun CameraPreviewContent(
+  enabled: Boolean,
+  blurred: Boolean,
+  location: GeoLocation?,
+  places: List<Place>,
+  blurredRectFs: List<RoundedRectF>,
+  padding: PaddingValues,
+  onCameraPreviewTouch: () -> Unit,
+  overlayContent: @Composable BoxScope.(ARMarkerRenderer) -> Unit,
 ) {
   val context = LocalContext.current
   val lifecycleOwner = LocalLifecycleOwner.current
@@ -150,9 +184,9 @@ fun CameraPreview(
           if (streamState == PreviewView.StreamState.STREAMING) {
             openGLRenderer.setBlurEnabled(enabled = previewBlurred, animated = true)
             openGLRenderer.setContrastingColor(
-              red = contrastingColor.red.toInt(),
-              green = contrastingColor.green.toInt(),
-              blue = contrastingColor.blue.toInt(),
+              red = contrastingColor.red,
+              green = contrastingColor.green,
+              blue = contrastingColor.blue,
             )
           }
         }

@@ -33,7 +33,6 @@ android {
 }
 
 dependencies {
-  implementation(project(":core:ar"))
   implementation(project(":core:common"))
   implementation(project(":core:domain"))
   implementation(project(":core:model"))
