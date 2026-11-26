@@ -71,9 +71,11 @@ import com.trm.sightline.core.common.PermissionStatus
 import com.trm.sightline.core.common.util.CheckLocationSettingsResult
 import com.trm.sightline.core.common.util.checkLocationSettings
 import com.trm.sightline.core.common.util.startAppSettingsActivity
+import com.trm.sightline.core.domain.places.CategoryPlacesState
+import com.trm.sightline.core.domain.places.CustomLocationSearchState
+import com.trm.sightline.core.domain.places.LocationAddressState
 import com.trm.sightline.core.model.CustomLocation
 import com.trm.sightline.core.model.GeoLocation
-import com.trm.sightline.core.model.LoadingState
 import com.trm.sightline.core.model.MapCameraPosition
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
@@ -90,14 +92,12 @@ import com.trm.sightline.core.common.R as commonR
 @Composable
 fun SharedTransitionScope.MainScreen(
   isCompactHeight: Boolean,
-  places: Map<PlaceCategory, LoadingState<List<Place>>>,
+  places: Map<PlaceCategory, CategoryPlacesState>,
   allPlaces: List<Place>,
-  currentLocation: GeoLocation?,
-  userLocation: GeoLocation?,
-  userLocationAddress: LoadingState<String>,
-  customLocation: GeoLocation?,
+  activeLocation: GeoLocation?,
+  userLocationAddress: LocationAddressState,
   customLocationAddress: String,
-  customLocationSearchResults: LoadingState<List<CustomLocation>>,
+  customLocationSearchResults: CustomLocationSearchState,
   isUserLocationEnabled: Boolean,
   lastMapPosition: MapCameraPosition?,
   errorMessage: Int?,
@@ -106,6 +106,7 @@ fun SharedTransitionScope.MainScreen(
   onUserLocationEnabledChange: (Boolean) -> Unit,
   onCustomLocationAddressChange: (String) -> Unit,
   onCustomLocationSearchResultClick: (CustomLocation) -> Unit,
+  onCancelCustomLocationSearch: () -> Unit,
   onTogglePlaceCategory: (PlaceCategory) -> Unit,
   onCategoryClick: (PlaceCategory, List<Place>) -> Unit,
   onMapPositionChanged: (MapCameraPosition) -> Unit,
@@ -269,12 +270,10 @@ fun SharedTransitionScope.MainScreen(
       val density = LocalDensity.current
       PlacesContent(
         places = places,
-        locationAddress =
-          if (userLocationEnabled) userLocationAddress
-          else LoadingState.Loaded(customLocationAddress),
         userLocationEnabled = userLocationEnabled,
-        placeCategoriesEnabled =
-          if (userLocationEnabled) userLocation != null else customLocation != null,
+        activeLocation = activeLocation,
+        userLocationAddress = userLocationAddress,
+        customLocationAddress = customLocationAddress,
         customLocationSearchResults = customLocationSearchResults,
         layout =
           if (isCompactHeight || cameraPreviewBlurred) PlacesLayout.Grid else PlacesLayout.Row,
@@ -327,6 +326,7 @@ fun SharedTransitionScope.MainScreen(
         },
         onCustomLocationAddressChange = onCustomLocationAddressChange,
         onCustomLocationSearchResultClick = onCustomLocationSearchResultClick,
+        onCancelCustomLocationSearch = onCancelCustomLocationSearch,
         onTogglePlaceCategory = onTogglePlaceCategory,
         onCategoryClick = onCategoryClick,
       )
@@ -372,7 +372,7 @@ fun SharedTransitionScope.MainScreen(
       ) {
         MainPager(
           pagerState = pagerState,
-          location = currentLocation,
+          location = activeLocation,
           places = allPlaces,
           lastMapPosition = lastMapPosition,
           isCompactHeight = isCompactHeight,

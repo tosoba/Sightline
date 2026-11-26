@@ -1,4 +1,4 @@
-package com.trm.sightline.shared
+package com.trm.sightline.core.domain.places
 
 import com.trm.sightline.core.common.RequestError
 import com.trm.sightline.core.common.location.LocationProvider
@@ -22,24 +22,25 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
 
 /**
- * Owns the reactive places, location, and custom-location-search state that Android keeps in
- * `MainViewModel`. State is derived from the same repositories and preferences, exposed as
- * `StateFlow`s, and mutated through the intents below.
+ * Owns the reactive places, location, and custom-location-search state shared by Android and iOS.
+ * State is derived from the same repositories and preferences, exposed as fine-grained
+ * `StateFlow`s plus the consolidated [state] snapshot, and mutated through the intents below.
  *
  * Intents are expected to be invoked from the main thread; every effect runs on [scope].
  */
-class PlacesCoordinator
-internal constructor(
+class PlacesCoordinator(
   private val placesRepository: PlacesRepository,
   private val addressRepository: AddressRepository,
   private val userPreferencesRepository: UserPreferencesRepository,
@@ -84,6 +85,44 @@ internal constructor(
 
   private val _error = MutableStateFlow<RequestError?>(null)
   val error: StateFlow<RequestError?> = _error.asStateFlow()
+
+  val state: StateFlow<PlacesUiState> =
+    combine(
+        combine(
+          _places,
+          _allPlaces,
+          _activeLocation,
+          _userLocation,
+          _userLocationAddress,
+          ::PlaceStateSnapshot,
+        ),
+        combine(
+          _customLocation,
+          _customLocationAddress,
+          _customLocationSearchResults,
+          _userLocationEnabled,
+          _searchRadius,
+          ::LocationStateSnapshot,
+        ),
+        _lastMapPosition,
+        _error,
+      ) { places, location, lastMapPosition, error ->
+        PlacesUiState(
+          places = places.places,
+          allPlaces = places.allPlaces,
+          activeLocation = places.activeLocation,
+          userLocation = places.userLocation,
+          userLocationAddress = places.userLocationAddress,
+          customLocation = location.customLocation,
+          customLocationAddress = location.customLocationAddress,
+          customLocationSearchResults = location.customLocationSearchResults,
+          userLocationEnabled = location.userLocationEnabled,
+          searchRadius = location.searchRadius,
+          lastMapPosition = lastMapPosition,
+          error = error,
+        )
+      }
+      .stateIn(scope = scope, started = SharingStarted.Eagerly, initialValue = PlacesUiState())
 
   private val activeCategories = mutableSetOf<PlaceCategory>()
   private val fetchJobs = mutableMapOf<PlaceCategory, Job>()
@@ -442,3 +481,19 @@ internal constructor(
     const val CUSTOM_LOCATION_SEARCH_LIMIT = 100
   }
 }
+
+private data class PlaceStateSnapshot(
+  val places: Map<PlaceCategory, CategoryPlacesState>,
+  val allPlaces: List<Place>,
+  val activeLocation: GeoLocation?,
+  val userLocation: GeoLocation?,
+  val userLocationAddress: LocationAddressState,
+)
+
+private data class LocationStateSnapshot(
+  val customLocation: GeoLocation?,
+  val customLocationAddress: String,
+  val customLocationSearchResults: CustomLocationSearchState,
+  val userLocationEnabled: Boolean,
+  val searchRadius: PlaceSearchRadius,
+)

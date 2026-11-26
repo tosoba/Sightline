@@ -6,6 +6,7 @@ import com.trm.sightline.core.data.UserPreferencesDirectory
 import com.trm.sightline.core.domain.AddressRepository
 import com.trm.sightline.core.domain.PlacesRepository
 import com.trm.sightline.core.domain.UserPreferencesRepository
+import com.trm.sightline.core.domain.places.PlacesCoordinator
 import com.trm.sightline.core.model.CustomLocation
 import com.trm.sightline.core.model.GeoLocation
 import com.trm.sightline.core.model.Place
