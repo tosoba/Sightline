@@ -25,6 +25,21 @@ MapLibre Native is resolved through SPM (`exactVersion: 7.0.0`) and embedded as 
 
 ## Tests
 
+Run the Android and shared Kotlin gate from the repo root:
+
+```sh
+./gradlew test
+```
+
+`test` runs the Android app and feature-module unit tests plus the `testAndroidHostTest` suites of the KMP modules (`core:model`, `core:domain`, `core:common`, `core:data`, `core:datastore`, `api:photon`, `core:ar`).
+The iOS shared suite runs on the simulator separately:
+
+```sh
+./gradlew :shared:iosSimulatorArm64Test
+```
+
+Run the iOS UI tests with:
+
 ```sh
 xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp \
   -destination 'platform=iOS Simulator,name=iPhone 17' test

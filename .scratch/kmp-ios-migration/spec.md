@@ -145,6 +145,7 @@ The migration is staged so Android stays correct at every step.
 
 The dominant seam is the Android-correctness gate: after the standalone refactor and after every KMP conversion, Android must compile, its tests stay green, and user-visible behavior is unchanged.
 This is the single gate that every stage must pass before the next begins.
+Run it with `./gradlew test`, which covers the Android unit tests and the KMP modules' `testAndroidHostTest` suites; the iOS shared suite runs with `./gradlew :shared:iosSimulatorArm64Test`.
 
 Unit seams:
 
