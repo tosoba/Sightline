@@ -15,8 +15,10 @@ data class GeoLocation(
   val timestampMillis: Long = 0L,
 ) {
   fun distanceTo(other: GeoLocation): Float = haversineMeters(other).toFloat()
-
   fun bearingTo(other: GeoLocation): Float = initialBearingDegrees(other).toFloat()
+
+  @Suppress("unused") // used on iOS
+  fun withAltitude(altitude: Double): GeoLocation = copy(altitude = altitude)
 
   private fun haversineMeters(other: GeoLocation): Double {
     val lat1 = latitude * PI / 180.0
