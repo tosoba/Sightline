@@ -16,52 +16,6 @@ struct ARPlacement: Identifiable, Equatable {
     let cornerRadius: CGFloat
 }
 
-/// Debug-only stand-in for a capture failure. Simulators have no camera device, so the OS cannot
-/// drive the permission or configuration branches there; `-arUnavailable` injects the same handler.
-enum ARSimulatedUnavailability: String {
-    case permission
-    case configuration
-}
-
-struct ARCameraLaunchOptions {
-    let isArEntry: Bool
-    let forceSynthetic: Bool
-    let attitude: ARScriptedAttitude?
-    let blurStrength: Float?
-    let forceBlur: Bool
-    let forceNoBlur: Bool
-    let holeFill: ARHoleFillStyle
-    let debugHUD: Bool
-    let simulatedUnavailability: ARSimulatedUnavailability?
-
-    static var current: ARCameraLaunchOptions { ARCameraLaunchOptions(arguments: ProcessInfo.processInfo.arguments) }
-
-    /// Normal viewing starts sharp; only the debug blur flags override the pitch and sheet triggers.
-    var forcesBlur: Bool { forceBlur || (blurStrength ?? 0) > 0 }
-
-    /// `-arCamera` pins scripted launches to the AR page; without it the pager keeps its own default.
-    var requestedPage: MainPage? { isArEntry ? .camera : nil }
-
-    init(arguments: [String]) {
-        func value(after flag: String) -> String? {
-            guard let index = arguments.firstIndex(of: flag), arguments.indices.contains(index + 1) else {
-                return nil
-            }
-            return arguments[index + 1]
-        }
-
-        isArEntry = arguments.contains("-arCamera")
-        forceSynthetic = arguments.contains("-arSynthetic")
-        attitude = value(after: "-arAttitude").flatMap(ARScriptedAttitude.init(rawValue:))
-        blurStrength = value(after: "-arBlur").flatMap(Float.init)
-        forceBlur = arguments.contains("-arForceBlur")
-        forceNoBlur = arguments.contains("-arNoBlur")
-        holeFill = value(after: "-arHoleFill").flatMap(ARHoleFillStyle.init(rawValue:)) ?? .frosted
-        debugHUD = arguments.contains("-arDebug")
-        simulatedUnavailability = value(after: "-arUnavailable").flatMap(ARSimulatedUnavailability.init(rawValue:))
-    }
-}
-
 /// States the AR camera screen: owns the Metal renderer, the capture session, the motion source and
 /// the overlay layout. Main-thread confined, matching `ArProjection`'s scratch-state contract.
 @MainActor
@@ -113,9 +67,8 @@ final class ARCameraModel {
     private var lastHoleRects: [ARHoleRect] = []
     private var lastDrawnIDs: Set<String> = []
     private let slotSession = MarkerSlotSession()
+    private let orientationObserver = ARWindowOrientationObserver()
     private var contrastingColor: (red: Float, green: Float, blue: Float)?
-    private var orientationObservers: [NSObjectProtocol] = []
-    private var isGeneratingOrientationNotifications = false
 
     private static let layoutConfig = MarkerLayoutConfig(
         minMarkerHeight: 72,
@@ -166,13 +119,15 @@ final class ARCameraModel {
         isRunning = true
         unavailability = nil
         renderer.holeFillStyle = options.holeFill
-        observeOrientationChanges()
-        beginGeneratingOrientationNotifications()
+        orientationObserver.onRotationChange = { [weak self] rotation in
+            self?.applyScreenRotation(rotation)
+        }
+        orientationObserver.start()
 
         let useSynthetic = options.forceSynthetic || !ARCameraCapture.isCameraAvailable
         isSynthetic = useSynthetic
         if useSynthetic {
-            cameraLocation = Self.syntheticCameraLocation
+            cameraLocation = ARCameraSyntheticFixtures.cameraLocation
             renderer.setSyntheticTexture(ARCameraSyntheticFeed.makeTexture(device: renderer.device))
             statusText = "Synthetic feed"
         } else {
@@ -202,7 +157,7 @@ final class ARCameraModel {
         }
         motion.screenRotation = screenRotation
         motion.start(scripted: options.attitude)
-        refreshScreenRotation()
+        orientationObserver.refresh()
 
         blurEnabled = resolvedBlur
         if let strength = options.blurStrength {
@@ -221,8 +176,7 @@ final class ARCameraModel {
         isRunning = false
         motion.stop()
         capture.stop()
-        removeOrientationObservers()
-        endGeneratingOrientationNotifications()
+        orientationObserver.stop()
         renderer?.clearCameraTexture()
         renderer?.setBlurEnabled(false, animated: false)
         Self.log.info("stop")
@@ -277,7 +231,7 @@ final class ARCameraModel {
         viewport = size
         self.safeAreaInsets = safeAreaInsets
         self.overlayOrigin = overlayOrigin
-        refreshScreenRotation()
+        orientationObserver.refresh()
         if geometryChanged {
             recompute()
         }
@@ -371,91 +325,12 @@ final class ARCameraModel {
 
     // MARK: - Screen rotation
 
-    private func observeOrientationChanges() {
-        guard orientationObservers.isEmpty else { return }
-        let center = NotificationCenter.default
-        let names: [Notification.Name] = [
-            UIDevice.orientationDidChangeNotification,
-            UIApplication.didBecomeActiveNotification,
-            UIWindow.didBecomeKeyNotification,
-            UIScene.didActivateNotification,
-        ]
-        orientationObservers = names.map { name in
-            center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
-                Task { @MainActor [weak self] in
-                    self?.refreshScreenRotation()
-                }
-            }
-        }
-    }
-
-    private func removeOrientationObservers() {
-        let center = NotificationCenter.default
-        for observer in orientationObservers {
-            center.removeObserver(observer)
-        }
-        orientationObservers.removeAll()
-    }
-
-    private func beginGeneratingOrientationNotifications() {
-        guard !isGeneratingOrientationNotifications else { return }
-        UIDevice.current.beginGeneratingDeviceOrientationNotifications()
-        isGeneratingOrientationNotifications = true
-    }
-
-    private func endGeneratingOrientationNotifications() {
-        guard isGeneratingOrientationNotifications else { return }
-        UIDevice.current.endGeneratingDeviceOrientationNotifications()
-        isGeneratingOrientationNotifications = false
-    }
-
-    /// Reads the active window scene instead of the raw device orientation: the interface
-    /// orientation is what the SwiftUI viewport and the AR projection are laid out against.
-    func refreshScreenRotation() {
-        guard let scene = activeWindowScene(),
-              let mapping = Self.orientationMapping(
-                  for: scene.effectiveGeometry.interfaceOrientation
-              ) else {
-            capture.setVideoRotationAngle(Self.videoRotationAngle(for: screenRotation))
-            return
-        }
-        applyScreenRotation(mapping)
-    }
-
-    private func activeWindowScene() -> UIWindowScene? {
-        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
-        return scenes.first { $0.activationState == .foregroundActive }
-            ?? scenes.first { $0.activationState == .foregroundInactive }
-            ?? scenes.first
-    }
-
     private func applyScreenRotation(_ rotation: ScreenRotation) {
-        capture.setVideoRotationAngle(Self.videoRotationAngle(for: rotation))
+        capture.setVideoRotationAngle(ARWindowOrientationObserver.videoRotationAngle(for: rotation))
         motion.screenRotation = rotation
         guard rotation != screenRotation else { return }
         screenRotation = rotation
         recompute()
-    }
-
-    private static func orientationMapping(
-        for orientation: UIInterfaceOrientation
-    ) -> ScreenRotation? {
-        switch orientation {
-        case .portrait: .rotation0
-        case .landscapeRight: .rotation90
-        case .landscapeLeft: .rotation270
-        case .portraitUpsideDown: .rotation180
-        @unknown default: nil
-        }
-    }
-
-    private static func videoRotationAngle(for rotation: ScreenRotation) -> CGFloat {
-        switch rotation {
-        case .rotation0: 90
-        case .rotation90: 0
-        case .rotation180: 270
-        case .rotation270: 180
-        }
     }
 
     // MARK: - Layout
@@ -479,7 +354,7 @@ final class ARCameraModel {
             screenRotation: screenRotation
         )
 
-        let places: [Place] = isSynthetic ? Self.syntheticPlaces() : nearby.allPlaces
+        let places: [Place] = isSynthetic ? ARCameraSyntheticFixtures.places() : nearby.allPlaces
         let candidates = places.map { Self.candidate(for: $0, camera: location) }
         let update = slotSession.update(
             povLocation: location,
@@ -591,7 +466,7 @@ final class ARCameraModel {
 
     private static func candidate(for place: Place, camera: GeoLocation) -> MarkerCandidate {
         let location = place.location.withAltitude(
-            altitude: camera.altitude + altitudeOffset(for: place)
+            altitude: camera.altitude + ARCameraSyntheticFixtures.altitudeOffset(for: place)
         )
         return MarkerCandidate(
             place: place,
@@ -646,48 +521,6 @@ final class ARCameraModel {
         case .rotation180: "180"
         case .rotation270: "270"
         }
-    }
-
-    // MARK: - Synthetic fixtures
-
-    private static let syntheticCameraLocation = GeoLocation(
-        latitude: 50.0614,
-        longitude: 19.9366,
-        altitude: 210,
-        horizontalAccuracyMeters: nil,
-        timestampMillis: 0
-    )
-
-    private static let syntheticBearings: [Double] = [-12, 12]
-    private static let syntheticDistances: [Double] = [140, 240]
-    private static let syntheticAltitudes: [Double] = [10, -4]
-    private static let syntheticNames = ["Cloth Hall", "St Mary's"]
-    private static let syntheticCategories: [PlaceCategory] = [.sightsLandmarks, .artsCulture]
-
-    private static func syntheticPlaces() -> [Place] {
-        let camera = syntheticCameraLocation
-        // The shared projection treats one degree of longitude as 111111 m (the Android behaviour);
-        // mirroring that here keeps the fixture bearings exact.
-        let metersPerDegree = 111_111.0
-        return syntheticBearings.enumerated().map { index, bearingDegrees in
-            let bearing = bearingDegrees * .pi / 180
-            let distance = syntheticDistances[index % syntheticDistances.count]
-            let latitude = camera.latitude + cos(bearing) * distance / metersPerDegree
-            let longitude = camera.longitude + sin(bearing) * distance / metersPerDegree
-            return Place(
-                id: "synthetic-\(index)",
-                name: syntheticNames[index % syntheticNames.count],
-                latitude: latitude,
-                longitude: longitude,
-                category: syntheticCategories[index % syntheticCategories.count]
-            )
-        }
-    }
-
-    /// Synthetic-fixture altitude, used only to keep the two demo markers off the horizon line.
-    private static func altitudeOffset(for place: Place) -> Double {
-        let index = Int(place.id.split(separator: "-").last ?? "0") ?? 0
-        return syntheticAltitudes[index % syntheticAltitudes.count]
     }
 
     private static func normalizedDegrees(_ degrees: Double) -> Double {
