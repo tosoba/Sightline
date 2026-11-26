@@ -10,7 +10,11 @@ plugins {
 kotlin {
   android {
     namespace = "com.trm.sightline.api.photon"
-    compileSdk = 37
+    compileSdk {
+      version = release(libs.versions.compileSdk.get().toInt()) {
+        minorApiLevel = libs.versions.compileSdkMinor.get().toInt()
+      }
+    }
     minSdk = libs.versions.minSdk.get().toInt()
 
     compilerOptions { jvmTarget.set(JvmTarget.JVM_11) }
