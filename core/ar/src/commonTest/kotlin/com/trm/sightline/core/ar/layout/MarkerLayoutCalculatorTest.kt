@@ -90,6 +90,70 @@ class MarkerLayoutCalculatorTest {
   }
 
   @Test
+  fun `ios target height mode restores the four seventy two point rows in landscape`() {
+    val geometry =
+      MarkerLayoutCalculator.calculate(
+        config =
+          phoneConfig.copy(
+            sizingMode = MarkerSizingMode.TargetHeightFirst,
+            targetRows = 6,
+          ),
+        usableWidth = 852f,
+        usableHeight = 381f,
+        topInset = 0f,
+      )
+
+    assertEquals(4, geometry.rows)
+    assertEquals(72f, geometry.markerHeight)
+  }
+
+  @Test
+  fun `ios target height mode caps the card height on tall viewports`() {
+    val geometry =
+      MarkerLayoutCalculator.calculate(
+        config =
+          phoneConfig.copy(
+            sizingMode = MarkerSizingMode.TargetHeightFirst,
+            targetRows = 6,
+          ),
+        usableWidth = 393f,
+        usableHeight = 800f,
+        topInset = 0f,
+      )
+
+    assertEquals(6, geometry.rows)
+    assertEquals(88f, geometry.markerHeight)
+  }
+
+  @Test
+  fun `default fit rows mode keeps android cards at the minimum on short viewports`() {
+    val geometry =
+      MarkerLayoutCalculator.calculate(
+        config = androidConfig,
+        usableWidth = 1080f,
+        usableHeight = 200f,
+        topInset = 0f,
+      )
+
+    assertEquals(1, geometry.rows)
+    assertEquals(189f, geometry.markerHeight)
+  }
+
+  @Test
+  fun `default fit rows mode still sizes a short phone viewport from the minimum row`() {
+    val geometry =
+      MarkerLayoutCalculator.calculate(
+        config = phoneConfig,
+        usableWidth = 852f,
+        usableHeight = 381f,
+        topInset = 0f,
+      )
+
+    assertEquals(4, geometry.rows)
+    assertEquals(79.25f, geometry.markerHeight)
+  }
+
+  @Test
   fun `tiny viewport falls back to one row and the minimum card height`() {
     val geometry =
       MarkerLayoutCalculator.calculate(

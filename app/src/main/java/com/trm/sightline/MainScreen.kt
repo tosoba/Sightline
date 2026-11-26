@@ -214,6 +214,12 @@ fun SharedTransitionScope.MainScreen(
   }
 
   val userLocationEnabled = isUserLocationEnabled && locationPermissionState.isGranted
+  val locationAddress =
+    if (userLocationEnabled) {
+      userLocationAddress
+    } else {
+      LocationAddressState.Loaded(customLocationAddress)
+    }
   val focusManager = LocalFocusManager.current
 
   val sheetPeekHeight =
@@ -241,8 +247,7 @@ fun SharedTransitionScope.MainScreen(
           places = places,
           userLocationEnabled = userLocationEnabled,
           activeLocation = activeLocation,
-          userLocationAddress = userLocationAddress,
-          customLocationAddress = customLocationAddress,
+          locationAddress = locationAddress,
           customLocationSearchResults = customLocationSearchResults,
           layout =
             if (isCompactHeight || sheet.cameraPreviewBlurred) PlacesLayout.Grid
@@ -285,7 +290,7 @@ fun SharedTransitionScope.MainScreen(
           onCategoryClick = onCategoryClick,
         )
       },
-    ) { sheet, _ ->
+    ) { sheet ->
       LaunchedEffect(sheet.sheetState.targetValue) {
         if (sheet.sheetState.targetValue == SheetValue.PartiallyExpanded) {
           focusManager.clearFocus()

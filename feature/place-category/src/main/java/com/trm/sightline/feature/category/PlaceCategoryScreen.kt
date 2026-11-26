@@ -123,7 +123,7 @@ fun SharedTransitionScope.PlaceCategoryScreen(
           }
         }
       },
-    ) { sheet, _ ->
+    ) { sheet ->
       Box(modifier = Modifier.fillMaxSize()) {
         AnimatedVisibility(
           visible =

@@ -1,12 +1,30 @@
 package com.trm.sightline.core.ar.layout
 
 /**
+ * How [MarkerLayoutCalculator] turns the usable viewport height into card height and row count.
+ *
+ * These are the two sizing strategies the platform models have always used. The mode is an explicit
+ * behavior-preserving platform strategy rather than two algorithms landing here by accident: Android
+ * has always grown rows first from a text-metric minimum, while iOS has always divided the height by
+ * a fixed target row count and then derived the rows that fit.
+ */
+enum class MarkerSizingMode {
+  /** Rows fit at the minimum card height first, then cards grow to fill the remaining height. */
+  FitRows,
+
+  /** Card height targets `usableHeight / targetRows`, then the rows that fit become the row count. */
+  TargetHeightFirst,
+}
+
+/**
  * Platform-dependent bounds for the adaptive AR Marker card layout.
  *
- * Both platforms share one sizing formula ([MarkerLayoutCalculator]); only these bounds differ, so
- * they carry every platform value: pixel/point card bounds, the target width that drives the column
- * divisor, the row range, the vertical gap between stacked rows, the overlap-guard fraction used by
- * [com.trm.sightline.core.ar.math.MarkerSlotAssignment] and the padding below the top inset.
+ * Both platforms share one calculator ([MarkerLayoutCalculator]); these values differ per platform,
+ * so they carry every platform value: pixel/point card bounds, the target width that drives the
+ * column divisor, the row range, the vertical gap between stacked rows, the overlap-guard fraction
+ * used by [com.trm.sightline.core.ar.math.MarkerSlotAssignment], the padding below the top inset and
+ * the [sizingMode] selector. [FitRows] is the default because it reproduces Android's current
+ * geometry; iOS opts into [MarkerSizingMode.TargetHeightFirst] with [targetRows].
  */
 data class MarkerLayoutConfig(
   val minMarkerHeight: Float,
@@ -21,6 +39,8 @@ data class MarkerLayoutConfig(
   val verticalSpacing: Float,
   val overlapGuardFraction: Float,
   val topPadding: Float,
+  val sizingMode: MarkerSizingMode = MarkerSizingMode.FitRows,
+  val targetRows: Int = 6,
 ) {
   init {
     require(minMarkerHeight <= maxMarkerHeight)
@@ -31,6 +51,7 @@ data class MarkerLayoutConfig(
     require(verticalSpacing >= 0f)
     require(overlapGuardFraction >= 0f)
     require(topPadding >= 0f)
+    require(targetRows >= 1)
   }
 }
 
@@ -48,18 +69,20 @@ data class MarkerLayoutGeometry(
 /**
  * Computes the adaptive AR Marker card layout from the usable viewport.
  *
- * Canonical formula, shared by Android and iOS:
+ * Width is shared by both [MarkerSizingMode]s:
  * - `divisor = clamp((usableWidth / targetMarkerWidth).toInt(), minWidthDivisor, maxWidthDivisor)`
  * - `markerWidth = clamp(usableWidth / divisor, minMarkerWidth, maxMarkerWidth)`
- * - `rows = clamp((usableHeight / (minMarkerHeight + verticalSpacing)).toInt(), minRows, maxRows)`
- * - `markerHeight = clamp(usableHeight / rows - verticalSpacing, minMarkerHeight, maxMarkerHeight)`
- * - `overlapGuard = markerWidth * overlapGuardFraction`
- * - `baseY = topInset + topPadding + markerHeight / 2`
  *
- * Rows fit at the minimum card height first, then the cards grow to consume the remaining height
- * up to the platform maximum. That reproduces Android's text-metric-driven card height exactly and
- * keeps iOS inside its 72...88 pt bounds; only a viewport shorter than six minimum rows can grow
- * iOS cards slightly above the old fixed 72 pt minimum.
+ * Height depends on the platform's [MarkerSizingMode]:
+ * - [MarkerSizingMode.FitRows] (default, Android): `rows = clamp((usableHeight /
+ *   (minMarkerHeight + verticalSpacing)).toInt(), minRows, maxRows)` then `markerHeight =
+ *   clamp(usableHeight / rows - verticalSpacing, minMarkerHeight, maxMarkerHeight)`.
+ * - [MarkerSizingMode.TargetHeightFirst] (iOS): `markerHeight = clamp(usableHeight / targetRows,
+ *   minMarkerHeight, maxMarkerHeight)` then `rows = clamp((usableHeight + verticalSpacing) /
+ *   (markerHeight + verticalSpacing)).toInt(), minRows, maxRows)`.
+ *
+ * Both modes finish with `overlapGuard = markerWidth * overlapGuardFraction` and `baseY = topInset +
+ * topPadding + markerHeight / 2`.
  */
 object MarkerLayoutCalculator {
   fun calculate(
@@ -78,13 +101,27 @@ object MarkerLayoutCalculator {
     val markerWidth =
       (width / divisor).coerceIn(config.minMarkerWidth, config.maxMarkerWidth)
 
-    val rows =
-      (height / (config.minMarkerHeight + config.verticalSpacing))
-        .toInt()
-        .coerceIn(config.minRows, config.maxRows)
-    val markerHeight =
-      (height / rows - config.verticalSpacing)
-        .coerceIn(config.minMarkerHeight, config.maxMarkerHeight)
+    val rows: Int
+    val markerHeight: Float
+    when (config.sizingMode) {
+      MarkerSizingMode.FitRows -> {
+        rows =
+          (height / (config.minMarkerHeight + config.verticalSpacing))
+            .toInt()
+            .coerceIn(config.minRows, config.maxRows)
+        markerHeight =
+          (height / rows - config.verticalSpacing)
+            .coerceIn(config.minMarkerHeight, config.maxMarkerHeight)
+      }
+      MarkerSizingMode.TargetHeightFirst -> {
+        markerHeight =
+          (height / config.targetRows).coerceIn(config.minMarkerHeight, config.maxMarkerHeight)
+        rows =
+          ((height + config.verticalSpacing) / (markerHeight + config.verticalSpacing))
+            .toInt()
+            .coerceIn(config.minRows, config.maxRows)
+      }
+    }
 
     return MarkerLayoutGeometry(
       markerWidth = markerWidth,

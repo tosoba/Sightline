@@ -20,6 +20,7 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import androidx.navigation3.ui.NavDisplay
+import com.trm.sightline.core.common.messageResource
 import com.trm.sightline.core.ui.theme.SightlineTheme
 import com.trm.sightline.feature.category.PlaceCategoryRoute
 import com.trm.sightline.feature.category.PlaceCategoryScreen
@@ -41,7 +42,7 @@ class MainActivity : ComponentActivity() {
 
           val viewModel = metroViewModel<MainViewModel>()
           val state by viewModel.state.collectAsStateWithLifecycle()
-          val errorMessage by viewModel.errorMessage.collectAsStateWithLifecycle()
+          val errorMessage = state.error?.messageResource()
 
           SharedTransitionLayout {
             NavDisplay(

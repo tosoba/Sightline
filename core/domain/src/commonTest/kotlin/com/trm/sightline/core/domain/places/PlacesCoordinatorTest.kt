@@ -23,6 +23,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
@@ -468,6 +469,24 @@ class PlacesCoordinatorTest {
     val harness = harness(preferences = prefsWithKrakow(userLocationEnabled = true))
     runCurrent()
     assertEquals(true, harness.coordinator.userLocationEnabled.value)
+
+    harness.location.setLocationEnabled(false)
+    runCurrent()
+
+    assertEquals(false, harness.coordinator.userLocationEnabled.value)
+    assertEquals(listOf(false), harness.preferences.userLocationEnabledWrites)
+  }
+
+  @Test
+  fun refreshLocationSettingsRestartsTheLocationServicesObservation() = runTest {
+    val harness = harness(preferences = prefsWithKrakow(userLocationEnabled = true))
+    runCurrent()
+    assertEquals(1, harness.location.locationEnabledSubscriptions)
+
+    harness.coordinator.refreshLocationSettings()
+    runCurrent()
+
+    assertEquals(2, harness.location.locationEnabledSubscriptions)
 
     harness.location.setLocationEnabled(false)
     runCurrent()
@@ -925,6 +944,9 @@ private class StubLocationProvider : LocationProvider {
   private val locationEnabled = MutableStateFlow(true)
   private val authorization = MutableStateFlow<LocationAuthorization>(LocationAuthorization.Granted)
 
+  var locationEnabledSubscriptions = 0
+    private set
+
   fun emit(location: GeoLocation) {
     updates.tryEmit(location)
   }
@@ -935,7 +957,8 @@ private class StubLocationProvider : LocationProvider {
 
   override fun locationUpdates(): Flow<GeoLocation> = updates
 
-  override fun isLocationEnabled(): Flow<Boolean> = locationEnabled
+  override fun isLocationEnabled(): Flow<Boolean> =
+    locationEnabled.onStart { locationEnabledSubscriptions++ }
 
   override val authorizationState: Flow<LocationAuthorization> = authorization
 
