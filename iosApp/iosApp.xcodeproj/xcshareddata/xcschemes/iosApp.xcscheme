@@ -17,7 +17,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "78B53CC79860CBFC2F5543C6"
-               BuildableName = "iosApp.app"
+               BuildableName = "Sightline.app"
                BlueprintName = "iosApp"
                ReferencedContainer = "container:iosApp.xcodeproj">
             </BuildableReference>
@@ -34,7 +34,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "78B53CC79860CBFC2F5543C6"
-            BuildableName = "iosApp.app"
+            BuildableName = "Sightline.app"
             BlueprintName = "iosApp"
             ReferencedContainer = "container:iosApp.xcodeproj">
          </BuildableReference>
@@ -70,7 +70,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "78B53CC79860CBFC2F5543C6"
-            BuildableName = "iosApp.app"
+            BuildableName = "Sightline.app"
             BlueprintName = "iosApp"
             ReferencedContainer = "container:iosApp.xcodeproj">
          </BuildableReference>
@@ -89,7 +89,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "78B53CC79860CBFC2F5543C6"
-            BuildableName = "iosApp.app"
+            BuildableName = "Sightline.app"
             BlueprintName = "iosApp"
             ReferencedContainer = "container:iosApp.xcodeproj">
          </BuildableReference>

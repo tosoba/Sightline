@@ -65,11 +65,11 @@
 		7E89613391F5E3CE7C3B793B /* dark_style.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = dark_style.json; sourceTree = "<group>"; };
 		840FE9E1605EBA504BEF724B /* ARCameraScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARCameraScreen.swift; sourceTree = "<group>"; };
 		84E08D53FE14521E864C1BC9 /* IPadAdaptiveUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadAdaptiveUITests.swift; sourceTree = "<group>"; };
-		86038AE1032E284E79B32AD6 /* iosApp.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = iosApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		87C9FF6C45AC13D186492166 /* MapScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapScreen.swift; sourceTree = "<group>"; };
 		8FB967CAEED073BEF18D1E7B /* ARWindowOrientationObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARWindowOrientationObserver.swift; sourceTree = "<group>"; };
 		93DFF26DEB51A16FAA6F6F6F /* UITestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITestSupport.swift; sourceTree = "<group>"; };
 		951114D8CC22B4E39EFCAA10 /* ARCameraRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARCameraRenderer.swift; sourceTree = "<group>"; };
+		A20F11F9660F75332412629E /* Sightline.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Sightline.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AFB8190B75134EDFD7D663E5 /* ARCameraMotion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARCameraMotion.swift; sourceTree = "<group>"; };
 		F954F8A9CC4247902BFD7B5A /* light_style.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = light_style.json; sourceTree = "<group>"; };
 		FA752ACAF27B074DF3C67475 /* MainScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainScreen.swift; sourceTree = "<group>"; };
@@ -160,8 +160,8 @@
 		94C98B8B3A2BFC1966447269 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				86038AE1032E284E79B32AD6 /* iosApp.app */,
 				323906AFB18147ABEDEBDB38 /* iosAppUITests.xctest */,
+				A20F11F9660F75332412629E /* Sightline.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -229,7 +229,7 @@
 				B26BDE9F5B50F285C10A6766 /* MapLibre */,
 			);
 			productName = iosApp;
-			productReference = 86038AE1032E284E79B32AD6 /* iosApp.app */;
+			productReference = A20F11F9660F75332412629E /* Sightline.app */;
 			productType = "com.apple.product-type.application";
 		};
 		C6FCE5742C7A4D59A165E213 /* iosAppUITests */ = {
@@ -260,6 +260,7 @@
 				LastUpgradeCheck = 1600;
 				TargetAttributes = {
 					78B53CC79860CBFC2F5543C6 = {
+						DevelopmentTeam = TNDGLB93Z5;
 						ProvisioningStyle = Automatic;
 					};
 					C6FCE5742C7A4D59A165E213 = {
@@ -537,6 +538,7 @@
 				CODE_SIGNING_ALLOWED = YES;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = TNDGLB93Z5;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -582,6 +584,7 @@
 				CODE_SIGNING_ALLOWED = YES;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = TNDGLB93Z5;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
