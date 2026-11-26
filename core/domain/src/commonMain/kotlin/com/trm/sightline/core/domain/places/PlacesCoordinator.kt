@@ -30,6 +30,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
 
@@ -371,8 +372,7 @@ class PlacesCoordinator(
     }
     if (activeCategories.isEmpty()) return
 
-    _places.value = activeCategories.associateWith { CategoryPlacesState.Loading }
-    refreshAllPlaces()
+    updatePlaces { activeCategories.associateWith { CategoryPlacesState.Loading } }
 
     activeCategories.toList().forEach(::refetchCategory)
   }
@@ -383,27 +383,25 @@ class PlacesCoordinator(
   }
 
   private fun putCategory(category: PlaceCategory, state: CategoryPlacesState) {
-    _places.value = _places.value + (category to state)
-    refreshAllPlaces()
+    updatePlaces { it + (category to state) }
   }
 
   private fun removeCategory(category: PlaceCategory) {
-    if (!_places.value.containsKey(category)) return
-    _places.value = _places.value - category
-    refreshAllPlaces()
+    updatePlaces { it - category }
   }
 
   private fun clearPlaces() {
     fetchJobs.values.toList().forEach(Job::cancel)
     fetchJobs.clear()
-    if (_places.value.isEmpty()) return
-    _places.value = emptyMap()
-    refreshAllPlaces()
+    updatePlaces { emptyMap() }
   }
 
-  private fun refreshAllPlaces() {
+  private fun updatePlaces(
+    transform: (Map<PlaceCategory, CategoryPlacesState>) -> Map<PlaceCategory, CategoryPlacesState>
+  ) {
+    val places = _places.updateAndGet(transform)
     _allPlaces.value =
-      _places.value.values
+      places.values
         .filterIsInstance<CategoryPlacesState.Loaded>()
         .flatMap(CategoryPlacesState.Loaded::places)
   }
