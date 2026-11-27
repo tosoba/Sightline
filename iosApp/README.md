@@ -8,6 +8,7 @@ The `shared` Gradle module builds a static `Shared.xcframework`; this app consum
 - `project.yml` - XcodeGen manifest; `iosApp.xcodeproj` is generated from it and committed.
 - `Sources/` - the SwiftUI app: the root pager and screens, the MapLibre wrapper, the nearby-places model, and the AR camera page with its capture session, Metal renderer and shaders (`ARCameraShaders.metal`), Core Motion feed, and marker overlay.
 - `Sources/Shared/SharedResources+SwiftUI.swift` - the `StringResource` / `ImageResource` and key-path sugar over the `:core:resources` moko-resources output (`Text(\.places_count, count)`, `Image(category.icon)`).
+- `Assets.xcassets/` - the app icon, rendered at 1024x1024 from the Android adaptive-icon vector (`app/src/main/res/drawable/ic_launcher_foreground.xml` and its gradient background) so both platforms share one mark.
 - `Resources/` - MapLibre `light_style.json` and `dark_style.json`, copied from `core/ui/src/main/res/raw` by `./gradlew :syncIosMapStyles`.
 - `Support/Info.plist` - app plist with the `NSLocationWhenInUseUsageDescription` and `NSCameraUsageDescription` purpose strings.
 - `UITests/` - the full smoke suite (camera, map, category push and back, location, preferences across a relaunch), the map page test, the location denial test, and their shared launch, toggle, and prompt helpers.

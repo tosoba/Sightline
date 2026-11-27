@@ -32,6 +32,7 @@
 		DADC53BBD40228ACA5DE753E /* ARCameraLaunchOptions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E566AF587CC02BAB9E07BDC /* ARCameraLaunchOptions.swift */; };
 		E0B924A393B05C3F6146F8F4 /* ARCameraShaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = 59681088DAB9643DDEFE8F90 /* ARCameraShaders.metal */; };
 		E1993BAB1B7155F9F0383130 /* PlaceCategory+Display.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BB26040EFB85EB4A90D97A8 /* PlaceCategory+Display.swift */; };
+		EC9D51B8D24EEF7328ACD3FE /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B1720870E51445F47D3045A0 /* Assets.xcassets */; };
 		EF84A5A8285EDBD245535C31 /* ARCameraModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22FCF56B91875AF59A4FB242 /* ARCameraModel.swift */; };
 		FF5892B4FB11915DE0A6A790 /* SharedResources+SwiftUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64233CDD7B45FC2FAB55F42C /* SharedResources+SwiftUI.swift */; };
 /* End PBXBuildFile section */
@@ -73,6 +74,7 @@
 		951114D8CC22B4E39EFCAA10 /* ARCameraRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARCameraRenderer.swift; sourceTree = "<group>"; };
 		A20F11F9660F75332412629E /* Sightline.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Sightline.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AFB8190B75134EDFD7D663E5 /* ARCameraMotion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARCameraMotion.swift; sourceTree = "<group>"; };
+		B1720870E51445F47D3045A0 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		F954F8A9CC4247902BFD7B5A /* light_style.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = light_style.json; sourceTree = "<group>"; };
 		FA752ACAF27B074DF3C67475 /* MainScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainScreen.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -112,6 +114,7 @@
 		38B69C3F79CD97858CF7B609 = {
 			isa = PBXGroup;
 			children = (
+				B1720870E51445F47D3045A0 /* Assets.xcassets */,
 				7B45CC5FD21777444CE3CA27 /* Resources */,
 				B53BB82DD7780F3657A03A11 /* Sources */,
 				F13ED58769885D2F4FFF934C /* UITests */,
@@ -307,6 +310,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EC9D51B8D24EEF7328ACD3FE /* Assets.xcassets in Resources */,
 				7AC8305FF41ED484BF8B4C31 /* dark_style.json in Resources */,
 				6AD776884F44D9355F045FE0 /* light_style.json in Resources */,
 			);
