@@ -37,6 +37,7 @@ dependencies {
   implementation(project(":core:common"))
   implementation(project(":core:domain"))
   implementation(project(":core:model"))
+  implementation(project(":core:resources"))
   implementation(project(":core:ui"))
 
   implementation(libs.androidx.core.ktx)

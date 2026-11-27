@@ -56,8 +56,11 @@ import com.trm.sightline.core.ui.AdaptiveSheetScaffold
 import com.trm.sightline.core.ui.MapCameraAnimateToBoundingBoxEffect
 import com.trm.sightline.core.ui.MapPreview
 import com.trm.sightline.core.ui.R as uiR
-import com.trm.sightline.core.ui.icon
-import com.trm.sightline.core.ui.labelRes
+import com.trm.sightline.core.resources.MR
+import com.trm.sightline.core.resources.icon
+import com.trm.sightline.core.resources.label
+import com.trm.sightline.core.resources.places_count
+import com.trm.sightline.core.ui.localized
 import com.trm.sightline.core.ui.rememberMapPlaceState
 import com.trm.sightline.core.ui.rememberMapPlacesBoundingBox
 import com.trm.sightline.core.ui.toCameraPadding
@@ -187,7 +190,7 @@ private fun SharedTransitionScope.PlaceCategoryHeader(
       ) {
         Box(contentAlignment = Alignment.Center) {
           Icon(
-            imageVector = category.icon,
+            painter = painterResource(category.icon.drawableResId),
             contentDescription = null,
             modifier = Modifier.size(32.dp),
             tint = MaterialTheme.colorScheme.onSurface,
@@ -199,7 +202,7 @@ private fun SharedTransitionScope.PlaceCategoryHeader(
 
       Column {
         Text(
-          text = stringResource(category.labelRes),
+          text = category.label.localized(),
           style = MaterialTheme.typography.headlineSmall,
           color = MaterialTheme.colorScheme.onSurface,
           modifier =
@@ -209,7 +212,7 @@ private fun SharedTransitionScope.PlaceCategoryHeader(
             ),
         )
         Text(
-          text = stringResource(commonR.string.places_count, placesCount),
+          text = MR.strings.places_count.localized(placesCount),
           style = MaterialTheme.typography.bodyMedium,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
           modifier =

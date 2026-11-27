@@ -156,7 +156,7 @@ final class NearbyPlacesModel {
         customLocationAddress = state.customLocationAddress
         customLocationSearchResults = state.customLocationSearchResults
         lastMapPosition = state.lastMapPosition
-        errorMessage = state.error.map { message(for: $0) }
+        errorMessage = state.error?.localizedMessage
 
         if userLocationEnabled != state.userLocationEnabled {
             userLocationEnabled = state.userLocationEnabled
@@ -168,14 +168,6 @@ final class NearbyPlacesModel {
         if searchRadius != state.searchRadius {
             searchRadius = state.searchRadius
             Self.logger.info("search radius changed to \(state.searchRadius.meters, privacy: .public) m")
-        }
-    }
-
-    private func message(for error: any RequestError) -> String {
-        switch onEnum(of: error) {
-        case .iO: "A connection error occurred."
-        case .http: "A server error occurred - try again later."
-        case .other: "An unknown error occurred - try again later."
         }
     }
 }

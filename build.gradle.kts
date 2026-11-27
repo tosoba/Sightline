@@ -8,6 +8,7 @@ plugins {
   alias(libs.plugins.kotlin.multiplatform) apply false
   alias(libs.plugins.kotlin.serialization) apply false
   alias(libs.plugins.metro) apply false
+  alias(libs.plugins.multiplatform.resources) apply false
   alias(libs.plugins.skie) apply false
 }
 
@@ -18,6 +19,7 @@ val kmpHostTestProjects =
     ":core:common",
     ":core:data",
     ":core:datastore",
+    ":core:resources",
     ":api:photon",
     ":core:ar",
   )

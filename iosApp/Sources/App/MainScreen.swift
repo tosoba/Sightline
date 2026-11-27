@@ -11,8 +11,8 @@ enum MainPage: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .camera: "Camera"
-        case .map: "Map"
+        case .camera: MR.strings().camera_label.localized
+        case .map: MR.strings().map_label.localized
         }
     }
 

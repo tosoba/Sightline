@@ -39,6 +39,7 @@ kotlin {
     androidMain.dependencies {
       implementation(project(":core:ar-native"))
       implementation(project(":core:common"))
+      implementation(project(":core:resources"))
       implementation(project(":core:ui"))
 
       implementation(libs.androidx.core.ktx)

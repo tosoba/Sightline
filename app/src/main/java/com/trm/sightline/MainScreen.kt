@@ -44,7 +44,6 @@ import com.trm.sightline.core.ar.util.dpToPx
 import com.trm.sightline.core.ar.util.getScreenSize
 import com.trm.sightline.core.ar.util.sideSheetRectF
 import com.trm.sightline.core.common.PermissionStatus
-import com.trm.sightline.core.common.messageResource
 import com.trm.sightline.core.common.util.CheckLocationSettingsResult
 import com.trm.sightline.core.common.util.checkLocationSettings
 import com.trm.sightline.core.common.util.startAppSettingsActivity
@@ -54,6 +53,11 @@ import com.trm.sightline.core.model.CustomLocation
 import com.trm.sightline.core.model.MapCameraPosition
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
+import com.trm.sightline.core.resources.MR
+import com.trm.sightline.core.resources.cancel
+import com.trm.sightline.core.resources.message
+import com.trm.sightline.core.resources.open_settings
+import com.trm.sightline.core.ui.localized
 import com.trm.sightline.core.model.PlaceSearchRadius
 import com.trm.sightline.core.ui.AdaptiveSheetScaffold
 import com.trm.sightline.core.ui.collapsedBottomSheetContentHeightDp
@@ -61,7 +65,6 @@ import com.trm.sightline.core.ui.rememberPermissionState
 import com.trm.sightline.feature.places.PlacesContent
 import com.trm.sightline.feature.places.PlacesLayout
 import kotlinx.coroutines.launch
-import com.trm.sightline.core.common.R as commonR
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -119,12 +122,12 @@ fun SharedTransitionScope.MainScreen(
             context.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
           },
         ) {
-          Text(stringResource(commonR.string.open_settings))
+          Text(MR.strings.open_settings.localized())
         }
       },
       dismissButton = {
         TextButton(onClick = { showLocationDisabledDialog = false }) {
-          Text(stringResource(commonR.string.cancel))
+          Text(MR.strings.cancel.localized())
         }
       },
     )
@@ -151,12 +154,12 @@ fun SharedTransitionScope.MainScreen(
             context.startAppSettingsActivity()
           },
         ) {
-          Text(stringResource(commonR.string.open_settings))
+          Text(MR.strings.open_settings.localized())
         }
       },
       dismissButton = {
         TextButton(onClick = { showCameraPermissionSettingsDialog = false }) {
-          Text(stringResource(commonR.string.cancel))
+          Text(MR.strings.cancel.localized())
         }
       },
     )
@@ -192,12 +195,12 @@ fun SharedTransitionScope.MainScreen(
             context.startAppSettingsActivity()
           },
         ) {
-          Text(stringResource(commonR.string.open_settings))
+          Text(MR.strings.open_settings.localized())
         }
       },
       dismissButton = {
         TextButton(onClick = { showLocationPermissionSettingsDialog = false }) {
-          Text(stringResource(commonR.string.cancel))
+          Text(MR.strings.cancel.localized())
         }
       },
     )
@@ -210,7 +213,7 @@ fun SharedTransitionScope.MainScreen(
     } else {
       LocationAddressState.Loaded(state.customLocationAddress)
     }
-  val errorMessage = state.error?.messageResource()
+  val errorMessage = state.error?.message
   val focusManager = LocalFocusManager.current
 
   val sheetPeekHeight =
@@ -346,7 +349,7 @@ fun SharedTransitionScope.MainScreen(
     }
 
     MainScreenErrorMessage(
-      message = errorMessage?.let { stringResource(it) }.orEmpty(),
+      message = errorMessage?.localized().orEmpty(),
       visible = errorMessage != null,
       modifier = Modifier.align(Alignment.TopCenter).padding(16.dp).systemBarsPadding(),
     )

@@ -52,7 +52,7 @@ struct PlacesSheet: View {
         .presentationContentInteraction(.scrolls)
         .interactiveDismissDisabled(!path.isEmpty)
         .alert("Location access is off", isPresented: $showsSettingsAlert) {
-            Button("Open Settings") {
+            Button(MR.strings().open_settings.localized) {
                 AppSettings.open()
             }
             Button("Cancel", role: .cancel) {}
@@ -88,7 +88,7 @@ struct PlacesSheet: View {
             } else {
                 searchField
                 if isSearchFocused {
-                    Button("Cancel") {
+                    Button(MR.strings().cancel.localized) {
                         cancelSearch()
                     }
                     .buttonStyle(.plain)
@@ -121,10 +121,10 @@ struct PlacesSheet: View {
         HStack(spacing: 8) {
             if model.userLocation == nil {
                 ProgressView()
-                Text("Loading location...")
+                Text(\.loading_location)
             } else if case .loading = onEnum(of: model.userLocationAddress) {
                 ProgressView()
-                Text("Loading location address...")
+                Text(\.loading_location_address)
             } else {
                 Image(systemName: "location.fill")
                     .foregroundStyle(.secondary)
@@ -147,7 +147,7 @@ struct PlacesSheet: View {
         guard case let .loaded(loaded) = onEnum(of: model.userLocationAddress),
               !loaded.address.isEmpty
         else {
-            return "Location address not found."
+            return MR.strings().location_address_not_found.localized
         }
         return loaded.address
     }
@@ -156,7 +156,7 @@ struct PlacesSheet: View {
         HStack(spacing: 6) {
             Image(systemName: "magnifyingglass")
                 .foregroundStyle(.secondary)
-            TextField("Enter your location.", text: addressBinding)
+            TextField(MR.strings().enter_location_placeholder.localized, text: addressBinding)
                 .textFieldStyle(.plain)
                 .focused($isSearchFocused)
                 .submitLabel(.search)
@@ -202,9 +202,9 @@ struct PlacesSheet: View {
     private var searchStateView: some View {
         switch onEnum(of: model.customLocationSearchResults) {
         case .idle:
-            prompt("Start typing to search for a location.")
+            prompt(MR.strings().start_typing_to_search.localized)
         case .queryTooShort:
-            prompt("Your query must be at least 3 characters long.")
+            prompt(MR.strings().query_too_short.localized)
         case .loading:
             ProgressView()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -319,7 +319,7 @@ private struct CategoryGridCard: View {
 
     private var subtitle: String {
         guard isActive else { return "Not selected" }
-        return model.isLoading(category) ? "Loading..." : "\(places.count) places"
+        return model.isLoading(category) ? "Loading..." : MR.strings().places_count.localized([places.count])
     }
 
     var body: some View {
@@ -334,7 +334,7 @@ private struct CategoryGridCard: View {
                         ProgressView()
                             .tint(isActive ? .white : .accentColor)
                     } else {
-                        Image(systemName: category.symbolName)
+                        Image(category.icon)
                             .font(.system(size: 20, weight: .semibold))
                             .foregroundStyle(isActive ? Color.white : Color.secondary)
                     }

@@ -1,11 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="error_connection">A connection error occurred.</string>
-    <string name="error_server">A server error occurred - try again later.</string>
-    <string name="error_unknown">An unknown error occurred - try again later.</string>
-    <string name="open_settings">Open Settings</string>
-    <string name="cancel">Cancel</string>
     <string name="back">Back</string>
-    <string name="places_count">%1$d places</string>
     <string name="open_in_google_maps">Open in Google Maps</string>
 </resources>

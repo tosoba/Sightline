@@ -59,7 +59,7 @@ struct CategoryPlacesScreen: View {
 
     private var summaryHeader: some View {
         HStack(spacing: 12) {
-            Image(systemName: route.category.symbolName)
+            Image(route.category.icon)
                 .font(.title3.weight(.semibold))
                 .frame(width: 48, height: 48)
                 .background(
@@ -69,7 +69,7 @@ struct CategoryPlacesScreen: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(route.category.title)
                     .font(.headline)
-                Text("\(places.count) places")
+                Text(\.places_count, places.count)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }

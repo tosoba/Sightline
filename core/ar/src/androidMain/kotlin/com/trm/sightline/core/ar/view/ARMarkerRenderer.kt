@@ -3,21 +3,14 @@ package com.trm.sightline.core.ar.view
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
-import android.graphics.Matrix
 import android.graphics.Paint
-import android.graphics.Path
 import android.graphics.RectF
 import android.graphics.Typeface
+import android.graphics.drawable.VectorDrawable
 import android.os.Bundle
 import android.text.TextPaint
 import android.text.TextUtils
 import androidx.annotation.MainThread
-import androidx.compose.ui.graphics.PathFillType
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.vector.PathNode
-import androidx.compose.ui.graphics.vector.VectorGroup
-import androidx.compose.ui.graphics.vector.VectorNode
-import androidx.compose.ui.graphics.vector.VectorPath
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.withSave
 import com.trm.sightline.core.ar.layout.MarkerLayoutCalculator
@@ -42,12 +35,9 @@ import com.trm.sightline.core.common.util.formatMarkerDistance
 import com.trm.sightline.core.model.GeoLocation
 import com.trm.sightline.core.model.PlaceCategory
 import com.trm.sightline.core.ui.R
-import com.trm.sightline.core.ui.icon
+import com.trm.sightline.core.resources.icon
 import com.trm.sightline.core.ui.sideSheetWidthDp
 import java.util.Objects
-import kotlin.math.abs
-import kotlin.math.acos
-import kotlin.math.sqrt
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -130,20 +120,14 @@ class ARMarkerRenderer(private val context: Context) {
   var disabled: Boolean = false
     @MainThread set
 
-  // Per-category path cache: each PlaceCategory's ImageVector is baked exactly once
-  // (group transforms folded in via Matrix) and stored here so per-frame drawing is
-  // allocation-free regardless of how many different categories appear on screen.
-  private val iconPathCache = HashMap<PlaceCategory, BakedIcon>()
+  // Per-category drawable cache: each PlaceCategory's vector is inflated once and reused, so
+  // per-frame drawing only sets bounds and tint.
+  private val iconDrawableCache = HashMap<PlaceCategory, VectorDrawable>()
 
-  /**
-   * Returns the [BakedIcon] for [category], baking it on first access. All Material Icons share a
-   * 24x24 viewport and no top-level rotation, so the fast path (cache hit) dominates after the
-   * first frame per category.
-   */
-  private fun bakedIconFor(category: PlaceCategory): BakedIcon =
-    iconPathCache.getOrPut(category) {
-      val vector = category.icon
-      BakedIcon(viewportWidth = vector.viewportWidth, paths = vector.bakeToAndroidPaths())
+  private fun iconDrawableFor(category: PlaceCategory): VectorDrawable? =
+    iconDrawableCache.getOrPut(category) {
+      ResourcesCompat.getDrawable(context.resources, category.icon.drawableResId, context.theme)
+        as? VectorDrawable ?: return null
     }
 
   private val pagedMarkers = HashMap<String, PagedMarker>()
@@ -344,8 +328,8 @@ class ARMarkerRenderer(private val context: Context) {
    * └──────────────────────────────────────────────┘
    * ```
    *
-   * Left box: category [ImageVector] icon rendered from pre-baked [android.graphics.Path]s. Right
-   * column: name (up to 2 lines), then distance (shown when vertical space permits).
+   * Left box: category vector drawable icon. Right column: name (up to 2 lines), then distance
+   * (shown when vertical space permits).
    */
   private fun Canvas.drawMarkerContent(marker: ARMarker, rectF: RectF) {
     val cornerRadiusPx = context.dpToPx(MARKER_RECT_F_CORNER_RADIUS_DP)
@@ -362,19 +346,21 @@ class ARMarkerRenderer(private val context: Context) {
 
     drawRoundRect(leftBoxRectF, cornerRadiusPx, cornerRadiusPx, surfaceBackgroundPaint)
 
-    // Draw the pre-baked icon paths for this marker's own category, scaled to
-    // ICON_BOX_FILL_FRACTION of the box. Each category is baked once on first use
-    // and retrieved from iconPathCache on subsequent frames.
-    val baked = bakedIconFor(marker.place.category)
-    if (baked.paths.isNotEmpty()) {
+    // Draw the vector icon for this marker's own category, scaled to ICON_BOX_FILL_FRACTION of
+    // the box. Each category's drawable is inflated once and reused.
+    val iconDrawable = iconDrawableFor(marker.place.category)
+    if (iconDrawable != null) {
       val iconDisplaySize = leftBoxSize * ICON_BOX_FILL_FRACTION
-      val iconScale = iconDisplaySize / baked.viewportWidth.coerceAtLeast(1f)
+      val iconScale = iconDisplaySize / ICON_VIEWPORT_SIZE
       val iconLeft = leftBoxRectF.left + (leftBoxSize - iconDisplaySize) / 2f
       val iconTop = leftBoxRectF.top + (leftBoxSize - iconDisplaySize) / 2f
       withSave {
         translate(iconLeft, iconTop)
         scale(iconScale, iconScale)
-        baked.paths.forEach { path -> drawPath(path, iconPaint) }
+        iconDrawable.setTint(iconPaint.color)
+        iconDrawable.alpha = iconPaint.alpha
+        iconDrawable.setBounds(0, 0, ICON_VIEWPORT_SIZE.toInt(), ICON_VIEWPORT_SIZE.toInt())
+        iconDrawable.draw(this)
       }
     }
 
@@ -424,332 +410,6 @@ class ARMarkerRenderer(private val context: Context) {
     }
   }
 
-  // ── ImageVector → Android Path baking ─────────────────────────────────────
-
-  /**
-   * Converts an [ImageVector] to a list of [android.graphics.Path]s in the icon's viewport
-   * coordinate space. Group transforms (rotation, scale, translation) are folded into each path via
-   * [Matrix] so that drawing only needs a single canvas-level scale/translate per frame.
-   */
-  private fun ImageVector.bakeToAndroidPaths(): List<Path> {
-    val result = mutableListOf<Path>()
-    bakeVectorNode(root, Matrix(), result)
-    return result
-  }
-
-  private fun bakeVectorNode(node: VectorNode, parentMatrix: Matrix, result: MutableList<Path>) {
-    when (node) {
-      is VectorGroup -> {
-        val m = Matrix(parentMatrix)
-        if (node.rotation != 0f) m.preRotate(node.rotation, node.pivotX, node.pivotY)
-        if (node.scaleX != 1f || node.scaleY != 1f)
-          m.preScale(node.scaleX, node.scaleY, node.pivotX, node.pivotY)
-        if (node.translationX != 0f || node.translationY != 0f)
-          m.preTranslate(node.translationX, node.translationY)
-        node.forEach { child -> bakeVectorNode(child, m, result) }
-      }
-      is VectorPath -> {
-        val path = node.pathData.toAndroidPath()
-        path.fillType =
-          if (node.pathFillType == PathFillType.EvenOdd) Path.FillType.EVEN_ODD
-          else Path.FillType.WINDING
-        if (!parentMatrix.isIdentity) path.transform(parentMatrix)
-        result.add(path)
-      }
-    }
-  }
-
-  /**
-   * Converts Compose [PathNode] path data to an [android.graphics.Path].
-   *
-   * All 19 SVG path command variants are handled. For SVG arc commands, the standard endpoint →
-   * center parameterization (SVG spec §B.2.4) is used to produce an Android `arcTo` call. Rotated
-   * arcs (xRotation ≠ 0) fall back to a straight line; Material Icons do not use them.
-   *
-   * Reflective curve/quad commands track the previous control point so that the reflection is
-   * geometrically correct, not just an approximation.
-   */
-  private fun List<PathNode>.toAndroidPath(): Path {
-    val path = Path()
-    var cx = 0f
-    var cy = 0f // current point
-    var mx = 0f
-    var my = 0f // last moveTo (for Close)
-    var lastCubicCx = Float.NaN
-    var lastCubicCy = Float.NaN
-    var lastQuadCx = Float.NaN
-    var lastQuadCy = Float.NaN
-
-    fun clearCubic() {
-      lastCubicCx = Float.NaN
-    }
-    fun clearQuad() {
-      lastQuadCx = Float.NaN
-    }
-
-    for (node in this) {
-      when (node) {
-        is PathNode.MoveTo -> {
-          path.moveTo(node.x, node.y)
-          cx = node.x
-          cy = node.y
-          mx = cx
-          my = cy
-          clearCubic()
-          clearQuad()
-        }
-        is PathNode.RelativeMoveTo -> {
-          cx += node.dx
-          cy += node.dy
-          path.moveTo(cx, cy)
-          mx = cx
-          my = cy
-          clearCubic()
-          clearQuad()
-        }
-        is PathNode.LineTo -> {
-          path.lineTo(node.x, node.y)
-          cx = node.x
-          cy = node.y
-          clearCubic()
-          clearQuad()
-        }
-        is PathNode.RelativeLineTo -> {
-          cx += node.dx
-          cy += node.dy
-          path.lineTo(cx, cy)
-          clearCubic()
-          clearQuad()
-        }
-        is PathNode.HorizontalTo -> {
-          path.lineTo(node.x, cy)
-          cx = node.x
-          clearCubic()
-          clearQuad()
-        }
-        is PathNode.RelativeHorizontalTo -> {
-          cx += node.dx
-          path.lineTo(cx, cy)
-          clearCubic()
-          clearQuad()
-        }
-        is PathNode.VerticalTo -> {
-          path.lineTo(cx, node.y)
-          cy = node.y
-          clearCubic()
-          clearQuad()
-        }
-        is PathNode.RelativeVerticalTo -> {
-          cy += node.dy
-          path.lineTo(cx, cy)
-          clearCubic()
-          clearQuad()
-        }
-        is PathNode.CurveTo -> {
-          path.cubicTo(node.x1, node.y1, node.x2, node.y2, node.x3, node.y3)
-          lastCubicCx = node.x2
-          lastCubicCy = node.y2
-          cx = node.x3
-          cy = node.y3
-          clearQuad()
-        }
-        is PathNode.RelativeCurveTo -> {
-          path.rCubicTo(node.dx1, node.dy1, node.dx2, node.dy2, node.dx3, node.dy3)
-          lastCubicCx = cx + node.dx2
-          lastCubicCy = cy + node.dy2
-          cx += node.dx3
-          cy += node.dy3
-          clearQuad()
-        }
-        is PathNode.ReflectiveCurveTo -> {
-          // Reflect ctrl2 of the previous cubic across the current point.
-          val c1x = if (lastCubicCx.isNaN()) cx else 2f * cx - lastCubicCx
-          val c1y = if (lastCubicCy.isNaN()) cy else 2f * cy - lastCubicCy
-          path.cubicTo(c1x, c1y, node.x1, node.y1, node.x2, node.y2)
-          lastCubicCx = node.x1
-          lastCubicCy = node.y1
-          cx = node.x2
-          cy = node.y2
-          clearQuad()
-        }
-        is PathNode.RelativeReflectiveCurveTo -> {
-          val c1x = if (lastCubicCx.isNaN()) 0f else cx - lastCubicCx
-          val c1y = if (lastCubicCy.isNaN()) 0f else cy - lastCubicCy
-          path.rCubicTo(c1x, c1y, node.dx1, node.dy1, node.dx2, node.dy2)
-          lastCubicCx = cx + node.dx1
-          lastCubicCy = cy + node.dy1
-          cx += node.dx2
-          cy += node.dy2
-          clearQuad()
-        }
-        is PathNode.QuadTo -> {
-          path.quadTo(node.x1, node.y1, node.x2, node.y2)
-          lastQuadCx = node.x1
-          lastQuadCy = node.y1
-          cx = node.x2
-          cy = node.y2
-          clearCubic()
-        }
-        is PathNode.RelativeQuadTo -> {
-          path.rQuadTo(node.dx1, node.dy1, node.dx2, node.dy2)
-          lastQuadCx = cx + node.dx1
-          lastQuadCy = cy + node.dy1
-          cx += node.dx2
-          cy += node.dy2
-          clearCubic()
-        }
-        is PathNode.ReflectiveQuadTo -> {
-          val c1x = if (lastQuadCx.isNaN()) cx else 2f * cx - lastQuadCx
-          val c1y = if (lastQuadCy.isNaN()) cy else 2f * cy - lastQuadCy
-          path.quadTo(c1x, c1y, node.x, node.y)
-          lastQuadCx = c1x
-          lastQuadCy = c1y
-          cx = node.x
-          cy = node.y
-          clearCubic()
-        }
-        is PathNode.RelativeReflectiveQuadTo -> {
-          val c1x = if (lastQuadCx.isNaN()) 0f else cx - lastQuadCx
-          val c1y = if (lastQuadCy.isNaN()) 0f else cy - lastQuadCy
-          path.rQuadTo(c1x, c1y, node.dx, node.dy)
-          lastQuadCx = cx + c1x
-          lastQuadCy = cy + c1y
-          cx += node.dx
-          cy += node.dy
-          clearCubic()
-        }
-        is PathNode.ArcTo -> {
-          svgArcTo(
-            path,
-            cx,
-            cy,
-            node.horizontalEllipseRadius,
-            node.verticalEllipseRadius,
-            node.theta,
-            node.isMoreThanHalf,
-            node.isPositiveArc,
-            node.arcStartX,
-            node.arcStartY,
-          )
-          cx = node.arcStartX
-          cy = node.arcStartY
-          clearCubic()
-          clearQuad()
-        }
-        is PathNode.RelativeArcTo -> {
-          val endX = cx + node.arcStartDx
-          val endY = cy + node.arcStartDy
-          svgArcTo(
-            path,
-            cx,
-            cy,
-            node.horizontalEllipseRadius,
-            node.verticalEllipseRadius,
-            node.theta,
-            node.isMoreThanHalf,
-            node.isPositiveArc,
-            endX,
-            endY,
-          )
-          cx = endX
-          cy = endY
-          clearCubic()
-          clearQuad()
-        }
-        PathNode.Close -> {
-          path.close()
-          cx = mx
-          cy = my
-          clearCubic()
-          clearQuad()
-        }
-      }
-    }
-    return path
-  }
-
-  /**
-   * Converts an SVG arc (endpoint parameterization) to an Android [android.graphics.Path.arcTo]
-   * call using the standard center-parameterization derivation from SVG spec §B.2.4.
-   *
-   * Rotated arcs (xRotation ≠ 0) are extremely rare in Material Icons and fall back to a straight
-   * line — implementing canvas-rotation for baked paths would require decomposing into cubic
-   * Béziers, which is unnecessary complexity for this use case.
-   */
-  private fun svgArcTo(
-    path: Path,
-    x0: Float,
-    y0: Float,
-    rx: Float,
-    ry: Float,
-    xRotation: Float,
-    largeArc: Boolean,
-    sweep: Boolean,
-    x1: Float,
-    y1: Float,
-  ) {
-    if (x0 == x1 && y0 == y1) return
-    if (rx == 0f || ry == 0f) {
-      path.lineTo(x1, y1)
-      return
-    }
-    if (xRotation != 0f) {
-      path.lineTo(x1, y1)
-      return
-    } // see kdoc above
-
-    val dx = (x0 - x1) / 2.0
-    val dy = (y0 - y1) / 2.0
-    // (x1', y1') in rotated frame — with xRotation=0 the frame is unchanged
-    val x1p = dx
-    val y1p = dy
-    val x1pSq = x1p * x1p
-    val y1pSq = y1p * y1p
-
-    var rxD = abs(rx.toDouble())
-    var ryD = abs(ry.toDouble())
-    // Scale up radii if they are too small
-    val lambda = x1pSq / (rxD * rxD) + y1pSq / (ryD * ryD)
-    if (lambda > 1.0) {
-      val s = sqrt(lambda)
-      rxD *= s
-      ryD *= s
-    }
-    val rxSq = rxD * rxD
-    val rySq = ryD * ryD
-
-    // Center in the rotated frame (cx', cy')
-    val num = rxSq * rySq - rxSq * y1pSq - rySq * x1pSq
-    val den = rxSq * y1pSq + rySq * x1pSq
-    val sq = if (den == 0.0) 0.0 else sqrt(maxOf(0.0, num / den))
-    val sign = if (largeArc == sweep) -1.0 else 1.0
-    val cxp = sign * sq * rxD * y1p / ryD
-    val cyp = sign * sq * -ryD * x1p / rxD
-
-    // Centre in user space (xRotation = 0 → no rotation matrix)
-    val cx = cxp + (x0 + x1) / 2.0
-    val cy = cyp + (y0 + y1) / 2.0
-
-    // Angles
-    val startAngle = svgAngle(1.0, 0.0, (x1p - cxp) / rxD, (y1p - cyp) / ryD)
-    var sweepAngle =
-      svgAngle((x1p - cxp) / rxD, (y1p - cyp) / ryD, (-x1p - cxp) / rxD, (-y1p - cyp) / ryD)
-    if (!sweep && sweepAngle > 0) sweepAngle -= 360.0
-    if (sweep && sweepAngle < 0) sweepAngle += 360.0
-
-    val oval =
-      RectF((cx - rxD).toFloat(), (cy - ryD).toFloat(), (cx + rxD).toFloat(), (cy + ryD).toFloat())
-    path.arcTo(oval, startAngle.toFloat(), sweepAngle.toFloat())
-  }
-
-  /** Signed angle (degrees) from vector (ux,uy) to vector (vx,vy). */
-  private fun svgAngle(ux: Double, uy: Double, vx: Double, vy: Double): Double {
-    val dot = ux * vx + uy * vy
-    val len = sqrt(ux * ux + uy * uy) * sqrt(vx * vx + vy * vy)
-    val angle = Math.toDegrees(acos((dot / len).coerceIn(-1.0, 1.0)))
-    return if (ux * vy - uy * vx < 0) -angle else angle
-  }
-
   // ── Instance state ──────────────────────────────────────────────────────────
 
   internal fun onSaveInstanceState(): Bundle =
@@ -792,9 +452,6 @@ class ARMarkerRenderer(private val context: Context) {
 
   private data class PagedYPosition(var y: Float, var page: Int)
 
-  /** Viewport width and pre-baked [android.graphics.Path] list for one [PlaceCategory] icon. */
-  private data class BakedIcon(val viewportWidth: Float, val paths: List<Path>)
-
   private enum class SavedStateKeys {
     LAST_DRAWN_MARKER_IDS,
   }
@@ -830,5 +487,9 @@ class ARMarkerRenderer(private val context: Context) {
 
     // Fraction of the box side that the icon fills, leaving even padding on all sides.
     private const val ICON_BOX_FILL_FRACTION = 0.60f
+
+    // Every shared category vector declares this viewport; bounds are set to it and the canvas
+    // applies the display scale.
+    private const val ICON_VIEWPORT_SIZE = 24f
   }
 }

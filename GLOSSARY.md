@@ -12,6 +12,10 @@ _Avoid_: POI, venue, spot
 One of the thirteen tourist and exploration groupings that a user can toggle on or off to fetch and filter nearby places.
 _Avoid_: Tag, filter, group
 
+**Category Icon**:
+The single monochrome glyph that represents a Place Category, rendered from the same shared vector on both Android and iOS.
+_Avoid_: Category image, category symbol, category avatar
+
 **Search Radius**:
 The maximum distance from the active location within which nearby places are fetched for each active place category.
 _Avoid_: Range, distance limit

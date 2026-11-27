@@ -36,19 +36,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.dp
-import com.trm.sightline.core.common.R as commonR
 import com.trm.sightline.core.domain.places.CategoryPlacesState
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
-import com.trm.sightline.core.ui.labelRes
+import com.trm.sightline.core.resources.MR
+import com.trm.sightline.core.resources.label
+import com.trm.sightline.core.resources.places_count
+import com.trm.sightline.core.ui.localized
 
 @Composable
 internal fun SharedTransitionScope.PlaceCategoryItem(
   category: PlaceCategory,
-  icon: ImageVector,
+  icon: Painter,
   enabled: Boolean,
   selected: Boolean,
   state: CategoryPlacesState?,
@@ -89,7 +90,7 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
           Spacer(modifier = Modifier.height(4.dp))
 
           Text(
-            text = stringResource(category.labelRes),
+            text = category.label.localized(),
             style = MaterialTheme.typography.labelSmall,
             maxLines = 1,
             modifier = Modifier.basicMarquee(iterations = Int.MAX_VALUE),
@@ -151,7 +152,7 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
 
           Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
             Text(
-              text = stringResource(category.labelRes),
+              text = category.label.localized(),
               style = MaterialTheme.typography.titleMedium,
               color = MaterialTheme.colorScheme.onSurface,
               maxLines = 1,
@@ -167,7 +168,7 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
               when (current) {
                 is CategoryPlacesState.Loaded -> {
                   Text(
-                    text = stringResource(commonR.string.places_count, current.places.size),
+                    text = MR.strings.places_count.localized(current.places.size),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
@@ -205,7 +206,7 @@ internal fun SharedTransitionScope.PlaceCategoryItem(
 private fun PlaceCategoryItemIconLoadingState(
   state: CategoryPlacesState?,
   trackColor: Color,
-  icon: ImageVector,
+  icon: Painter,
 ) {
   AnimatedContent(targetState = state) { current ->
     when (current) {
@@ -213,7 +214,7 @@ private fun PlaceCategoryItemIconLoadingState(
         CircularProgressIndicator(modifier = Modifier.size(32.dp), trackColor = trackColor)
       }
       else -> {
-        Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(32.dp))
+        Icon(painter = icon, contentDescription = null, modifier = Modifier.size(32.dp))
       }
     }
   }

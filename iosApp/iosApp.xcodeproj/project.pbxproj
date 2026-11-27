@@ -33,6 +33,7 @@
 		E0B924A393B05C3F6146F8F4 /* ARCameraShaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = 59681088DAB9643DDEFE8F90 /* ARCameraShaders.metal */; };
 		E1993BAB1B7155F9F0383130 /* PlaceCategory+Display.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BB26040EFB85EB4A90D97A8 /* PlaceCategory+Display.swift */; };
 		EF84A5A8285EDBD245535C31 /* ARCameraModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22FCF56B91875AF59A4FB242 /* ARCameraModel.swift */; };
+		FF5892B4FB11915DE0A6A790 /* SharedResources+SwiftUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64233CDD7B45FC2FAB55F42C /* SharedResources+SwiftUI.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -58,6 +59,7 @@
 		439A49C149153E5BC64BBA99 /* MapLibreMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapLibreMapView.swift; sourceTree = "<group>"; };
 		53C952C07E4A8E1D6E68BD65 /* ARCameraOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARCameraOverlay.swift; sourceTree = "<group>"; };
 		59681088DAB9643DDEFE8F90 /* ARCameraShaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = ARCameraShaders.metal; sourceTree = "<group>"; };
+		64233CDD7B45FC2FAB55F42C /* SharedResources+SwiftUI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SharedResources+SwiftUI.swift"; sourceTree = "<group>"; };
 		69665D6347C12403EEDD3EA4 /* PlacesSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlacesSheet.swift; sourceTree = "<group>"; };
 		6C0BE0BD2C453896E01CBEBB /* MapPageUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapPageUITests.swift; sourceTree = "<group>"; };
 		6D812E575DBE56BB2101C167 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
@@ -193,8 +195,17 @@
 				5E7B00D39DE8EF77FD83F8F3 /* ARCamera */,
 				6492EBBB0C60BE25470F3B5A /* Map */,
 				A640EB1625B06DB8BF0A237B /* Places */,
+				B7F17BF68983AA8625C6F3F7 /* Shared */,
 			);
 			path = Sources;
+			sourceTree = "<group>";
+		};
+		B7F17BF68983AA8625C6F3F7 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				64233CDD7B45FC2FAB55F42C /* SharedResources+SwiftUI.swift */,
+			);
+			path = Shared;
 			sourceTree = "<group>";
 		};
 		F13ED58769885D2F4FFF934C /* UITests */ = {
@@ -321,7 +332,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cd \"$SRCROOT/..\"\n./gradlew :syncIosMapStyles :shared:embedAndSignAppleFrameworkForXcode\n";
+			shellScript = "cd \"$SRCROOT/..\"\n./gradlew :syncIosMapStyles :shared:embedAndSignAppleFrameworkForXcode \\\n  :shared:copyFrameworkResourcesToApp \\\n  -Pmoko.resources.PLATFORM_NAME=\"$PLATFORM_NAME\" \\\n  -Pmoko.resources.CONFIGURATION=\"${KOTLIN_FRAMEWORK_BUILD_TYPE:-$CONFIGURATION}\" \\\n  -Pmoko.resources.ARCHS=\"$ARCHS\" \\\n  -Pmoko.resources.BUILT_PRODUCTS_DIR=\"$BUILT_PRODUCTS_DIR\" \\\n  -Pmoko.resources.CONTENTS_FOLDER_PATH=\"$CONTENTS_FOLDER_PATH\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -359,6 +370,7 @@
 				64E75C774EB567397E4E8BFF /* NearbyPlacesModel.swift in Sources */,
 				E1993BAB1B7155F9F0383130 /* PlaceCategory+Display.swift in Sources */,
 				8B576710D33C46E4ED239947 /* PlacesSheet.swift in Sources */,
+				FF5892B4FB11915DE0A6A790 /* SharedResources+SwiftUI.swift in Sources */,
 				C2C6EBF26D6A2F7249B7A70B /* SightlineApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

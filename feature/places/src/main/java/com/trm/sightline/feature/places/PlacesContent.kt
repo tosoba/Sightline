@@ -49,6 +49,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -59,7 +60,15 @@ import com.trm.sightline.core.model.CustomLocation
 import com.trm.sightline.core.model.GeoLocation
 import com.trm.sightline.core.model.Place
 import com.trm.sightline.core.model.PlaceCategory
-import com.trm.sightline.core.ui.icon
+import com.trm.sightline.core.resources.MR
+import com.trm.sightline.core.resources.enter_location_placeholder
+import com.trm.sightline.core.resources.icon
+import com.trm.sightline.core.resources.loading_location
+import com.trm.sightline.core.resources.loading_location_address
+import com.trm.sightline.core.resources.location_address_not_found
+import com.trm.sightline.core.resources.query_too_short
+import com.trm.sightline.core.resources.start_typing_to_search
+import com.trm.sightline.core.ui.localized
 import kotlinx.coroutines.launch
 
 @Composable
@@ -124,14 +133,13 @@ fun SharedTransitionScope.PlacesContent(
         enabled = !userLocationEnabled,
         placeholder = {
           Text(
-            stringResource(
-              when {
-                !userLocationEnabled -> R.string.enter_location_placeholder
-                activeLocation == null -> R.string.loading_location
-                locationAddress is LocationAddressState.Loading -> R.string.loading_location_address
-                else -> R.string.location_address_not_found
-              },
-            ),
+            when {
+                !userLocationEnabled -> MR.strings.enter_location_placeholder
+                activeLocation == null -> MR.strings.loading_location
+                locationAddress is LocationAddressState.Loading -> MR.strings.loading_location_address
+                else -> MR.strings.location_address_not_found
+              }
+              .localized(),
           )
         },
         leadingIcon = {
@@ -190,7 +198,7 @@ fun SharedTransitionScope.PlacesContent(
       inputField = inputField,
     ) {
       LazyColumn {
-        when (val results = customLocationSearchResults) {
+        when (customLocationSearchResults) {
           CustomLocationSearchState.Idle -> {
             item {
               Box(
@@ -198,7 +206,7 @@ fun SharedTransitionScope.PlacesContent(
                 contentAlignment = Alignment.Center,
               ) {
                 Text(
-                  text = stringResource(R.string.start_typing_to_search),
+                  text = MR.strings.start_typing_to_search.localized(),
                   style = MaterialTheme.typography.titleMedium,
                   color = MaterialTheme.colorScheme.onSurface,
                   textAlign = TextAlign.Center,
@@ -213,7 +221,7 @@ fun SharedTransitionScope.PlacesContent(
                 contentAlignment = Alignment.Center,
               ) {
                 Text(
-                  text = stringResource(R.string.query_too_short),
+                  text = MR.strings.query_too_short.localized(),
                   style = MaterialTheme.typography.titleMedium,
                   color = MaterialTheme.colorScheme.onSurface,
                   textAlign = TextAlign.Center,
@@ -225,7 +233,7 @@ fun SharedTransitionScope.PlacesContent(
             item { LinearProgressIndicator(modifier = Modifier.fillMaxWidth().animateItem()) }
           }
           is CustomLocationSearchState.Loaded -> {
-            items(results.results) { result ->
+            items(customLocationSearchResults.results) { result ->
               ListItem(
                 leadingContent = {
                   Icon(imageVector = Icons.Default.Place, contentDescription = null)
@@ -264,7 +272,7 @@ fun SharedTransitionScope.PlacesContent(
             rowLayoutCategories.forEach { category ->
               PlaceCategoryItem(
                 category = category,
-                icon = category.icon,
+                icon = painterResource(category.icon.drawableResId),
                 enabled = activeLocation != null,
                 selected = category in places,
                 state = places[category],
@@ -288,7 +296,7 @@ fun SharedTransitionScope.PlacesContent(
             items(items = PlaceCategory.entries, key = PlaceCategory::name) { category ->
               PlaceCategoryItem(
                 category = category,
-                icon = category.icon,
+                icon = painterResource(category.icon.drawableResId),
                 enabled = activeLocation != null,
                 selected = category in places,
                 state = places[category],

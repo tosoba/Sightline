@@ -59,7 +59,7 @@ struct ARCameraOverlay: View {
         )
 
         var image = context.resolve(
-            Image(systemName: placement.category.symbolName)
+            Image(placement.category.icon)
                 .symbolRenderingMode(.monochrome)
         )
         image.shading = .color(.white.opacity(0.9))

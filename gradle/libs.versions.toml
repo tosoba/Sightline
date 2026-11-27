@@ -22,6 +22,7 @@ mapLibreCompose = "0.20.0"
 material = "1.14.0"
 material3 = "1.5.0"
 metro = "1.6.0"
+mokoResources = "0.27.1"
 nav3 = "1.2.2"
 okhttp = "5.5.1"
 okio = "3.18.2"
@@ -70,6 +71,7 @@ maplibre-compose-runtime-vulkan-android = { module = "org.maplibre.compose:mapli
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 metrox-viewmodel = { group = "dev.zacsweers.metro", name = "metrox-viewmodel", version.ref = "metro" }
 metrox-viewmodel-compose = { group = "dev.zacsweers.metro", name = "metrox-viewmodel-compose", version.ref = "metro" }
+moko-resources = { group = "dev.icerock.moko", name = "resources", version.ref = "mokoResources" }
 okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
 okio = { group = "com.squareup.okio", name = "okio", version.ref = "okio" }
 play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
@@ -83,4 +85,5 @@ kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "ko
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 metro = { id = "dev.zacsweers.metro", version.ref = "metro" }
+multiplatform-resources = { id = "dev.icerock.mobile.multiplatform-resources", version.ref = "mokoResources" }
 skie = { id = "co.touchlab.skie", version.ref = "skie" }

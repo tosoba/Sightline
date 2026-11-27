@@ -37,6 +37,8 @@ include(":core:common")
 
 include(":core:model")
 
+include(":core:resources")
+
 include(":core:data")
 
 include(":core:datastore")
