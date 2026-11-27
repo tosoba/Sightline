@@ -3,7 +3,8 @@
 </div>
 
 ## About
-**_Sightline_** is a **location-based AR** (augmented reality) Android app utilizing **camera and map** previews.
+**_Sightline_** is a **location-based AR** (augmented reality) **Kotlin Multiplatform** app with native UI on each platform: **Jetpack Compose** on Android and **SwiftUI** on iOS.
+It uses **camera and map** previews.
 
 <details>
     <summary>Table of Contents</summary>
