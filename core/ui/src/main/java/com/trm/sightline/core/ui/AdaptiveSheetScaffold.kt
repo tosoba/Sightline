@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.BottomSheetScaffoldState
@@ -144,6 +145,11 @@ fun AdaptiveSheetScaffold(
   BottomSheetScaffold(
     modifier = modifier.fillMaxSize(),
     scaffoldState = scaffoldState,
+    sheetShape =
+      RoundedCornerShape(
+        topStart = bottomSheetCornerRadiusDp.dp,
+        topEnd = bottomSheetCornerRadiusDp.dp,
+      ),
     sheetDragHandle =
       if (isCompactHeight) {
         null
@@ -165,6 +171,10 @@ fun AdaptiveSheetScaffold(
         }
       },
     sheetContainerColor = sheetContainerColor,
+    // A transparent sheet would otherwise draw its own elevation shadow through itself,
+    // leaving a dark rim just inside the backdrop blur's edge.
+    sheetShadowElevation =
+      if (sheetContainerColor.alpha == 0f) 0.dp else BottomSheetDefaults.Elevation,
     sheetPeekHeight = sheetPeekHeight,
     sheetContent = {
       if (!isCompactHeight) {

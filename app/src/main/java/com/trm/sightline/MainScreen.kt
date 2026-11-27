@@ -60,10 +60,12 @@ import com.trm.sightline.core.resources.open_settings
 import com.trm.sightline.core.ui.localized
 import com.trm.sightline.core.model.PlaceSearchRadius
 import com.trm.sightline.core.ui.AdaptiveSheetScaffold
+import com.trm.sightline.core.ui.bottomSheetCornerRadiusDp
 import com.trm.sightline.core.ui.collapsedBottomSheetContentHeightDp
 import com.trm.sightline.core.ui.rememberPermissionState
 import com.trm.sightline.feature.places.PlacesContent
 import com.trm.sightline.feature.places.PlacesLayout
+import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -314,10 +316,10 @@ fun SharedTransitionScope.MainScreen(
                 val screenSize = getScreenSize()
                 RoundedRectF(
                   left = 0f,
-                  top = sheet.sheetOffset.value,
+                  top = sheet.sheetOffset.value.roundToInt().toFloat(),
                   right = screenSize.width.toFloat(),
                   bottom = screenSize.height.toFloat(),
-                  cornerRadius = dpToPx(32f),
+                  cornerRadius = dpToPx(bottomSheetCornerRadiusDp.toFloat()),
                 )
               }
             },
